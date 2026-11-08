@@ -110,7 +110,7 @@ While conventional battery State-of-Charge (SOC) estimation studies predominantl
 ### Option 1: Using Conda (Recommended)
 
 ```bash
-git clone https://github.com/hoangle-dut/SOC-Observer-PINN-Benchmark.git
+git clone https://github.com/HuyHoangLe0201/SOC-Observer-PINN-Benchmark.git
 cd SOC-Observer-PINN-Benchmark
 
 conda env create -f environment.yml
