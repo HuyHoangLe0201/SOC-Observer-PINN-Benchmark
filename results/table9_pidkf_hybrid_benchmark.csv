@@ -1,0 +1,4 @@
+Model,NMC RMSE (%),NMC Max Err (%),LFP RMSE (%),LFP Max Err (%)
+Standard EKF,1.985,4.734,0.978,1.565
+Dual EKF (DEKF),0.452,1.4,0.302,0.514
+Novel PIDKF (Hybrid),0.414,0.748,0.149,0.329

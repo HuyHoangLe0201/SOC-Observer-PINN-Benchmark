@@ -1,0 +1,12 @@
+\babel@toc {USenglish}{}\relax 
+\contentsline {figure}{\numberline {1}{\ignorespaces Dynamic SOC tracking and estimation error comparison across 6 algorithms under the UDDS drive cycle at $25^\circ \text {C}$ and $100\%$ SOH}}{6}{figure.struct.2}%
+\contentsline {figure}{\numberline {2}{\ignorespaces Evolution of SOC estimation error as battery SOH degrades from $100\%$ down to $80\%$, illustrating the 45-fold accuracy degradation of standard EKF versus the resilience of DEKF}}{6}{figure.struct.4}%
+\contentsline {figure}{\numberline {3}{\ignorespaces Algorithmic tracking performance under cold ($0^\circ \text {C}$), nominal ($25^\circ \text {C}$), and elevated ($45^\circ \text {C}$) ambient temperatures}}{6}{figure.struct.6}%
+\contentsline {figure}{\numberline {4}{\ignorespaces Transient convergence trajectories from a $-40\%$ initial SOC estimation error across all algorithms}}{7}{figure.struct.8}%
+\contentsline {figure}{\numberline {5}{\ignorespaces Multi-attribute radar comparison across 5 engineering dimensions illustrating algorithmic trade-offs}}{8}{figure.struct.9}%
+\contentsline {figure}{\numberline {6}{\ignorespaces Estimation performance on $\text {LiFePO}_4$ (LFP) chemistry over the flat voltage plateau where $d\text {OCV}/d\text {SOC} \approx 0$}}{8}{figure.struct.11}%
+\contentsline {figure}{\numberline {7}{\ignorespaces Observer robustness under current sensor bias drift ($+0.25\text { A}$) and high-frequency inverter EMI noise}}{8}{figure.struct.13}%
+\contentsline {figure}{\numberline {8}{\ignorespaces Electrochemical Impedance Spectroscopy (EIS) Nyquist spectra from $100\text { kHz}$ down to $1\text { mHz}$ capturing charge-transfer and SEI resistance expansion during cell aging}}{9}{figure.struct.14}%
+\contentsline {figure}{\numberline {9}{\ignorespaces Series-connected 8S battery pack estimation comparing lumped model deficiency with distributed DEKF weakest cell tracking}}{9}{figure.struct.16}%
+\contentsline {figure}{\numberline {10}{\ignorespaces Empirical Pareto efficiency frontier comparing computational complexity (FLOPs, execution time) against estimation error}}{10}{figure.struct.18}%
+\contentsline {figure}{\numberline {11}{\ignorespaces Benchmark of the proposed hybrid Physics-Informed Dual Kalman Filter (PIDKF) demonstrating sub-0.1\% tracking error}}{10}{figure.struct.20}%

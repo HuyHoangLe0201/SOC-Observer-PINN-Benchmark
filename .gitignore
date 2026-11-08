@@ -1,0 +1,60 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyd
+
+# C / C++ build outputs
+*.o
+*.obj
+*.exe
+*.dll
+*.so
+*.dylib
+
+# LaTeX build outputs
+*.aux
+*.bbl
+*.blg
+*.log
+*.out
+*.toc
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.dvi
+*.thm
+texput.log
+
+# Temporary editing & scratch scripts
+apply_*.py
+check_*.py
+fix_*.py
+pull_*.py
+test_*.py
+tighten_*.py
+solve_*.py
+tune_*.py
+restore_*.py
+move_*.py
+found_script.py
+finalize_exact_13p.py
+review_feedback.txt
+build_*.py
+compile_*.py
+package_*.py
+refine_*.py
+sync_*.py
+deep_*.py
+execute_*.py
+compact_appendices.py
+generate_word_cover_letter.py
+run_test_perf13.py
+
+# OS / Editor artifacts
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*~

@@ -1,0 +1,6 @@
+Algorithm,RMSE with Bias (%),Max Error (%),End-of-Cycle Drift (%),Fault Immunity
+Coulomb Counting,7.178,12.409,12.399,Poor (Runaway Drift)
+EKF,1.817,5.013,1.821,High
+AEKF,1.859,5.013,2.026,Moderate
+DEKF,2.121,5.013,1.927,High
+SMO,5.035,14.458,1.024,High

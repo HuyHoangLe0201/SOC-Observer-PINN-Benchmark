@@ -1,0 +1,7 @@
+Algorithm,Convergence Time (sec),RMSE (%),Max Error (%)
+EKF,7.0,0.686,4.43
+AEKF,6.0,0.683,4.43
+DEKF,725.0,2.625,7.67
+SMO,9.0,1.948,36.34
+BiLSTM-Attn,30.0,5.625,39.99
+PINN-SOC,0.0,2.229,6.84

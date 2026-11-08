@@ -1,0 +1,10 @@
+\babel@toc {USenglish}{}\relax 
+\contentsline {table}{\numberline {1}{\ignorespaces Benchmark results under UDDS dynamic schedule at nominal condition ($25^\circ \text {C}$, $\text {SOH}=100\%$)}}{6}{table.struct.1}%
+\contentsline {table}{\numberline {2}{\ignorespaces Degradation benchmark across progressive SOH stages ($100\%$ to $80\%$ SOH)}}{7}{table.struct.3}%
+\contentsline {table}{\numberline {3}{\ignorespaces Thermal robustness comparison across ambient temperatures ($0^\circ \text {C}, 25^\circ \text {C}, 45^\circ \text {C}$)}}{7}{table.struct.5}%
+\contentsline {table}{\numberline {4}{\ignorespaces Convergence metrics under initial uncertainty ($\mathaccent "0362{\text {SOC}}_0 = 0.50$, $\text {SOC}_0^{\text {true}} = 0.90$)}}{7}{table.struct.7}%
+\contentsline {table}{\numberline {5}{\ignorespaces Multi-chemistry generalization benchmark (NMC vs. LFP flat plateau)}}{7}{table.struct.10}%
+\contentsline {table}{\numberline {6}{\ignorespaces Robustness under Hall current bias ($+0.25\text { A}$) and inverter EMI ($25\text { mV}$)}}{8}{table.struct.12}%
+\contentsline {table}{\numberline {7}{\ignorespaces 8S series pack benchmark with cell-to-cell inconsistency ($\sigma _Q=3\%$, $\sigma _R=10\%$)}}{9}{table.struct.15}%
+\contentsline {table}{\numberline {8}{\ignorespaces Embedded hardware profiling on ARM Cortex-M architectures}}{9}{table.struct.17}%
+\contentsline {table}{\numberline {9}{\ignorespaces Performance of the proposed hybrid PIDKF vs. state-of-the-art baselines}}{9}{table.struct.19}%

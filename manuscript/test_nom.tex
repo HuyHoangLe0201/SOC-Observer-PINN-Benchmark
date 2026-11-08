@@ -1,0 +1,27 @@
+\documentclass[preprint,12pt]{elsarticle}
+\usepackage{amsmath,amssymb}
+\journal{Journal of Energy Storage}
+
+\newcommand{\entry}[2]{\noindent\makebox[0.22\textwidth][l]{#1} \parbox[t]{0.75\textwidth}{#2}\par\vspace{2pt}}
+\newcommand{\EntryHeading}[1]{\par\vspace{6pt}\noindent\textbf{#1}\par\vspace{2pt}}
+\newenvironment{nomenclature}{\section*{Nomenclature}}{}
+
+\begin{document}
+\begin{frontmatter}
+\title{Test Title}
+\author{Author}
+\begin{abstract}
+Test
+\end{abstract}
+\end{frontmatter}
+
+\begin{nomenclature}
+\entry{$\mathbf{A}_k$}{Discrete state transition matrix}
+\entry{, C_2$}{Polarization capacitances (F)}
+\EntryHeading{Greek Letters}
+\entry{$\alpha$}{Constant-phase element exponent}
+\end{nomenclature}
+
+\section{Introduction}
+Test intro.
+\end{document}
