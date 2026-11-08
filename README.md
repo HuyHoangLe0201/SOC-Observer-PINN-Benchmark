@@ -1,6 +1,5 @@
 # Comparative Benchmark of State-of-Charge Observers and Physics-Informed Neural Networks Across Battery Aging and Thermal Regimes
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14028912.svg)](https://doi.org/10.5281/zenodo.14028912)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
 [![PyTorch 2.0+](https://img.shields.io/badge/PyTorch-2.0+-ee4c2c.svg)](https://pytorch.org/)
@@ -203,7 +202,7 @@ If you use this benchmark platform, models, or bare-metal C code in your researc
   title   = {Comparative Benchmark of State-of-Charge Observers and Physics-Informed Neural Networks Across Battery Aging and Thermal Regimes},
   journal = {Journal of Energy Storage},
   year    = {2026},
-  doi     = {10.5281/zenodo.14028912},
+  url     = {https://github.com/HuyHoangLe0201/SOC-Observer-PINN-Benchmark},
   note    = {Under Review}
 }
 ```

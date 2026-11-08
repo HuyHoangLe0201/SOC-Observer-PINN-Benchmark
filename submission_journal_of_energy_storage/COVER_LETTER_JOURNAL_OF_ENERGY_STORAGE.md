@@ -39,7 +39,7 @@ In alignment with Elsevier's *"Your Paper Your Way"* submission guidelines, this
 We confirm that:
 - This manuscript is original, has not been published previously, and is not currently under consideration for publication elsewhere.
 - All authors have reviewed and approved the submitted version of the manuscript.
-- All experimental datasets utilized are publicly accessible (CALCE, Oxford, NASA PCoE), and the full reproducible simulation platform and bare-metal embedded profiling code are archived on Zenodo (DOI: `10.5281/zenodo.14028912`) and GitHub.
+- All experimental datasets utilized are publicly accessible (CALCE, Oxford, NASA PCoE), and the full reproducible simulation platform and bare-metal embedded profiling code are openly hosted on GitHub on GitHub (`https://github.com/HuyHoangLe0201/SOC-Observer-PINN-Benchmark`).
 - There are no conflicts of interest to declare.
 
 ### Suggested Expert Reviewers

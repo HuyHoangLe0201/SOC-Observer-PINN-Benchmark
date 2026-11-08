@@ -53,7 +53,7 @@ This manuscript is squarely aligned with the aims and scope of the *Journal of E
 
 - **Novelty & Non-Duplication:** This manuscript is original, has not been published previously, and is not currently under consideration for publication elsewhere.
 - **Author Agreement:** All authors have approved the manuscript and agree with its submission to the *Journal of Energy Storage*.
-- **Data Availability & Reproducibility:** All datasets (CALCE, NASA Ames PCoE, Oxford), calibrated 2-RC model parameters, and optimized CMSIS-DSP C kernels are openly available on GitHub and permanently archived on Zenodo (`DOI: 10.5281/zenodo.14048921`).
+- **Data Availability & Reproducibility:** All datasets (CALCE, NASA Ames PCoE, Oxford), calibrated 2-RC model parameters, and optimized CMSIS-DSP C kernels are openly available on GitHub and permanently openly hosted on GitHub (`DOI: 10.5281/zenodo.14048921`).
 - **Conflict of Interest:** The authors declare that they have no known competing financial interests or personal relationships that could have appeared to influence the work reported in this paper.
 
 ---

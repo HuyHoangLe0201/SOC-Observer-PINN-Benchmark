@@ -5,7 +5,7 @@ Comparative Benchmark of State-of-Charge Observers and Physics-Informed Neural N
 Across Battery Aging and Thermal Regimes (Journal of Energy Storage)
 
 Authors: Huy Hoang Le, Kim-Anh Nguyen
-Zenodo DOI: 10.5281/zenodo.14028912
+GitHub: https://github.com/HuyHoangLe0201/SOC-Observer-PINN-Benchmark
 """
 
 import os
