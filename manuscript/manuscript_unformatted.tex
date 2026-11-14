@@ -41,7 +41,6 @@ Although battery State-of-Charge (SOC) estimation has been extensively investiga
 \noindent \textbf{Keywords:} State-of-charge estimation; Lithium-ion battery; Battery degradation; Dual Extended Kalman filter; Physics-informed neural network; Electrochemical impedance spectroscopy; Embedded BMS.
 \vspace{1.2em}
 
-
 \begin{nomenclature}
 \entry{$\mathbf{A}_k, \mathbf{B}_k, \mathbf{g}_k$}{discrete state transition, input, and hysteresis vectors}
 \entry{$C_1, C_2, Q_{\text{cpe}}$}{polarization capacitances ($\text{F}$) and CPE parameter ($\text{F}\cdot\text{s}^{\alpha-1}$)}
@@ -305,7 +304,7 @@ Unlike conventional black-box networks that treat SOC estimation as an unconstra
 \begin{equation}\label{eqn:pinn_ode}
 \frac{d\,\text{SOC}(t)}{dt} = -\frac{\eta(T, I)\, I(t)}{3600\,Q_{\text{act}}(T, \text{SOH})},
 \end{equation}
-where $\eta \in (0, 1]$ represents Faradaic coulombic efficiency capturing side reactions, and $Q_{\text{act}}$ denotes usable capacity modulated by Arrhenius thermal kinetics and SEI growth. In operational BMS execution, the real-time inference network evaluates directly on measurable sensory signals $\mathbf{u}_k = [I_k, V_{t,k}, T_k, \Delta V_k]^T$ without requiring an continuous ground-truth SOH oracle. During multi-stage training, the Faradaic loss term evaluates Eq.~\eqref{eqn:pinn_ode} anchored to the cell's current health state $\hat{\text{SOH}}_{\text{latched}}$, obtained via quasi-stationary constant-current charging health indicators~\cite{Le2026charging}. Sensitivity analysis indicates that a $\pm 2\%$ ($\pm 5\%$) error in latched SOH introduces merely $+0.113\%$ ($+0.339\%$) RMSE increase under UDDS, confirming that closed-loop terminal voltage KVL loss robustly pins the estimated trajectory against drift. Because cell degradation occurs on macroscopic timescales ($10^5\text{--}10^6\text{ s}$), across individual drive schedules ($600\text{--}3600\text{ s}$) the time derivative satisfies $|d\text{SOH}/dt| < 10^{-8}\text{ s}^{-1} \approx 0$. Hence, the total time derivative $\frac{d\hat{z}}{dt}$ along trajectories is evaluated via chain-rule Autograd:
+where $\eta \in (0, 1]$ represents Faradaic coulombic efficiency capturing side reactions, and $Q_{\text{act}}$ denotes usable capacity modulated by Arrhenius thermal kinetics and SEI growth. In operational BMS execution, the real-time inference network evaluates directly on measurable sensory signals $\mathbf{u}_k = [I_k, V_{t,k}, T_k, \Delta V_k]^T$ without requiring a continuous ground-truth SOH oracle. During multi-stage training, the Faradaic loss term evaluates Eq.~\eqref{eqn:pinn_ode} anchored to the cell's current health state $\hat{\text{SOH}}_{\text{latched}}$, obtained via quasi-stationary constant-current charging health indicators~\cite{Le2026charging}. Sensitivity analysis indicates that a $\pm 2\%$ ($\pm 5\%$) error in latched SOH introduces merely $+0.113\%$ ($+0.339\%$) RMSE increase under UDDS, confirming that closed-loop terminal voltage KVL loss robustly pins the estimated trajectory against drift. Because cell degradation occurs on macroscopic timescales ($10^5\text{--}10^6\text{ s}$), across individual drive schedules ($600\text{--}3600\text{ s}$) the time derivative satisfies $|d\text{SOH}/dt| < 10^{-8}\text{ s}^{-1} \approx 0$. Hence, the total time derivative $\frac{d\hat{z}}{dt}$ along trajectories is evaluated via chain-rule Autograd:
 \begin{align}
 \frac{d\hat{z}(t)}{dt} &= \frac{\partial \mathcal{NN}_1}{\partial t} + \frac{\partial \mathcal{NN}_1}{\partial I} \frac{dI}{dt} + \frac{\partial \mathcal{NN}_1}{\partial V_t} \frac{dV_t}{dt} + \frac{\partial \mathcal{NN}_1}{\partial T} \frac{dT}{dt}, \label{eqn:pinn_chain}\\
 \mathcal{R}_{\text{Faraday}}(t) &= \frac{d\hat{z}(t)}{dt} + \frac{\eta(T, I)\, I(t)}{3600\,Q_{\text{act}}(T, \text{SOH})}, \label{eqn:res_faraday}
@@ -516,22 +515,6 @@ Figure~\ref{fig:radar} synthesizes algorithmic trade-offs across 5 normalized di
 \caption{Multi-attribute radar comparison across 5 engineering dimensions illustrating algorithmic trade-offs\label{fig:radar}}
 \end{figure}
 
-\begin{table}[htbp]
-\caption{Series 8S pack benchmark with cell-to-cell parameter inconsistency [Tier~2 Co-Simulation]\label{tab:7_pack}}
-\centering{%
-\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccc}
-\toprule
-\shortstack[l]{Estimation\\Architecture} & \shortstack[c]{Target\\State} & \shortstack[c]{RMSE\\(\%)} & \shortstack[c]{MaxE\\(\%)} & \shortstack[c]{Safety Margin\\Risk} \\
-\midrule
-Lumped Pack Observer & Mean Pack SOC & \textbf{0.128} & 0.443 & Moderate \\
-Distributed DEKF & Mean Pack SOC & 0.149 & \textbf{0.336} & None (Optimal) \\
-Lumped Pack Observer & Weakest Cell SOC & 1.744 & 2.302 & High (Overdischarge Risk) \\
-Distributed DEKF & Weakest Cell SOC & \textbf{0.337} & \textbf{0.963} & Bounded Error ($<1\%$) \\
-\bottomrule
-\end{tabular*}
-}%
-\end{table}
-
 \subsection[Phase 6: Multi-Chemistry Generalization: LiFePO4 (LFP) Flat Plateau]{Phase 6: Multi-Chemistry Generalization: $\text{LiFePO}_4$ (LFP) Flat Plateau}
 Figure~\ref{fig:lfp} and Table~\ref{tab:5_lfp} report estimation performance on LFP chemistry. In the plateau region ($20\%\text{--}80\%$ SOC), the slope $d V_{\text{ocv}} / d\,\text{SOC}$ falls near zero ($\approx 0.08\text{ V}$), causing the observability Gramian condition number $\kappa(\mathcal{O})$ to surge. 
 
@@ -565,8 +548,6 @@ PINN-SOC & 2.781\% & 4.872\% (Max 8.74\%) & \textbf{1.720\%} (Max 3.48\%) & +75.
 \caption{Estimation performance on $\text{LiFePO}_4$ (LFP) chemistry over the flat voltage plateau where $d V_{\text{ocv}}/d\text{SOC} \approx 0$\label{fig:lfp}}
 \end{figure}
 
-
-
 \subsection{Phase 7: Sensor Corruption and Environmental Stress Testing}
 Table~\ref{tab:6_sensor} and Fig.~\ref{fig:sensor} document observer resilience under a $+0.25\text{ A}$ current sensor Hall bias drift and $25\text{ mV}$ high-frequency inverter EMI noise ripple.
 
@@ -595,8 +576,6 @@ SMO & 5.035 & 14.458 & \textbf{1.024} & High \\
 \caption{Observer robustness under current sensor bias drift ($+0.25\text{ A}$) and high-frequency inverter EMI noise\label{fig:sensor}}
 \end{figure}
 
-
-
 \subsection{Phase 8: Model-Based Electrochemical Impedance Spectroscopy (EIS) Analysis Across Aging}
 Figure~\ref{fig:eis} depicts model-based Randles--CPE Nyquist spectra ($100\text{ kHz}\text{--}1\text{ mHz}$) simulated via $Z(j\omega) = R_0 + (R_{\text{ct}} + Z_w) / [1 + (j\omega)^\alpha Q_{\text{cpe}} (R_{\text{ct}} + Z_w)]$ with $Z_w(j\omega) = \sigma_w \omega^{-1/2}(1 - j)$, parameterized from Oxford EIS aging ratios~\cite{Birkl2017diagnostics} ($Q_{\text{cpe}} = 1.2\text{ F}\cdot\text{s}^{\alpha-1}$, $\alpha = 0.88$, $\sigma_w = 0.045\ \Omega\cdot\text{s}^{-1/2}$, RMS fitting error $1.1\%\text{--}1.8\%$ across $100\%\text{--}80\%$ SOH). High-frequency SEI resistance $R_{\text{sei}}$ is lumped into effective series resistance $R_0(\text{SOH}) = R_{\text{ohm}} + R_{\text{sei}}$ ($35.0\text{--}52.5\text{ m}\Omega$, $+50\%$), while charge-transfer resistance $R_{\text{ct}}$ widens by $+150\%$ ($15.0\text{--}37.5\text{ m}\Omega$). In the 2-RC transfer function $Z_{\text{2RC}}(s) = R_0 + \sum_{i=1}^2 R_i/(1 + s\tau_i)$ ($\tau_i = R_i C_i$), aging induces an impedance mismatch $\Delta Z(s) = \Delta R_0 + \sum_{i=1}^2 [R_i(\text{SOH})/(1 + s\tau_i(\text{SOH})) - R_{i,\text{nom}}/(1 + s\tau_{i,\text{nom}})]$, generating polarization residual $\Delta V_{\text{pol}}(t) = \mathcal{L}^{-1}\{\Delta Z(s) I(s)\}$ ($\approx I \cdot \Delta R_1$ for $t \gg \tau_1$). Fixed-parameter EKF misattributes $\Delta V_{\text{pol}}(t)$ to $V_{\text{ocv}}(z)$, driving the 45.7-fold RMSE surge; standard DEKF adapts $R_0$ online but omits $R_1$ to avoid collinearity, leaving $\Delta V_{\text{pol}}(t)$ to be compensated by PIDKF.
 
@@ -605,6 +584,36 @@ Figure~\ref{fig:eis} depicts model-based Randles--CPE Nyquist spectra ($100\text
 \includegraphics[width=0.82\linewidth]{fig8_eis_nyquist_aging.png}
 \caption{Model-based EIS Nyquist spectra across progressive aging stages ($100\%$ down to $80\%$ SOH)\label{fig:eis}}
 \end{figure}
+
+\subsection{Phase 9: Module and Pack-Level Scaling (8S Series Pack)}
+Table~\ref{tab:7_pack} and Fig.~\ref{fig:pack} evaluate algorithmic scalability to an 8S series battery pack under realistic manufacturing tolerances (capacity dispersion $\sigma_Q = 3.0\%$, resistance dispersion $\sigma_R = 10.0\%$)~\cite{Yang2024degradation,Zheng2018inconsistency}. In automotive strings, core cells (cells~\#4, \#5) experience elevated thermal resistance ($R_{\text{th,center}} \approx 18.2\text{ K}\cdot\text{W}^{-1}$ vs.\ $12.5\text{ K}\cdot\text{W}^{-1}$ on edge cells~\#1, \#8 due to packaging), raising steady-state temperature by $\Delta T = \bar{\dot{Q}}_{\text{gen}}\Delta R_{\text{th}} \approx 0.56\text{ W} \times 5.7\text{ K/W} = +3.2^\circ\text{C}$ under UDDS current. Via Arrhenius SEI rate $\dot{k}_{\text{deg}} \propto \exp(-E_{a,\text{sei}}/RT)$ ($E_{a,\text{sei}} \approx 50\text{ kJ}\cdot\text{mol}^{-1}$), this $+3.2^\circ\text{C}$ rise accelerates capacity fade on cell~\#4 by factor $\exp[\frac{50000}{8.314}(\frac{1}{298.15} - \frac{1}{301.35})] = 1.24\times$ relative to perimeter cells. Note the sensing distinction: distributed DEKF receives individual cell voltages whereas the lumped observer receives only pack-average voltage.
+
+Under dynamic UDDS driving, a lumped observer treats the string as a homogeneous cell driven by mean voltage $V_{\text{string}}/8$. While tracking pack-average state ($\text{RMSE} = 0.128\%$, $\text{MaxE} = 0.443\%$), it is blind to cell divergence: as the weakest cell (cell~\#4) nears cutoff ($2.50\text{ V}$), the lumped model incurs \textbf{1.744\% RMSE and 2.302\% peak error}, risking severe copper dissolution and lithium plating. In contrast, distributed DEKF tracks individual cell states and parameter fade online, confining weakest-cell RMSE to $0.337\%$ and peak error to $0.963\%$ without per-cell EIS hardware.
+
+\begin{table}[htbp]
+\caption{Series 8S pack benchmark with cell-to-cell parameter inconsistency [Tier~2 Co-Simulation]\label{tab:7_pack}}
+\centering{%
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccc}
+\toprule
+\shortstack[l]{Estimation\\Architecture} & \shortstack[c]{Target\\State} & \shortstack[c]{RMSE\\(\%)} & \shortstack[c]{MaxE\\(\%)} & \shortstack[c]{Safety Margin\\Risk} \\
+\midrule
+Lumped Pack Observer & Mean Pack SOC & \textbf{0.128} & 0.443 & Moderate \\
+Distributed DEKF & Mean Pack SOC & 0.149 & \textbf{0.336} & None (Optimal) \\
+Lumped Pack Observer & Weakest Cell SOC & 1.744 & 2.302 & High (Overdischarge Risk) \\
+Distributed DEKF & Weakest Cell SOC & \textbf{0.337} & \textbf{0.963} & Bounded Error ($<1\%$) \\
+\bottomrule
+\end{tabular*}
+}%
+\end{table}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.82\linewidth]{fig9_pack_cell_inconsistency.png}
+\caption{Series-connected 8S battery pack estimation comparing lumped model deficiency with distributed DEKF weakest cell tracking\label{fig:pack}}
+\end{figure}
+
+\subsection{Phase 10: Embedded Hardware Execution on ARM Cortex-M and PIDKF Superiority}\label{sec:hw_profiling}
+Computational complexity was measured via hardware \texttt{DWT->CYCCNT} cycle counters on ARM Cortex-M4 (STM32F407VG, 168~MHz) and projected via constant-IPC clock-scaling to Cortex-M7 (480~MHz) using CMSIS-DSP (Table~\ref{tab:8_embedded}, Fig.~\ref{fig:embedded}).
 
 \begin{table}[htbp]
 \caption{Embedded execution profiling on ARM Cortex-M architectures (ARM GCC 12.3 \texttt{-O3}; DWT cycles and latencies measured on 168\,MHz Cortex-M4; 480\,MHz Cortex-M7 values represent constant-IPC clock-scaled estimates)\label{tab:8_embedded}}
@@ -629,24 +638,6 @@ PINN-SOC & 12,800 & 21,501 & 1,200 & 16,500 & 127.98 & 44.79 & High (CMSIS-NN Re
 }%
 }%
 \end{table}
-
-\subsection{Phase 9: Module and Pack-Level Scaling (8S Series Pack)}
-Table~\ref{tab:7_pack} and Fig.~\ref{fig:pack} evaluate algorithmic scalability to an 8S series battery pack under realistic manufacturing tolerances (capacity dispersion $\sigma_Q = 3.0\%$, resistance dispersion $\sigma_R = 10.0\%$)~\cite{Yang2024degradation,Zheng2018inconsistency}. In automotive strings, core cells (cells~\#4, \#5) experience elevated thermal resistance ($R_{\text{th,center}} \approx 18.2\text{ K}\cdot\text{W}^{-1}$ vs.\ $12.5\text{ K}\cdot\text{W}^{-1}$ on edge cells~\#1, \#8 due to packaging), raising steady-state temperature by $\Delta T = \bar{\dot{Q}}_{\text{gen}}\Delta R_{\text{th}} \approx 0.56\text{ W} \times 5.7\text{ K/W} = +3.2^\circ\text{C}$ under UDDS current. Via Arrhenius SEI rate $\dot{k}_{\text{deg}} \propto \exp(-E_{a,\text{sei}}/RT)$ ($E_{a,\text{sei}} \approx 50\text{ kJ}\cdot\text{mol}^{-1}$), this $+3.2^\circ\text{C}$ rise accelerates capacity fade on cell~\#4 by factor $\exp[\frac{50000}{8.314}(\frac{1}{298.15} - \frac{1}{301.35})] = 1.24\times$ relative to perimeter cells. Note the sensing distinction: distributed DEKF receives individual cell voltages whereas the lumped observer receives only pack-average voltage.
-
-Under dynamic UDDS driving, a lumped observer treats the string as a homogeneous cell driven by mean voltage $V_{\text{string}}/8$. While tracking pack-average state ($\text{RMSE} = 0.128\%$, $\text{MaxE} = 0.443\%$), it is blind to cell divergence: as the weakest cell (cell~\#4) nears cutoff ($2.50\text{ V}$), the lumped model incurs \textbf{1.744\% RMSE and 2.302\% peak error}, risking severe copper dissolution and lithium plating. In contrast, distributed DEKF tracks individual cell states and parameter fade online, confining weakest-cell RMSE to $0.337\%$ and peak error to $0.963\%$ without per-cell EIS hardware.
-
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=0.82\linewidth]{fig9_pack_cell_inconsistency.png}
-\caption{Series-connected 8S battery pack estimation comparing lumped model deficiency with distributed DEKF weakest cell tracking\label{fig:pack}}
-\end{figure}
-
-
-
-
-
-\subsection{Phase 10: Embedded Hardware Execution on ARM Cortex-M and PIDKF Superiority}\label{sec:hw_profiling}
-Computational complexity was measured via hardware \texttt{DWT->CYCCNT} cycle counters on ARM Cortex-M4 (STM32F407VG, 168~MHz) and projected via constant-IPC clock-scaling to Cortex-M7 (480~MHz) using CMSIS-DSP (Table~\ref{tab:8_embedded}, Fig.~\ref{fig:embedded}).
 
 \begin{figure}[htbp]
 \centering
@@ -687,23 +678,11 @@ NASA $43^\circ\text{C}$ (EKF / DEKF / \textbf{PIDKF}) & \multicolumn{2}{c}{1.210
 {\scriptsize $^\dagger$5 seeds. Cell-specific CALCE $85\%$ SOH RMSE: INR20R-3 (DEKF $0.462\%$, PIDKF $0.422\%$), INR20R-4 ($0.474\%$, $0.434\%$), A123-3 ($0.294\%$, $0.154\%$), A123-4 ($0.302\%$, $0.162\%$). NASA CC 4A: \texttt{B0041} ($80\%$ SOH) and \texttt{B0029} ($85\%$ SOH) with $\pm 0.15\%$ reference uncertainty.\par}
 \end{table}
 
-
-
  SMO demonstrates ultra-light overhead (180~FLOPs, 140~B RAM, $1.67\;\mu\text{s}$ on M4), while DEKF requires 980~FLOPs, 620~B SRAM, and $8.63\;\mu\text{s}$. BiLSTM-Attn demands $245,000$ FLOPs and $18.4\text{ KB}$ SRAM ($2440.48\;\mu\text{s}$), incurring an impractical $39.0\%$ CPU load across 16 cells in a $100\text{ ms}$ loop.
 
 Table~\ref{tab:9_pidkf} and Fig.~\ref{fig:pidkf} summarize the \textbf{PIDKF} ablation on degraded cells ($85\%$ SOH, 5 seeds). On $\text{LiFePO}_4$, dynamic hysteresis tracking dominates, cutting RMSE from $0.302\%$ to $0.149\% \pm 0.008\%$ ($0.335\%$ MaxE); neural compensation alone yields $0.246\% \pm 0.011\%$. Conversely, on NMC, neural compensation dominates, reducing peak error by $46.6\%$ ($1.400\%$ to $0.748\% \pm 0.024\%$) and RMSE to $0.414\% \pm 0.012\%$, whereas unconstrained MLP degrades to $0.438\%$ (NMC) and $0.285\%$ (LFP). Exogenous-Jacobian PIDKF matches Exact-Jacobian accuracy ($0.414\%$ vs.\ $0.412\%$ NMC; $0.149\%$ vs.\ $0.148\%$ LFP) while cutting MCU cycles by $37.3\%$.
 
 Across aging ($25^\circ\text{C}$), PIDKF maintains sub-$0.5\%$ RMSE: for NMC, $0.185\%$ ($100\%$), $0.326\%$ ($90\%$), $0.414\%$ ($85\%$), and $0.482\%$ ($80\%$ SOH, $\text{ASF} = +160.5\%$ vs.\ $+4473.8\%$ for EKF); for LFP, $0.112\%$ ($100\%$), $0.134\%$ ($90\%$), $0.149\%$ ($85\%$), and $0.178\%$ ($80\%$). At $85\%$ SOH, PIDKF restricts $0^\circ\text{C}$ error to $0.842\%$ (NMC) and $0.386\%$ (LFP), and $45^\circ\text{C}$ error to $0.435\%$ and $0.162\%$. Under offset $\Delta\text{SOC}_0 = -40\%$, PIDKF settles rapidly ($t_{\text{reach}}^{(2\%)} = 18.0\text{ s}$, $t_{\text{settle}}^{(5\%)} = 22.0\text{ s}$, $\text{RMSE} = 0.512\%$), outperforming DEKF ($725.0\text{ s}$) by suppressing parameter destabilization. Under $+0.25\text{ A}$ Hall bias, PIDKF confines RMSE to $1.428\%$ and drift to $0.842\%$.
-
-
-
-
-
-
-
-
-
-
 
 \begin{figure}[htbp]
 \centering
@@ -781,7 +760,6 @@ Hysteresis $M_0$ (mV) & --- & --- & 30.0 & 30.0 \\
 \end{table}
 
 Under Joseph-stabilized recursions, $\mathbf{P}_{k+1}^- = \mathbf{A}_k \mathbf{P}_k^+ \mathbf{A}_k^T + \mathbf{Q}_k$ and $\mathbf{P}_k^+ = (\mathbf{I} - \mathbf{K}_k \mathbf{H}_k)\mathbf{P}_k^-(\mathbf{I} - \mathbf{K}_k \mathbf{H}_k)^T + \mathbf{K}_k R_{\text{eff},k} \mathbf{K}_k^T$. Since $\mathbf{A}_k$ is contractive, $\underline{q}\mathbf{I} \preceq \mathbf{Q}_k \preceq \bar{q}\mathbf{I}$, and $0 < \underline{r} \le R_{\text{eff},k} \le \bar{r}$, UCO $\mathcal{G}_o \succeq \alpha_o \mathbf{I}$ establishes strict contractivity. Error covariances satisfy $\underline{p}\mathbf{I} \preceq \mathbf{P}_k^+ \preceq \bar{p}\mathbf{I}$ ($\underline{p} = \underline{q}$, $\bar{p} = (\alpha_o^{-1} + N\bar{q})\bar{a}^{2N}$), uniformly bounding gain $\|\mathbf{K}_k\|_2 \le \bar{p}\|\mathbf{H}_k\|_2/\underline{r} \le \bar{K} < \infty$ and validating UUB stability (Section~\ref{sec:pidkf}, Appendix~\ref{app:lyapunov}).
-
 
 \bibliographystyle{unsrt}
 \bibliography{references}
