@@ -1,8 +1,8 @@
 """
 Publication-Quality Visualization Generator
-Journal of Electrochemical Energy Conversion and Storage (ASME)
+Journal of Energy Storage (Elsevier)
 
-Generates clean, vector-quality, double-column figures adhering to ASME author guidelines:
+Generates clean, vector-quality, double-column figures for publication:
 1. Fig 1: Dynamic Drive Cycle (UDDS) Tracking & Error Residuals
 2. Fig 2: Degradation Robustness across Progressive Battery Aging (SOH: 100% -> 80%)
 3. Fig 3: Thermal Robustness across Multi-Temperature Regimes (0°C, 25°C, 45°C)
@@ -15,7 +15,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 
-# Configure matplotlib for ASME publication styling
+# Configure matplotlib for publication styling
 plt.rcParams.update({
     "font.family": "serif",
     "font.size": 10,
@@ -243,7 +243,7 @@ def plot_radar_summary(metrics_dict, save_path="../results/fig5_radar_tradeoff.p
     - Convergence Speed
     - Embedded Efficiency (1 / Latency)
     """
-    categories = ['Accuracy', 'Aging\nResilience', 'Thermal\nRobustness', 'Convergence\nSpeed', 'Embedded\nEfficiency']
+    categories = ['Nominal\nAccuracy', 'Aging\nRobustness', 'Thermal\nRobustness', 'Convergence\nSpeed', 'Computational\nEfficiency']
     N = len(categories)
     angles = [n / float(N) * 2 * np.pi for n in range(N)]
     angles += angles[:1]

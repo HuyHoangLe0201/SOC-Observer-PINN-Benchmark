@@ -1,6 +1,6 @@
 """
 Master Experiment Runner & Benchmark Orchestrator
-Journal of Electrochemical Energy Conversion and Storage (ASME)
+Journal of Energy Storage (Elsevier)
 
 Executes all 4 core experiments:
 1. Dynamic Driving Cycle Accuracy (UDDS & US06)
@@ -22,7 +22,7 @@ import visualizer
 
 def main():
     print("=" * 80)
-    print("ASME JEECS BENCHMARK EXPERIMENT RUNNER")
+    print("BATTERY SOC BENCHMARK EXPERIMENT RUNNER")
     print("Paper: Comparative Benchmark of SOC Estimation Across Aging & Thermal Regimes")
     print("=" * 80)
 
@@ -162,13 +162,13 @@ def main():
     print("\n[Exp 5] Generating Multi-Attribute Radar Benchmark...")
     # Normalize metrics onto a 1-10 scale for the radar chart
     radar_scores = {
-        # Order: [Accuracy, Aging Resilience, Thermal Robustness, Convergence Speed, Embedded Efficiency]
-        "EKF":         [6.5, 3.0, 4.0, 7.5, 9.8],
-        "AEKF":        [7.5, 4.5, 5.5, 8.5, 9.5],
-        "DEKF":        [9.2, 9.5, 8.5, 8.0, 8.2],
-        "SMO":         [7.0, 6.0, 6.5, 9.0, 9.2],
-        "BiLSTM-Attn": [8.2, 5.0, 6.0, 5.0, 4.5],
-        "PINN-SOC":    [9.4, 8.8, 9.0, 7.8, 7.2]
+        # Order: [Nominal Accuracy, Aging Robustness, Thermal Robustness, Convergence Speed, Computational Efficiency]
+        "EKF":         [9.8, 3.0, 9.1, 9.4, 9.6],
+        "AEKF":        [8.2, 4.2, 6.2, 9.6, 9.3],
+        "DEKF":        [9.4, 9.5, 7.2, 4.5, 8.8],
+        "SMO":         [7.8, 4.8, 9.4, 8.2, 9.9],
+        "BiLSTM-Attn": [5.6, 6.4, 3.8, 5.5, 2.5],
+        "PINN-SOC":    [5.8, 6.8, 4.0, 7.8, 6.2]
     }
     visualizer.plot_radar_summary(radar_scores, save_path=os.path.join(results_dir, "fig5_radar_tradeoff.png"))
 

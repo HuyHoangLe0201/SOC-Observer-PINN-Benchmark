@@ -1,6 +1,6 @@
 """
 Real-World Experimental Battery Dataset Loader
-Journal of Electrochemical Energy Conversion and Storage (ASME)
+Journal of Energy Storage (Elsevier)
 
 Supported Open-Access Laboratory Datasets:
 1. CALCE Battery Research Group (University of Maryland)

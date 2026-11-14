@@ -1,6 +1,6 @@
 """
 Series Battery Pack & Cell-to-Cell Inconsistency Benchmark
-Journal of Electrochemical Energy Conversion and Storage (ASME)
+Journal of Energy Storage (Elsevier)
 
 Features:
 1. 8S Series Battery Pack (8 Cells in Series) with realistic manufacturing variations:
@@ -59,8 +59,14 @@ class SeriesBatteryPack:
             cell.reset_state(initial_soc=self.initial_socs[i])
             self.cells.append(cell)
 
-        # Identify the "Weakest Cell" (lowest capacity, critical safety limiter)
-        self.weakest_cell_idx = int(np.argmin(self.capacities))
+        # Place the minimum-capacity limiting cell at core position #4 (index 3)
+        min_idx = int(np.argmin(self.capacities))
+        if min_idx != 3:
+            self.capacities[3], self.capacities[min_idx] = self.capacities[min_idx], self.capacities[3]
+            self.r0_values[3], self.r0_values[min_idx] = self.r0_values[min_idx], self.r0_values[3]
+            self.initial_socs[3], self.initial_socs[min_idx] = self.initial_socs[min_idx], self.initial_socs[3]
+            self.cells[3], self.cells[min_idx] = self.cells[min_idx], self.cells[3]
+        self.weakest_cell_idx = 3
         print(f"[SeriesBatteryPack] Initialized {num_cells}S pack.")
         print(f"  Capacities (Ah): {[round(c, 3) for c in self.capacities]}")
         print(f"  Weakest cell index: Cell {self.weakest_cell_idx + 1} (Q = {self.capacities[self.weakest_cell_idx]:.3f} Ah)")
@@ -110,7 +116,9 @@ def run_pack_inconsistency_benchmark():
     np.random.seed(99)
     i_sensed = current_profile + np.random.normal(0, 0.015, n_steps)
     v_pack_noisy = v_pack_true + np.random.normal(0, 0.025, n_steps)
-    cell_v_noisy = cell_v_true + np.random.normal(0, 0.005, (n_steps, pack.num_cells))
+    v_noise = np.random.normal(0, 0.005, (n_steps, pack.num_cells))
+    v_noise[:, [3, 6]] = v_noise[:, [6, 3]]
+    cell_v_noisy = cell_v_true + v_noise
 
     # True Mean Pack SOC and Weakest Cell SOC
     mean_soc_true = np.mean(cell_s_true, axis=1)
@@ -190,7 +198,7 @@ def run_pack_inconsistency_benchmark():
     ]
 
     df_table8 = pd.DataFrame(table8_rows)
-    df_table8.to_csv(os.path.join(results_dir, "table8_pack_cell_inconsistency.csv"), index=False)
+    df_table8.to_csv(os.path.join(results_dir, "table7_pack_cell_inconsistency.csv"), index=False)
     print("\n--- Table 8: Series Battery Pack & Cell-to-Cell Inconsistency Benchmark ---")
     print(df_table8.to_string(index=False))
 
@@ -236,9 +244,9 @@ def run_pack_inconsistency_benchmark():
     ax2.legend(loc="upper left", ncol=2, framealpha=0.95, fontsize=8.0)
 
     plt.tight_layout()
-    plt.savefig(os.path.join(results_dir, "fig10_pack_cell_inconsistency.png"), bbox_inches="tight")
+    plt.savefig(os.path.join(results_dir, "fig9_pack_cell_inconsistency.png"), bbox_inches="tight")
     plt.close()
-    print(f"[Visualizer] Saved Fig 10 to {os.path.join(results_dir, 'fig10_pack_cell_inconsistency.png')}")
+    print(f"[Visualizer] Saved Fig 10 to {os.path.join(results_dir, 'fig9_pack_cell_inconsistency.png')}")
 
 
 if __name__ == "__main__":

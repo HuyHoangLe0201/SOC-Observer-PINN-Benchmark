@@ -9,7 +9,7 @@ plt.rcParams['mathtext.fontset'] = 'dejavusans'
 algs = ['SMO', 'EKF', 'AEKF', 'DEKF', 'PIDKF (Proposed)', 'PINN-SOC', 'BiLSTM-Attn']
 latencies = [1.67, 3.87, 5.24, 8.63, 14.20, 127.98, 2440.48]
 aged_rmse = [4.254, 1.985, 3.834, 0.452, 0.414, 4.177, 4.202]
-fresh_rmse = [0.941, 0.065, 0.759, 0.191, 0.063, 2.781, 2.813]
+fresh_rmse = [0.941, 0.065, 0.759, 0.191, 0.185, 2.781, 2.813]
 
 colors = {
     'SMO': '#2CA02C',
@@ -47,7 +47,7 @@ annot_pos = {
     'DEKF': (9.7, 0.55),
     'PIDKF (Proposed)': (16.2, 0.32),
     'PINN-SOC': (60.0, 4.35),
-    'BiLSTM-Attn': (650.0, 4.40)
+    'BiLSTM-Attn': (1050.0, 3.68)
 }
 
 for a, pos in annot_pos.items():

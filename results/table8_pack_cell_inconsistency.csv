@@ -1,5 +1,0 @@
-Estimation Strategy,Target State,RMSE (%),Max Error (%),Safety Margin Risk
-Lumped Pack Observer (Mean Macro-Cell EKF),Mean Pack SOC,0.128,0.443,Moderate
-Distributed DEKF Architecture,Mean Pack SOC,0.149,0.336,None (Optimal)
-Lumped Pack Observer (Ignoring Variations),Weakest Cell SOC (Safety Limiter),1.744,2.302,High (Risk of Overdischarge / Plating)
-Distributed DEKF Architecture,Weakest Cell SOC (Safety Limiter),0.337,0.963,Guaranteed Tracking

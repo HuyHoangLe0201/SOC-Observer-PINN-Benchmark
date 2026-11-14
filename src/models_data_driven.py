@@ -1,6 +1,6 @@
 """
 Data-Driven Deep Learning Models for Battery State-of-Charge (SOC) Estimation
-Journal of Electrochemical Energy Conversion and Storage (ASME)
+Journal of Energy Storage (Elsevier)
 
 Architectures:
 1. BiLSTM-Attention: Bidirectional Long Short-Term Memory with Temporal Self-Attention

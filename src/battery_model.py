@@ -1,6 +1,6 @@
 """
 Battery Electro-Thermal & Degradation Model (NMC and LiFePO4 / LFP)
-Journal of Electrochemical Energy Conversion and Storage (ASME)
+Journal of Energy Storage (Elsevier)
 Benchmark Framework for State-of-Charge (SOC) Estimation
 
 Features:
@@ -130,7 +130,7 @@ class BatteryCellLFP:
     """
     LiFePO4 (LFP) Cell (e.g. CALCE A123 26650 or CATL LFP Blade Cell).
     Nominal Capacity: 2.5 Ah, Nominal Voltage: 3.2 V - 3.3 V.
-    Key characteristics for ASME JEECS:
+    Key characteristics for battery state estimation:
     1. Very flat OCV plateau between 20% and 80% SOC (dOCV/dSOC < 0.1 V/SOC).
     2. Dynamic path-dependent thermodynamic hysteresis (dV_h ~ 30-50 mV).
     """
@@ -208,7 +208,7 @@ class BatteryCellLFP:
         LFP Open-Circuit Voltage:
         Features sharp slope at edges (SOC < 15% and SOC > 85%)
         and very flat central plateau (~3.28V to 3.32V) in the 20% - 80% range.
-        Modeled via hyperbolic tangent formulation commonly adopted in ASME JEECS.
+        Modeled via hyperbolic tangent formulation commonly adopted in the electrochemical literature.
         """
         s = np.clip(soc_val, 0.0, 1.0)
         # Baseline central plateau at 3.30V

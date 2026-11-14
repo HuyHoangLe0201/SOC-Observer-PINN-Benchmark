@@ -1,6 +1,6 @@
 """
 Model-Based Observers for Battery State-of-Charge (SOC) Estimation
-Journal of Electrochemical Energy Conversion and Storage (ASME)
+Journal of Energy Storage (Elsevier)
 
 Algorithms Implemented:
 1. Extended Kalman Filter (EKF) - Baseline observer

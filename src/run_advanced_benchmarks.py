@@ -1,6 +1,6 @@
 """
 Advanced Scientific Extensions & Benchmark Suite
-Journal of Electrochemical Energy Conversion and Storage (ASME)
+Journal of Energy Storage (Elsevier)
 
 Extensions:
 1. Multi-Chemistry Benchmark: NMC vs. LiFePO4 (LFP Flat Plateau & Dynamic Hysteresis)
@@ -49,7 +49,7 @@ def run_advanced_experiments():
     dt = 1.0
 
     print("=" * 80)
-    print("ASME JEECS ADVANCED SCIENTIFIC EXTENSIONS")
+    print("ADVANCED SCIENTIFIC EXTENSIONS & BENCHMARK SUITE")
     print("1. Chemistry Generalization: NMC vs. LiFePO4 (LFP) with Hysteresis")
     print("2. In-Vehicle Sensor Fault & Bias Drift Stress Testing")
     print("3. Embedded Hardware Profiling for ARM Cortex-M BMS Microcontrollers")
@@ -141,7 +141,7 @@ def run_advanced_experiments():
     for name, s_est in lfp_models.items():
         ax1.plot(time_min, s_est * 100.0, label=name, color=COLORS.get(name, "#888"), alpha=0.85)
     ax1.set_ylabel("SOC (%)")
-    ax1.set_title(r"(a) LiFePO$_4$ Tracking Across Flat Plateau (20%--80% SOC) with Hysteresis", loc="left", fontweight="bold")
+    ax1.set_title(r"(a) LiFePO$_4$ Tracking Across Flat Plateau (20%–80% SOC) with Hysteresis", loc="left", fontweight="bold")
     ax1.grid(True)
     ax1.set_ylim(48, 106)
     ax1.legend(loc="upper right", ncol=2, framealpha=0.95, fontsize=8)
@@ -153,7 +153,7 @@ def run_advanced_experiments():
     ax2.axhline(0, color="black", linestyle="--", linewidth=0.8)
     ax2.axhline(2.0, color="#555555", linestyle=":", linewidth=0.9)
     ax2.axhline(-2.0, color="#555555", linestyle=":", linewidth=0.9)
-    ax2.text(1.0, 2.2, r"$\pm 2\%$ Target Corridor", fontsize=7.5, color="#444444", va="bottom", fontweight="bold")
+    ax2.text(32.0, 2.3, r"$\pm 2\%$ Target Corridor", fontsize=7.5, color="#333333", va="bottom", fontweight="bold", bbox=dict(boxstyle="round,pad=0.18", facecolor="white", edgecolor="none", alpha=0.88))
     ax2.set_xlabel("Time (minutes)")
     ax2.set_ylabel("Error (%)")
     ax2.set_title(r"(b) Residual Error under Low Observability ($\partial OCV / \partial SOC \approx 0$)", loc="left", fontweight="bold")

@@ -1,8 +1,0 @@
-Algorithm,FLOPs/Step,RAM (Bytes),Flash (Bytes),M4 @ 168MHz (us),M7 @ 480MHz (us),Embedded Feasibility
-EKF,420,280,3400,3.87,1.35,Excellent
-AEKF,580,340,4200,5.24,1.83,Excellent
-DEKF,980,620,5800,8.63,3.02,Excellent
-SMO,180,140,2100,1.67,0.58,Ideal (Ultra-light)
-BiLSTM-Attn,245000,18400,98000,2440.48,854.17,Marginal / Requires NPU
-PINN-SOC,12800,1200,16500,127.98,44.79,High (Ready for CMSIS-NN)
-PIDKF (Proposed),1540,850,8200,14.2,4.97,Optimal (Pareto Peak)

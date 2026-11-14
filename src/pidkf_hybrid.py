@@ -1,6 +1,6 @@
 """
 Physics-Informed Dual Kalman Filter (PIDKF) - Novel Hybrid Architecture
-Journal of Electrochemical Energy Conversion and Storage (ASME)
+Journal of Energy Storage (Elsevier)
 
 Architecture:
 - Combines Dual Extended Kalman Filter (DEKF) parameter-state tracking with

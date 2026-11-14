@@ -1,6 +1,6 @@
 """
 Standard Electric Vehicle & Energy Storage Drive Cycles
-Journal of Electrochemical Energy Conversion and Storage (ASME)
+Journal of Energy Storage (Elsevier)
 
 Generates standardized dynamic current profiles for:
 - UDDS (Urban Dynamometer Driving Schedule)

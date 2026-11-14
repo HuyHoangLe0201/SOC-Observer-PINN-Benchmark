@@ -90,7 +90,7 @@ While conventional battery State-of-Charge (SOC) estimation studies predominantl
 ├── manuscript/                    # Complete, unformatted LaTeX manuscript (article.cls)
 │   ├── manuscript_unformatted.tex # Standard unformatted LaTeX source
 │   ├── references.bib             # Complete BibTeX bibliography database
-│   ├── manuscript_unformatted.pdf # 31-page compiled PDF (0 warnings, 0 errors)
+│   ├── manuscript_unformatted.pdf # 32-page compiled PDF (0 warnings, 0 errors)
 │   └── fig1_*.png ... fig11_*.png # Co-located figure files
 │
 └── submission_journal_of_energy_storage/ # Submission-ready pack for Journal of Energy Storage

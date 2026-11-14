@@ -1,6 +1,6 @@
 """
 Physics-Informed Neural Network (PINN-SOC) for Battery State-of-Charge Estimation
-Journal of Electrochemical Energy Conversion and Storage (ASME)
+Journal of Energy Storage (Elsevier)
 
 Key Features:
 - Multi-objective Loss Function embedding:

@@ -1,6 +1,6 @@
 """
 Comprehensive Benchmark Execution Engine
-Journal of Electrochemical Energy Conversion and Storage (ASME)
+Journal of Energy Storage (Elsevier)
 
 Evaluates:
 - Extended Kalman Filter (EKF)

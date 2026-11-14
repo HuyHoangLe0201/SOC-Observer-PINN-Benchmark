@@ -1,6 +1,6 @@
 """
 Electrochemical Impedance Spectroscopy (EIS) & Frequency-Domain Analyzer
-Journal of Electrochemical Energy Conversion and Storage (ASME)
+Journal of Energy Storage (Elsevier)
 
 Calculates and visualizes:
 1. Analytical complex impedance Z(j*omega) across angular frequencies (10^-2 to 10^5 rad/s)

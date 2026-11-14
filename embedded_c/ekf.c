@@ -9,21 +9,20 @@
 
 void EKF_OCV_NMC(float soc, float *Vocv, float *dVocv)
 {
-    /* 6th-order polynomial calibrated for Samsung INR18650-20R */
+    /* Strictly monotonic 5th-order polynomial calibrated for Samsung INR18650-20R (Eq. 11) */
     if (soc < 0.0f) soc = 0.0f;
     if (soc > 1.0f) soc = 1.0f;
 
-    const float p6 = -12.45f;
-    const float p5 =  45.12f;
-    const float p4 = -64.88f;
-    const float p3 =  46.22f;
-    const float p2 = -16.89f;
-    const float p1 =   3.82f;
-    const float p0 =   3.15f;
+    const float p5 =   9.204f;
+    const float p4 = -28.841f;
+    const float p3 =  33.376f;
+    const float p2 = -17.419f;
+    const float p1 =   4.674f;
+    const float p0 =   3.212f;
 
-    *Vocv = p0 + soc*(p1 + soc*(p2 + soc*(p3 + soc*(p4 + soc*(p5 + soc*p6)))));
-    *dVocv = p1 + soc*(2.0f*p2 + soc*(3.0f*p3 + soc*(4.0f*p4 + soc*(5.0f*p5 + soc*6.0f*p6))));
-    if (*dVocv < 0.01f) *dVocv = 0.01f;
+    *Vocv = p0 + soc*(p1 + soc*(p2 + soc*(p3 + soc*(p4 + soc*p5))));
+    *dVocv = p1 + soc*(2.0f*p2 + soc*(3.0f*p3 + soc*(4.0f*p4 + soc*5.0f*p5)));
+    if (*dVocv < 0.40f) *dVocv = 0.40f;
 }
 
 void EKF_Init(EKF_Handle_t *h, float soc_init, float Q_nom, float R0, float R1, float C1, float R2, float C2)

@@ -22,7 +22,7 @@ void PIDKF_Init(PIDKF_Handle_t *h, float soc_init, float Q_nom, float R0, float 
 float PIDKF_Step(PIDKF_Handle_t *h, float current, float voltage, float temperature, float *out_R0, float *out_Qact);
 
 /* Neural forward inference with Butler-Volmer passivity clipping */
-float PIDKF_NeuralCompensator_Forward(float I, float V, float T, float soc, float R0);
+float PIDKF_NeuralCompensator_Forward(float I, float T, float soc, float U1, float U2, float SOH_ref);
 
 #ifdef __cplusplus
 }
