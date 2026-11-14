@@ -223,7 +223,7 @@ where $a_{h,k} = e^{-\beta |\Delta z_k|}$. Equation~\eqref{eqn:det_obs_lfp} is a
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.98\textwidth]{fig0_electrochemical_mechanism.png}
+\includegraphics[width=0.98\textwidth]{fig0_electrochemical_mechanism.pdf}
 \caption{Coupled electro-thermal-aging physical mechanism and observability landscape: (a)~microscopic electrode degradation (anode SEI film growth, lithium plating risk, and cathode single-phase NMC vs.\ biphasic $\text{LiFePO}_4 \leftrightarrow \text{FePO}_4$ transition) coupled with the Arrhenius electro-thermal energy balance; (b)~augmented 2nd-order RC equivalent circuit incorporating dynamic hysteresis $V_{h,k}$ and neural overpotential residual $\delta\hat{V}_{t,\text{comp},k}$ alongside the structural parameter allocation principle; (c)~calibrated open-circuit voltage curves $V_{\text{ocv}}(\text{SOC})$ and $\pm 30\text{ mV}$ LFP hysteresis envelope; and (d)~analytical observability slope $dV_{\text{ocv}}/d\text{SOC}$ illustrating the condition number surge ($\kappa(\mathcal{O}_k) > 1.99 \times 10^5$) across the $20\%\text{--}80\%$ LFP plateau.\label{fig:0_mechanism}}
 \end{figure}
 
@@ -360,8 +360,8 @@ guaranteeing discrete-time Input-to-State Stability (ISS) and first-moment and m
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.98\textwidth]{fig0_pidkf_framework.png}
-\caption{Proposed hybrid Physics-Informed Dual Kalman Filter (PIDKF) architecture and 10-phase benchmarking framework: (a)~closed-loop interaction between the Dual EKF state/parameter backbone ($980\text{ FLOPs/step}$), the compact $[16, 8]$ neural overpotential compensator ($560\text{ FLOPs/step}$, $257$ parameters), dissipative Butler--Volmer passivity projection ($I_k \cdot \delta\hat{V}_{t,\text{comp},k} \le 0$), and exogenous Jacobian sensitivity decoupling ($-37.3\%$ MCU cycles); and (b)~strict cell-batch validation split (Batch~A $\perp$ Batch~B), 7-algorithm taxonomy, bare-metal STM32F407VG (ARM Cortex-M4F) deployment, and the 10 experimental evaluation phases.\label{fig:0_framework}}
+\includegraphics[width=0.98\textwidth]{fig0_pidkf_framework.pdf}
+\caption{Proposed hybrid Physics-Informed Dual Kalman Filter (PIDKF) architecture and 10-phase benchmarking framework: (a)~closed-loop interaction between the Dual EKF state/parameter backbone ($980\text{ FLOPs/step}$), the compact $[16, 8]$ neural overpotential compensator ($560\text{ FLOPs/step}$, $257$ parameters), dissipative Butler--Volmer passivity projection ($I_k \cdot \delta\hat{V}_{t,\text{comp},k} \le 0$), and exogenous Jacobian sensitivity decoupling ($-37.3\%$ MCU cycles); and (b)~strict cell-batch validation split (Batch~A $\perp$ Batch~B), 8-estimator benchmark taxonomy, bare-metal STM32F407VG (ARM Cortex-M4F) deployment, and the 10 experimental evaluation phases.\label{fig:0_framework}}
 \end{figure}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Experimental Benchmarking Platform and Methodology\label{sec:exp_setup}}

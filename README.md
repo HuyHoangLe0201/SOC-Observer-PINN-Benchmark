@@ -36,7 +36,7 @@ While conventional battery State-of-Charge (SOC) estimation studies predominantl
 - **Online Parameter Adaptation (DEKF):** Online dual-tracking of ohmic resistance and active capacity confines full-lifespan RMSE to $0.585\%$.
 - **Hysteresis Restores LFP Observability:** Dynamic hysteresis tracking on flat-plateau $\text{LiFePO}_4$ chemistry restores linear time-varying observability ($\lambda_{\min}(\mathcal{G}_o) \ge 1.21 \times 10^{-3}$), preventing catastrophic divergence.
 - **Physics-Informed Dual Kalman Filter (PIDKF):** We formulate a hybrid filter coupling Butler–Volmer/Tafel passivity bounds with an online DEKF core. Experimental validation on degraded cells ($85\%$ SOH) achieves **$0.428\%$ RMSE (NMC)** and **$0.158\%$ RMSE (LFP)** on CALCE RPT profiles, and bounds error to $<0.85\%$ under NASA PCoE thermal extremes ($4^\circ\text{C}$ and $43^\circ\text{C}$).
-- **Bare-Metal MCU Profiling:** Profiling on ARM Cortex-M4 ($168\text{ MHz}$) using ARM GCC 12.3 and CMSIS-DSP demonstrates that PIDKF executes in **$13.65\;\mu\mathrm{s}$**, achieving the optimal Pareto efficiency frontier for automotive and stationary BMS.
+- **Bare-Metal MCU Profiling:** Profiling on ARM Cortex-M4 ($168\text{ MHz}$) using ARM GCC 12.3 and CMSIS-DSP demonstrates that PIDKF executes in **$14.20\;\mu\mathrm{s}$**, achieving the optimal Pareto efficiency frontier for automotive and stationary BMS.
 
 ---
 
@@ -72,7 +72,7 @@ While conventional battery State-of-Charge (SOC) estimation studies predominantl
 │   ├── eis_analyzer.py            # Randles-CPE Nyquist spectrum analyzer
 │   ├── benchmark_engine.py        # Automated multi-phase evaluation engine
 │   ├── nasa_data.py               # NASA PCoE battery dataset loader
-│   ├── generate_conceptual_figures.py # High-resolution mechanism & framework figures
+│   ├── generate_conceptual_figures.py # Pure-vector & 600-DPI conceptual figures
 │   └── visualizer.py              # Publication-grade figure generator
 │
 ├── embedded_c/                    # Bare-metal C implementations for ARM Cortex-M
@@ -85,9 +85,9 @@ While conventional battery State-of-Charge (SOC) estimation studies predominantl
 │   ├── dataset_loader.py          # Cycler parser for CALCE and Oxford datasets
 │   └── calce_sample_udds_25c.csv  # 1-second sample cycler baseline
 │
-├── results/                       # High-resolution publication figures & benchmark tables
-│   ├── fig0_electrochemical_mechanism.png
-│   ├── fig0_pidkf_framework.png
+├── results/                       # Pure-vector PDF & 600-DPI PNG publication figures
+│   ├── fig0_electrochemical_mechanism.pdf / .png
+│   ├── fig0_pidkf_framework.pdf / .png
 │   ├── fig1_udds_tracking_errors.png
 │   ├── fig2_aging_degradation.png
 │   ├── fig3_thermal_robustness.png
@@ -103,8 +103,8 @@ While conventional battery State-of-Charge (SOC) estimation studies predominantl
 ├── manuscript/                    # Complete, unformatted LaTeX manuscript (article.cls)
 │   ├── manuscript_unformatted.tex # Standard unformatted LaTeX source
 │   ├── references.bib             # Complete BibTeX bibliography database
-│   ├── manuscript_unformatted.pdf # 34-page compiled PDF (0 warnings, 0 errors)
-│   └── fig0_*.png ... fig11_*.png # Co-located figure files (13 figures)
+│   ├── manuscript_unformatted.pdf # Compiled LaTeX PDF (vector fig0 + 11 benchmark figures)
+│   └── fig0_*.pdf/.png ... fig11_*.png # Co-located figure files (13 figures)
 │
 └── submission_journal_of_energy_storage/ # Submission-ready pack for Journal of Energy Storage
     ├── Cover_Letter_Journal_of_Energy_Storage.docx
@@ -112,7 +112,7 @@ While conventional battery State-of-Charge (SOC) estimation studies predominantl
     ├── manuscript.pdf
     ├── manuscript.tex
     ├── references.bib
-    └── fig0_*.png ... fig11_*.png # Co-located figure files (13 figures)
+    └── fig0_*.pdf/.png ... fig11_*.png # Co-located figure files (13 figures)
 ```
 
 ---
