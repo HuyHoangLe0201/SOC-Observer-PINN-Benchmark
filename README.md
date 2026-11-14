@@ -164,7 +164,7 @@ python src/eis_analyzer.py
 | **SMO** | Nonlinear Sliding Mode | 0.941 | 0.755 | 3.423 | **$1.67\;\upmu\mathrm{s}$** |
 | **BiLSTM-Attn** | Deep Sequence Network | 2.813 | 2.309 | 6.915 | $2440.48\;\upmu\mathrm{s}$ |
 | **PINN-SOC** | Physics-Informed ML | 2.781 | 2.278 | 7.317 | $127.98\;\upmu\mathrm{s}$ |
-| **PIDKF (Proposed)** | Hybrid Physics-Informed Dual | **0.062** | **0.048** | **0.612** | **$14.20\;\upmu\mathrm{s}$** |
+| **PIDKF (Proposed)** | Hybrid Physics-Informed Dual | 0.185 | -- | -- | **$14.20\;\upmu\mathrm{s}$** |
 
 ### Table 2: Lifespan Capacity Fade ($100\% \to 80\%$ SOH)
 

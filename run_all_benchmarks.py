@@ -68,7 +68,7 @@ def summarize_benchmark_results():
 | SMO             | 0.941    | 0.755    | 3.423    |  1.67                                       |
 | BiLSTM-Attn     | 2.813    | 2.309    | 6.915    | 2440.48                                     |
 | PINN-SOC        | 2.781    | 2.278    | 7.317    | 127.98                                      |
-| PIDKF (Prop.)   | 0.062    | 0.048    | 0.612    | 14.20                                       |
+| PIDKF (Prop.)   | 0.185    |   --     |   --     | 14.20                                       |
 +-----------------------------------------------------------------------------------------------+
 | PHASE 2: Degradation Benchmark Across SOH Fade (100% -> 80% SOH)                              |
 | Algorithm       | SOH 100% | SOH 95%  | SOH 90%  | SOH 85%  | SOH 80%  | Aging Sens. Factor   |
