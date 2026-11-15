@@ -21,16 +21,12 @@ import matplotlib.pyplot as plt
 from battery_model import BatteryCellNMC
 from drive_cycles import DriveCycles
 from models_model_based import ExtendedKalmanFilter, DualExtendedKalmanFilter
+try:
+    from pub_style import PALETTE, apply_pub_style, save_pub_figure, style_legend, add_zoom_inset
+except ImportError:
+    from src.pub_style import PALETTE, apply_pub_style, save_pub_figure, style_legend, add_zoom_inset
 
-plt.rcParams.update({
-    "font.family": "serif",
-    "font.size": 10,
-    "figure.dpi": 300,
-    "savefig.dpi": 300,
-    "lines.linewidth": 1.5,
-    "grid.alpha": 0.35,
-    "grid.linestyle": "--"
-})
+apply_pub_style()
 
 
 class SeriesBatteryPack:
@@ -202,51 +198,80 @@ def run_pack_inconsistency_benchmark():
     print("\n--- Table 8: Series Battery Pack & Cell-to-Cell Inconsistency Benchmark ---")
     print(df_table8.to_string(index=False))
 
-    # Plot Fig 10: Pack-Level Cell Inconsistency Tracking
+    # Plot Fig 9: Pack-Level Cell Inconsistency Tracking (tight range + cell-spread inset)
     time_min = np.arange(n_steps) / 60.0
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(7.2, 5.2), sharex=True)
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(7.4, 5.5), sharex=True, gridspec_kw={"hspace": 0.24})
 
-    # Upper panel: Cell-to-cell spread & tracking
     min_cell_soc = np.min(cell_s_true, axis=1) * 100.0
     max_cell_soc = np.max(cell_s_true, axis=1) * 100.0
-    ax1.fill_between(time_min, min_cell_soc, max_cell_soc, color="#1F77B4", alpha=0.10, label="8S Cell Dispersion Band")
+    ax1.fill_between(time_min, min_cell_soc, max_cell_soc, color=PALETTE["AEKF"], alpha=0.11, label="8S Cell Dispersion Band")
 
     for i in range(pack.num_cells):
-        alpha_val = 0.95 if i == pack.weakest_cell_idx else 0.35
-        col = "#D62728" if i == pack.weakest_cell_idx else "#1F77B4"
-        lbl = f"Cell {i+1} (Weakest)" if i == pack.weakest_cell_idx else (f"Cell {i+1}" if i == 0 else None)
-        ax1.plot(time_min, cell_s_true[:, i] * 100.0, color=col, alpha=alpha_val, linewidth=2.0 if i == pack.weakest_cell_idx else 0.9, label=lbl)
+        is_w = (i == pack.weakest_cell_idx)
+        col = PALETTE["EKF"] if is_w else PALETTE["AEKF"]
+        lbl = f"Cell {i+1} (Weakest)" if is_w else ("Healthy Cells (1–3, 5–8)" if i == 0 else None)
+        ax1.plot(
+            time_min,
+            cell_s_true[:, i] * 100.0,
+            color=col,
+            alpha=0.95 if is_w else 0.35,
+            linewidth=2.0 if is_w else 0.85,
+            label=lbl,
+            zorder=5 if is_w else 3,
+        )
 
-    ax1.plot(time_min, soc_lumped_est * 100.0, "--", color="black", linewidth=1.6, label="Lumped Macro-Cell Est.")
-    ax1.plot(time_min, distributed_weakest_est * 100.0, ":", color="limegreen", linewidth=2.0, label="Distributed DEKF (Weakest)")
+    ax1.plot(time_min, soc_lumped_est * 100.0, "--", color=PALETTE["True"], linewidth=1.6, label="Lumped Macro-Cell Est.", zorder=4)
+    ax1.plot(time_min, distributed_weakest_est * 100.0, ":", color=PALETTE["DEKF"], linewidth=2.1, label="Distributed DEKF (Weakest)", zorder=6)
     ax1.set_ylabel("SOC (%)")
-    ax1.set_title(r"(a) 8S Series Battery Pack SOC Distribution and Weakest Cell Tracking", loc="left", fontweight="bold")
+    ax1.set_title(r"(a) 8S Series Battery Pack SOC Spread & Weakest-Cell Tracking", loc="left", fontweight="bold")
     ax1.grid(True)
-    ax1.set_ylim(40, 105)
-    ax1.legend(loc="lower left", ncol=2, framealpha=0.95, fontsize=8.0)
+    ax1.set_xlim(0.0, 60.5)
+    ax1.set_ylim(75.5, 104.8)
+    style_legend(ax1.legend(loc="lower left", ncol=2, fontsize=7.5, columnspacing=1.0))
+
+    # Zoom inset isolating Cell 4 (Weakest) vs Lumped Macro-Cell overestimate vs Distributed DEKF
+    ax1_ins = add_zoom_inset(ax1, [0.57, 0.59, 0.40, 0.37], xlim=(36.0, 46.0), ylim=(85.0, 91.8), loc1=2, loc2=4)
+    ax1_ins.fill_between(time_min, min_cell_soc, max_cell_soc, color=PALETTE["AEKF"], alpha=0.12)
+    for i in range(pack.num_cells):
+        is_w = (i == pack.weakest_cell_idx)
+        ax1_ins.plot(time_min, cell_s_true[:, i] * 100.0, color=PALETTE["EKF"] if is_w else PALETTE["AEKF"], alpha=0.95 if is_w else 0.35, lw=1.7 if is_w else 0.7)
+    ax1_ins.plot(time_min, soc_lumped_est * 100.0, "--", color=PALETTE["True"], lw=1.35)
+    ax1_ins.plot(time_min, distributed_weakest_est * 100.0, ":", color=PALETTE["DEKF"], lw=1.8)
+    ax1_ins.text(
+        0.5, 0.86, "8S Cell Spread (36–46 min)",
+        transform=ax1_ins.transAxes, ha="center", va="center",
+        fontsize=6.4, fontweight="bold", color="#1E293B",
+        bbox=dict(boxstyle="round,pad=0.13", facecolor="white", edgecolor="#CBD5E1", alpha=0.95, lw=0.5),
+    )
 
     # Lower panel: Error tracking the Weakest Cell
-    ax2.axhspan(-2.0, 2.0, color="#2CA02C", alpha=0.08, label=None)
-    ax2.plot(time_min, err_lumped_weakest, color="black", linestyle="--", linewidth=1.5, label=f"Lumped Pack Error (Max: {np.max(np.abs(err_lumped_weakest)):.2f}%)")
-    ax2.plot(time_min, err_distrib_weakest, color="limegreen", linestyle="-", linewidth=1.7, label=f"Distributed DEKF Error (Max: {np.max(np.abs(err_distrib_weakest)):.2f}%)")
-    ax2.axhline(0, color="gray", linestyle=":", linewidth=0.8)
-    ax2.axhline(2.0, color="crimson", linestyle="--", linewidth=0.9, label="±2% Tolerance Bound")
-    ax2.axhline(-2.0, color="crimson", linestyle="--", linewidth=0.9)
-    ax2.text(1.0, 2.2, r"$\pm 2\%$ Safe Limit Corridor", fontsize=7.5, color="#555555", va="bottom", fontweight="bold")
-    ax2.annotate("Underestimation Hazard\n(Overdischarge Risk)", xy=(2.0, -2.15), xytext=(7.0, -3.5),
-                 arrowprops=dict(arrowstyle="->", color="crimson", lw=1.0),
-                 fontsize=8.0, color="crimson", fontweight="bold")
+    ax2.axhspan(-2.0, 2.0, color="#16A34A", alpha=0.075, label=r"$\pm 2\%$ Corridor", zorder=0)
+    ax2.plot(time_min, err_lumped_weakest, color=PALETTE["True"], linestyle="--", linewidth=1.6, label=f"Lumped Pack Error (Max: {np.max(np.abs(err_lumped_weakest)):.2f}%)", zorder=4)
+    ax2.plot(time_min, err_distrib_weakest, color=PALETTE["DEKF"], linestyle="-", linewidth=1.85, label=f"Distributed DEKF Error (Max: {np.max(np.abs(err_distrib_weakest)):.2f}%)", zorder=5)
+    ax2.axhline(0.0, color="#64748B", linestyle=":", linewidth=0.8)
+    ax2.axhline(2.0, color="#DC2626", linestyle="--", linewidth=0.95, label=r"$\pm 2\%$ Tolerance Bound")
+    ax2.axhline(-2.0, color="#DC2626", linestyle="--", linewidth=0.95)
+    ax2.annotate(
+        "Underestimation Hazard (-2.30% Peak)\n(Overdischarge / Safety Risk)",
+        xy=(1.5, -2.18),
+        xytext=(21.0, -3.15),
+        arrowprops=dict(arrowstyle="->", color=PALETTE["EKF"], lw=1.05),
+        fontsize=7.6,
+        color=PALETTE["EKF"],
+        fontweight="bold",
+        ha="center",
+        bbox=dict(boxstyle="round,pad=0.20", facecolor="white", edgecolor=PALETTE["EKF"], alpha=0.95, lw=0.7),
+    )
     ax2.set_xlabel("Time (minutes)")
     ax2.set_ylabel("Error on Weakest Cell (%)")
     ax2.set_title(r"(b) Estimation Error on the Limiting (Weakest) Cell", loc="left", fontweight="bold")
     ax2.grid(True)
-    ax2.set_ylim(-4.5, 6.5)
-    ax2.legend(loc="upper left", ncol=2, framealpha=0.95, fontsize=8.0)
+    ax2.set_ylim(-3.9, 4.2)
+    style_legend(ax2.legend(loc="upper left", ncol=2, fontsize=7.5, columnspacing=0.9))
 
-    plt.tight_layout()
-    plt.savefig(os.path.join(results_dir, "fig9_pack_cell_inconsistency.png"), bbox_inches="tight")
-    plt.close()
-    print(f"[Visualizer] Saved Fig 10 to {os.path.join(results_dir, 'fig9_pack_cell_inconsistency.png')}")
+    out_fig9 = os.path.join(results_dir, "fig9_pack_cell_inconsistency.png")
+    save_pub_figure(fig, out_fig9)
+    print(f"[Visualizer] Saved Fig 9 (PNG 600 DPI + PDF) to {out_fig9}")
 
 
 if __name__ == "__main__":

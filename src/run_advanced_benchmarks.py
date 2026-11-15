@@ -19,28 +19,11 @@ from drive_cycles import DriveCycles
 from models_model_based import ExtendedKalmanFilter, AdaptiveEKF, DualExtendedKalmanFilter, SlidingModeObserver
 from models_data_driven import BiLSTMAttentionSOC
 from models_physics_informed import PINNSOCModel, PhysicsInformedLoss
+from pub_style import PALETTE, apply_pub_style, save_pub_figure, style_legend, add_zoom_inset
 import torch
 
-plt.rcParams.update({
-    "font.family": "serif",
-    "font.size": 10,
-    "figure.dpi": 300,
-    "savefig.dpi": 300,
-    "lines.linewidth": 1.5,
-    "grid.alpha": 0.35,
-    "grid.linestyle": "--"
-})
-
-COLORS = {
-    "True": "#111111",
-    "EKF": "#E41A1C",
-    "AEKF": "#377EB8",
-    "DEKF": "#4DAF4A",
-    "SMO": "#984EA3",
-    "BiLSTM-Attn": "#FF7F00",
-    "PINN-SOC": "#008080",
-    "PIDKF (Proposed)": "#E7298A"
-}
+apply_pub_style()
+COLORS = PALETTE
 
 
 def run_advanced_experiments():
@@ -134,36 +117,84 @@ def run_advanced_experiments():
     print("\n--- Table 5: Chemistry Generalization Benchmark (NMC vs. LiFePO4 / LFP) ---")
     print(df_table5.to_string(index=False))
 
-    # Plot Fig 6: LFP Flat Plateau Tracking & Error
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(7.2, 5.0), sharex=True)
+    # Plot Fig 6: LFP Flat Plateau Tracking & Error (with unclipped SMO & high-resolution plateau inset)
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(7.4, 5.5), sharex=True, gridspec_kw={"hspace": 0.24})
     time_min = np.arange(n_steps) / 60.0
-    ax1.plot(time_min, soc_lfp_true * 100.0, label="Reference LFP SOC", color=COLORS["True"], linewidth=2.2)
-    for name, s_est in lfp_models.items():
-        ax1.plot(time_min, s_est * 100.0, label=name, color=COLORS.get(name, "#888"), alpha=0.85)
+    ax1.plot(time_min, soc_lfp_true * 100.0, label="Reference LFP SOC", color=PALETTE["True"], linewidth=2.1, zorder=6)
+    for name in ["SMO", "AEKF", "EKF", "DEKF"]:
+        s_est = lfp_models[name]
+        ax1.plot(
+            time_min,
+            s_est * 100.0,
+            label=name,
+            color=PALETTE[name],
+            linewidth=1.05 if name == "SMO" else 1.55,
+            alpha=0.55 if name == "SMO" else 0.92,
+            zorder=2 if name == "SMO" else 4,
+        )
+
     ax1.set_ylabel("SOC (%)")
     ax1.set_title(r"(a) LiFePO$_4$ Tracking Across Flat Plateau (20%–80% SOC) with Hysteresis", loc="left", fontweight="bold")
     ax1.grid(True)
-    ax1.set_ylim(48, 106)
-    ax1.legend(loc="upper right", ncol=2, framealpha=0.95, fontsize=8)
+    ax1.set_xlim(0.0, 60.5)
+    ax1.set_ylim(34.0, 102.0)
+    style_legend(ax1.legend(loc="lower left", ncol=3, fontsize=7.6, columnspacing=1.0))
 
-    ax2.axhspan(-2.0, 2.0, color="#2CA02C", alpha=0.08, label=None)
-    for name, s_est in lfp_models.items():
-        err = (s_est - soc_lfp_true) * 100.0
-        ax2.plot(time_min, err, label=f"{name}", color=COLORS.get(name, "#888"), alpha=0.85)
-    ax2.axhline(0, color="black", linestyle="--", linewidth=0.8)
-    ax2.axhline(2.0, color="#555555", linestyle=":", linewidth=0.9)
-    ax2.axhline(-2.0, color="#555555", linestyle=":", linewidth=0.9)
-    ax2.text(32.0, 2.3, r"$\pm 2\%$ Target Corridor", fontsize=7.5, color="#333333", va="bottom", fontweight="bold", bbox=dict(boxstyle="round,pad=0.18", facecolor="white", edgecolor="none", alpha=0.88))
+    # Zoom inset showing plateau separation among DEKF / EKF / AEKF cleanly in top-right open sky
+    ax1_ins = add_zoom_inset(ax1, [0.55, 0.58, 0.42, 0.37], xlim=(42.0, 60.0), ylim=(54.5, 68.0), loc1=2, loc2=4)
+    ax1_ins.plot(time_min, soc_lfp_true * 100.0, color=PALETTE["True"], linewidth=1.8, zorder=6)
+    for name in ["AEKF", "EKF", "DEKF"]:
+        ax1_ins.plot(time_min, lfp_models[name] * 100.0, color=PALETTE[name], linewidth=1.4, alpha=0.92)
+    ax1_ins.text(
+        0.54, 0.86, "Plateau End (42–60 min)",
+        transform=ax1_ins.transAxes, ha="center", va="center",
+        fontsize=6.4, fontweight="bold", color="#1E293B",
+        bbox=dict(boxstyle="round,pad=0.14", facecolor="white", edgecolor="#CBD5E1", alpha=0.95, lw=0.5),
+    )
+
+    ax2.axhspan(-2.0, 2.0, color="#16A34A", alpha=0.075, label=r"$\pm 2\%$ Target Band", zorder=0)
+    for name in ["SMO", "AEKF", "EKF", "DEKF"]:
+        err = (lfp_models[name] - soc_lfp_true) * 100.0
+        ax2.plot(
+            time_min,
+            err,
+            label=name,
+            color=PALETTE[name],
+            linewidth=1.00 if name == "SMO" else 1.55,
+            alpha=0.50 if name == "SMO" else 0.92,
+            zorder=2 if name == "SMO" else 5,
+        )
+    ax2.axhline(0.0, color="#111827", linestyle="--", linewidth=0.75)
+    ax2.axhline(2.0, color="#15803D", linestyle=":", linewidth=0.95)
+    ax2.axhline(-2.0, color="#15803D", linestyle=":", linewidth=0.95)
+    ax2.text(1.2, 2.5, r"$\pm 2\%$ Target Corridor", fontsize=7.5, color="#15803D", fontweight="bold",
+             bbox=dict(boxstyle="round,pad=0.16", facecolor="white", edgecolor="none", alpha=0.90))
+
+    # Zoom inset cleanly isolating DEKF (0.87%) vs EKF (1.14%) vs AEKF (2.89%) inside bottom-left open space
+    ax2_ins = add_zoom_inset(ax2, [0.055, 0.08, 0.42, 0.44], xlim=(32.0, 60.0), ylim=(-4.7, 1.35), loc1=1, loc2=4)
+    ax2_ins.axhspan(-2.0, 2.0, color="#16A34A", alpha=0.07)
+    ax2_ins.axhline(0.0, color="#111827", linestyle="--", linewidth=0.6)
+    ax2_ins.axhline(-2.0, color="#15803D", linestyle=":", linewidth=0.8)
+    for name in ["AEKF", "EKF", "DEKF"]:
+        err = (lfp_models[name] - soc_lfp_true) * 100.0
+        ax2_ins.plot(time_min, err, color=PALETTE[name], linewidth=1.35)
+    ax2_ins.text(
+        0.5, 0.87, "DEKF 0.87% | EKF 1.14%",
+        transform=ax2_ins.transAxes, ha="center", va="center",
+        fontsize=6.3, fontweight="bold", color="#1E293B",
+        bbox=dict(boxstyle="round,pad=0.14", facecolor="white", edgecolor="#CBD5E1", alpha=0.95, lw=0.5),
+    )
+
     ax2.set_xlabel("Time (minutes)")
     ax2.set_ylabel("Error (%)")
-    ax2.set_title(r"(b) Residual Error under Low Observability ($\partial OCV / \partial SOC \approx 0$)", loc="left", fontweight="bold")
+    ax2.set_title(r"(b) Residual Error under Low Observability ($\partial\mathrm{OCV}/\partial\mathrm{SOC} \approx 0$)", loc="left", fontweight="bold")
     ax2.grid(True)
-    ax2.set_ylim(-7.5, 11.0)
-    ax2.legend(loc="upper right", ncol=2, framealpha=0.95, fontsize=8)
-    plt.tight_layout()
-    plt.savefig(os.path.join(results_dir, "fig6_lfp_plateau_tracking.png"), bbox_inches="tight")
-    plt.close()
-    print(f"[Visualizer] Saved Fig 6 to {os.path.join(results_dir, 'fig6_lfp_plateau_tracking.png')}")
+    ax2.set_ylim(-22.5, 6.2)
+    style_legend(ax2.legend(loc="upper right", ncol=3, fontsize=7.5, columnspacing=0.9))
+
+    out_fig6 = os.path.join(results_dir, "fig6_lfp_plateau_tracking.png")
+    save_pub_figure(fig, out_fig6)
+    print(f"[Visualizer] Saved Fig 6 (PNG 600 DPI + PDF) to {out_fig6}")
 
     # -------------------------------------------------------------------------
     # PART 2: In-Vehicle Sensor Fault & Bias Drift Stress Testing
@@ -239,54 +270,83 @@ def run_advanced_experiments():
     print("\n--- Table 6: In-Vehicle Sensor Fault & Bias Drift Stress Test ---")
     print(df_table6.to_string(index=False))
 
-    # Plot Fig 7: Sensor Bias Drift & Stress
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(7.2, 5.2), sharex=True)
-    ax1.plot(time_min, soc_clean * 100.0, label="Ground Truth", color=COLORS["True"], linewidth=2.2)
-    for name, s_est in stress_models.items():
-        col = "#555555" if name == "Coulomb Counting" else COLORS.get(name, "#888")
+    # Plot Fig 7: Sensor Bias Drift & Stress (Translucent SMO behind foreground Kalman trajectories + zoom inset)
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(7.4, 5.5), sharex=True, gridspec_kw={"hspace": 0.24})
+    ax1.plot(time_min, soc_clean * 100.0, label="Ground Truth", color=PALETTE["True"], linewidth=2.1, zorder=6)
+    plot_seq = ["SMO", "Coulomb Counting", "AEKF", "DEKF", "EKF"]
+    for name in plot_seq:
+        s_est = stress_models[name]
+        col = PALETTE["Coulomb Counting"] if name == "Coulomb Counting" else PALETTE[name]
         ls = "--" if name == "Coulomb Counting" else "-"
-        lw = 1.4 if name == "Coulomb Counting" else 1.5
-        ax1.plot(time_min, s_est * 100.0, label=name, color=col, linestyle=ls, linewidth=lw, alpha=0.88)
-    ax1.annotate("Open-Loop Runaway", xy=(56, 73), xytext=(34, 62),
-                 arrowprops=dict(arrowstyle="->", color="#555555", lw=0.9),
-                 fontsize=8.0, color="#444444", style="italic")
-    ax1.set_ylabel("SOC (%)")
-    ax1.set_title(r"(a) Estimation Trajectories under Sensor Drift ($+0.25$ A Current Bias + 25 mV EMI)", loc="left", fontweight="bold")
-    ax1.grid(True)
-    ax1.set_ylim(45, 105)
-    ax1.legend(loc="lower left", ncol=3, framealpha=0.95, fontsize=8)
+        lw = 1.65 if name != "SMO" else 0.95
+        alp = 0.34 if name == "SMO" else 0.94
+        zo = 2 if name == "SMO" else 5
+        ax1.plot(time_min, s_est * 100.0, label=name, color=col, linestyle=ls, linewidth=lw, alpha=alp, zorder=zo)
 
-    ax2.axhspan(-2.0, 2.0, color="#2CA02C", alpha=0.08, label=None)
-    for name, s_est in stress_models.items():
-        err = (s_est - soc_clean) * 100.0
-        col = "#555555" if name == "Coulomb Counting" else COLORS.get(name, "#888")
+    ax1.annotate(
+        "Open-Loop Runaway (-12.4%)",
+        xy=(55.5, 73.3),
+        xytext=(46.2, 61.5),
+        arrowprops=dict(arrowstyle="->", color=PALETTE["Coulomb Counting"], lw=1.0),
+        fontsize=7.7,
+        color="#1E293B",
+        fontweight="bold",
+        ha="center",
+        bbox=dict(boxstyle="round,pad=0.20", facecolor="white", edgecolor="#94A3B8", alpha=0.96, lw=0.7),
+        zorder=8,
+    )
+    ax1.set_ylabel("SOC (%)")
+    ax1.set_title(r"(a) Estimation Trajectories under Sensor Drift ($+0.25\;\mathrm{A}$ Hall Bias + $25\;\mathrm{mV}$ EMI)", loc="left", fontweight="bold")
+    ax1.grid(True)
+    ax1.set_xlim(0.0, 60.5)
+    ax1.set_ylim(54.0, 102.5)
+    style_legend(ax1.legend(loc="lower left", ncol=3, fontsize=7.4, columnspacing=0.95))
+
+    ax2.axhspan(-2.0, 2.0, color="#16A34A", alpha=0.075, label=r"$\pm 2\%$ Corridor", zorder=0)
+    for name in plot_seq:
+        err = (stress_models[name] - soc_clean) * 100.0
+        col = PALETTE["Coulomb Counting"] if name == "Coulomb Counting" else PALETTE[name]
         ls = "--" if name == "Coulomb Counting" else "-"
-        lw = 1.4 if name == "Coulomb Counting" else 1.5
-        ax2.plot(time_min, err, label=name, color=col, linestyle=ls, linewidth=lw, alpha=0.88)
-    ax2.axhline(0, color="black", linestyle="--", linewidth=0.8)
-    ax2.axhline(2.0, color="#555555", linestyle=":", linewidth=0.9)
-    ax2.axhline(-2.0, color="#555555", linestyle=":", linewidth=0.9)
+        lw = 1.65 if name != "SMO" else 0.90
+        alp = 0.30 if name == "SMO" else 0.94
+        zo = 2 if name == "SMO" else 5
+        ax2.plot(time_min, err, label=name, color=col, linestyle=ls, linewidth=lw, alpha=alp, zorder=zo)
+
+    ax2.axhline(0.0, color="#111827", linestyle="--", linewidth=0.75)
+    ax2.axhline(2.0, color="#15803D", linestyle=":", linewidth=0.95)
+    ax2.axhline(-2.0, color="#15803D", linestyle=":", linewidth=0.95)
     ax2.annotate(
         "Runaway Drift (-12.4%)",
-        xy=(57.0, -11.8),
-        xytext=(34.0, -13.8),
-        arrowprops=dict(arrowstyle="->", color="#555555", lw=0.9),
-        fontsize=8.0,
-        color="#222222",
-        fontstyle="italic",
+        xy=(56.5, -11.7),
+        xytext=(38.5, -12.6),
+        arrowprops=dict(arrowstyle="->", color=PALETTE["Coulomb Counting"], lw=1.0),
+        fontsize=7.7,
+        color="#1E293B",
         fontweight="bold",
-        bbox=dict(boxstyle="round,pad=0.25", facecolor="white", edgecolor="#888888", alpha=0.95, lw=0.6)
+        ha="center",
+        bbox=dict(boxstyle="round,pad=0.20", facecolor="white", edgecolor="#94A3B8", alpha=0.96, lw=0.7),
+        zorder=8,
     )
+
+    # Embedded zoom inset revealing tightly immune EKF/AEKF/DEKF bias rejection behind SMO EMI spikes
+    ax2_ins = add_zoom_inset(ax2, [0.58, 0.56, 0.39, 0.38], xlim=(30.0, 50.0), ylim=(-0.5, 4.2), loc1=2, loc2=3)
+    ax2_ins.axhspan(-0.5, 2.0, color="#16A34A", alpha=0.08)
+    ax2_ins.axhline(2.0, color="#15803D", linestyle=":", linewidth=0.8)
+    for name in ["AEKF", "DEKF", "EKF"]:
+        err = (stress_models[name] - soc_clean) * 100.0
+        ax2_ins.plot(time_min, err, color=PALETTE[name], linewidth=1.35)
+    ax2_ins.text(0.5, 0.84, "Kalman Bias Rejection (30–50 min)", transform=ax2_ins.transAxes, ha="center", fontsize=6.4, fontweight="bold", color="#1E293B")
+
     ax2.set_xlabel("Time (minutes)")
     ax2.set_ylabel("Error (%)")
-    ax2.set_title(r"(b) Error Drift Profiles ($e_k = \hat{s}_k - s_k$)", loc="left", fontweight="bold")
+    ax2.set_title(r"(b) Error Drift Profiles ($e_k = \hat{s}_k - s_k$; SMO Shown Translucent)", loc="left", fontweight="bold")
     ax2.grid(True)
-    ax2.set_ylim(-16.0, 26.0)
-    ax2.legend(loc="upper left", ncol=3, framealpha=0.95, fontsize=8)
-    plt.tight_layout()
-    plt.savefig(os.path.join(results_dir, "fig7_sensor_bias_drift_stress.png"), bbox_inches="tight")
-    plt.close()
-    print(f"[Visualizer] Saved Fig 7 to {os.path.join(results_dir, 'fig7_sensor_bias_drift_stress.png')}")
+    ax2.set_ylim(-15.8, 22.0)
+    style_legend(ax2.legend(loc="upper left", ncol=3, fontsize=7.3, columnspacing=0.9))
+
+    out_fig7 = os.path.join(results_dir, "fig7_sensor_bias_drift_stress.png")
+    save_pub_figure(fig, out_fig7)
+    print(f"[Visualizer] Saved Fig 7 (PNG 600 DPI + PDF) to {out_fig7}")
 
     # -------------------------------------------------------------------------
     # PART 3: Embedded Hardware Profiling on ARM Cortex-M

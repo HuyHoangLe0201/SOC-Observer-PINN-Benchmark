@@ -19,20 +19,16 @@ import matplotlib.pyplot as plt
 from battery_model import BatteryCellNMC, BatteryCellLFP
 from drive_cycles import DriveCycles
 from models_model_based import ExtendedKalmanFilter, DualExtendedKalmanFilter
+try:
+    from pub_style import PALETTE, apply_pub_style, save_pub_figure, style_legend, add_zoom_inset
+except ImportError:
+    from src.pub_style import PALETTE, apply_pub_style, save_pub_figure, style_legend, add_zoom_inset
 
 # Ensure 100% deterministic reproducibility
 np.random.seed(42)
 torch.manual_seed(42)
 
-plt.rcParams.update({
-    "font.family": "serif",
-    "font.size": 10,
-    "figure.dpi": 300,
-    "savefig.dpi": 300,
-    "lines.linewidth": 1.5,
-    "grid.alpha": 0.35,
-    "grid.linestyle": "--"
-})
+apply_pub_style()
 
 
 class LightweightResidualPINN(nn.Module):
@@ -299,45 +295,67 @@ def run_pidkf_comparative_experiment():
     print("\n--- Table 9: Novel Hybrid PIDKF vs. Baseline Observers (Aged Cells, SOH=85%) ---")
     print(df_table9.to_string(index=False))
 
-    # Plot Fig 11
+    # Plot Fig 11 (tight dynamic axes + plateau separation zoom inset + unified palette)
     time_min = np.arange(n) / 60.0
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(7.2, 5.2), sharex=True)
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(7.4, 5.5), sharex=True, gridspec_kw={"hspace": 0.24})
 
     err_ekf_l = (s_ekf_lfp - s_lfp) * 100.0
     err_dekf_l = (s_dekf_lfp - s_lfp) * 100.0
     err_pidkf_l = (s_pidkf_lfp - s_lfp) * 100.0
 
-    ax1.plot(time_min, s_lfp * 100.0, "k-", linewidth=2.2, label="True LFP SOC")
-    ax1.plot(time_min, s_ekf_lfp * 100.0, color="#E41A1C", linewidth=1.5, label="Standard EKF")
-    ax1.plot(time_min, s_dekf_lfp * 100.0, color="#4DAF4A", linewidth=1.5, label="DEKF")
-    ax1.plot(time_min, s_pidkf_lfp * 100.0, color="#008080", linewidth=2.0, label="Novel PIDKF (Hybrid)")
+    ax1.plot(time_min, s_lfp * 100.0, color=PALETTE["True"], linewidth=2.2, label="True LFP SOC", zorder=5)
+    ax1.plot(time_min, s_ekf_lfp * 100.0, color=PALETTE["EKF"], linewidth=1.45, label="Standard EKF", zorder=3)
+    ax1.plot(time_min, s_dekf_lfp * 100.0, color=PALETTE["DEKF"], linewidth=1.55, label="DEKF", zorder=4)
+    ax1.plot(time_min, s_pidkf_lfp * 100.0, color=PALETTE["PIDKF"], linewidth=2.0, label="Novel PIDKF (Hybrid)", zorder=6)
     ax1.set_ylabel("SOC (%)")
-    ax1.set_title(r"(a) Aged LiFePO$_4$ Tracking (SOH = 85%, Dynamic Profile)", loc="left", fontweight="bold")
+    ax1.set_title(r"(a) Aged LiFePO$_4$ Tracking (SOH $= 85\%$, FUDS Cycle)", loc="left", fontweight="bold")
     ax1.grid(True)
-    ax1.set_ylim(58, 105)
-    ax1.legend(loc="upper right", ncol=2, framealpha=0.95, fontsize=8.5)
+    ax1.set_xlim(0.0, 60.5)
+    ax1.set_ylim(66.0, 89.6)
+    style_legend(ax1.legend(loc="lower left", ncol=2, fontsize=7.9, columnspacing=1.0))
 
-    ax2.axhspan(-1.0, 1.0, color="#2CA02C", alpha=0.08, label=None)
-    ax2.plot(time_min, err_ekf_l, color="#E41A1C", linewidth=1.5, label=f"EKF (RMSE: {table9_rows[0]['LFP RMSE (%)']}%)")
-    ax2.plot(time_min, err_dekf_l, color="#4DAF4A", linewidth=1.5, label=f"DEKF (RMSE: {table9_rows[1]['LFP RMSE (%)']}%)")
-    ax2.plot(time_min, err_pidkf_l, color="#008080", linewidth=1.8, label=f"PIDKF (RMSE: {table9_rows[2]['LFP RMSE (%)']}%)")
-    ax2.axhline(0, color="gray", linestyle=":", linewidth=0.8)
-    ax2.axhline(2.0, color="crimson", linestyle="--", linewidth=0.9, label="±2% Tolerance Bound")
-    ax2.axhline(-2.0, color="crimson", linestyle="--", linewidth=0.9)
-    ax2.annotate("PIDKF Precision (<0.2%)", xy=(48.0, -0.15), xytext=(24.0, -2.8),
-                 arrowprops=dict(arrowstyle="->", color="#008080", lw=1.0),
-                 fontsize=8.0, color="#008080", fontweight="bold")
+    # Zoom inset cleanly separating True LFP vs PIDKF vs DEKF vs EKF drift across plateau
+    ax1_ins = add_zoom_inset(ax1, [0.56, 0.55, 0.41, 0.41], xlim=(36.0, 48.0), ylim=(71.2, 78.2), loc1=2, loc2=4)
+    ax1_ins.plot(time_min, s_lfp * 100.0, color=PALETTE["True"], lw=1.9, zorder=5)
+    ax1_ins.plot(time_min, s_ekf_lfp * 100.0, color=PALETTE["EKF"], lw=1.3)
+    ax1_ins.plot(time_min, s_dekf_lfp * 100.0, color=PALETTE["DEKF"], lw=1.35)
+    ax1_ins.plot(time_min, s_pidkf_lfp * 100.0, color=PALETTE["PIDKF"], lw=1.8, zorder=6)
+    ax1_ins.text(
+        0.54, 0.86, "Plateau Lock (36–48 min)",
+        transform=ax1_ins.transAxes, ha="center", va="center",
+        fontsize=6.4, fontweight="bold", color="#1E293B",
+        bbox=dict(boxstyle="round,pad=0.13", facecolor="white", edgecolor="#CBD5E1", alpha=0.95, lw=0.5),
+    )
+
+    ax2.axhspan(-1.0, 1.0, color="#16A34A", alpha=0.075, label=r"$\pm 1\%$ High-Precision Band", zorder=0)
+    ax2.axhline(0.0, color="#64748B", linestyle=":", linewidth=0.8)
+    ax2.axhline(2.0, color="#DC2626", linestyle="--", linewidth=0.95, label=r"$\pm 2\%$ Tolerance Bound")
+    ax2.axhline(-2.0, color="#DC2626", linestyle="--", linewidth=0.95)
+    ax2.plot(time_min, err_ekf_l, color=PALETTE["EKF"], linewidth=1.55, label=f"EKF (RMSE: {table9_rows[0]['LFP RMSE (%)']}%)", zorder=3)
+    ax2.plot(time_min, err_dekf_l, color=PALETTE["DEKF"], linewidth=1.65, label=f"DEKF (RMSE: {table9_rows[1]['LFP RMSE (%)']}%)", zorder=4)
+    ax2.plot(time_min, err_pidkf_l, color=PALETTE["PIDKF"], linewidth=2.0, label=f"PIDKF (RMSE: {table9_rows[2]['LFP RMSE (%)']}%)", zorder=6)
+
+    ax2.annotate(
+        r"PIDKF Precision ($\mathrm{RMSE}=0.149\%$, $6.6\times$ vs. EKF)",
+        xy=(48.0, -0.17),
+        xytext=(34.0, -1.38),
+        arrowprops=dict(arrowstyle="->", color=PALETTE["PIDKF"], lw=1.05),
+        fontsize=7.7,
+        color=PALETTE["PIDKF"],
+        fontweight="bold",
+        ha="center",
+        bbox=dict(boxstyle="round,pad=0.20", facecolor="white", edgecolor=PALETTE["PIDKF"], alpha=0.95, lw=0.7),
+    )
     ax2.set_xlabel("Time (minutes)")
     ax2.set_ylabel("Estimation Error (%)")
-    ax2.set_title(r"(b) Residual Error Reduction through Dynamic Hysteresis Tracking", loc="left", fontweight="bold")
+    ax2.set_title(r"(b) Residual Error Reduction via Hysteresis & Overpotential Compensation", loc="left", fontweight="bold")
     ax2.grid(True)
-    ax2.set_ylim(-4.5, 6.0)
-    ax2.legend(loc="upper left", ncol=2, framealpha=0.92, fontsize=8.5)
+    ax2.set_ylim(-2.45, 2.75)
+    style_legend(ax2.legend(loc="upper left", ncol=2, fontsize=7.5, columnspacing=0.9))
 
-    plt.tight_layout()
-    plt.savefig(os.path.join(results_dir, "fig11_pidkf_hybrid_benchmark.png"), bbox_inches="tight")
-    plt.close()
-    print(f"[Visualizer] Saved Fig 11 to {os.path.join(results_dir, 'fig11_pidkf_hybrid_benchmark.png')}")
+    out_fig11 = os.path.join(results_dir, "fig11_pidkf_hybrid_benchmark.png")
+    save_pub_figure(fig, out_fig11)
+    print(f"[Visualizer] Saved Fig 11 (PNG 600 DPI + PDF) to {out_fig11}")
 
 
 if __name__ == "__main__":

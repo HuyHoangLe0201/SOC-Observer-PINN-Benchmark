@@ -179,45 +179,51 @@ def get_mechanism_tex(data):
 % 2. Porous Composite Graphite Anode Zone (x = 0.66 to 4.86)
 \filldraw[fill=anodebg, draw=black, line width=0.65pt] (0.66, 13.95) rectangle (4.86, 20.02);
 
-\filldraw[fill=seifill!65, draw=black!50, line width=0.45pt, densely dashed] (1.16, 19.34) circle (0.38cm);
-\shade[outer color=graphcore, inner color=graphrim] (1.16, 19.34) circle (0.28cm);
-\draw[line width=0.45pt, draw=black!75] (1.16, 19.34) circle (0.28cm);
-
 \filldraw[fill=seifill!65, draw=black!50, line width=0.45pt, densely dashed] (1.16, 16.44) circle (0.38cm);
 \shade[outer color=graphcore, inner color=graphrim] (1.16, 16.44) circle (0.28cm);
 \draw[line width=0.45pt, draw=black!75] (1.16, 16.44) circle (0.28cm);
 
-% Hero Top Anode Particle with Bilayer SEI & Graphene Intercalation Galleries
-\filldraw[fill=seifill, draw=black, line width=0.75pt, densely dashed] (2.78, 18.20) circle (0.94cm);
-\shade[outer color=graphcore, inner color=graphrim] (2.78, 18.20) circle (0.70cm);
-\draw[line width=0.8pt] (2.78, 18.20) circle (0.70cm);
-\foreach \dy in {-0.28, 0.0, 0.28} {
-    \draw[line width=0.45pt, draw=black!75] (2.22, 18.20+\dy) -- (3.34, 18.20+\dy);
+% Hero Top Anode Particle with Bilayer SEI & Layered ABAB Graphene Intercalation Galleries
+\filldraw[fill=seifill, draw=black, line width=0.75pt, densely dashed] (2.78, 18.06) circle (0.94cm);
+\shade[outer color=graphcore, inner color=graphrim] (2.78, 18.06) circle (0.70cm);
+\draw[line width=0.8pt] (2.78, 18.06) circle (0.70cm);
+\foreach \dy in {-0.38, -0.22, 0.22, 0.38} {
+    \draw[line width=0.5pt, draw=black!75] (2.22, 18.06+\dy) -- (3.34, 18.06+\dy);
+}
+\foreach \xx in {2.32, 3.24} {
+    \filldraw[fill=nmcpart, draw=black, line width=0.35pt] (\xx, 18.06+0.30) circle (0.055cm);
+    \filldraw[fill=nmcpart, draw=black, line width=0.35pt] (\xx, 18.06-0.30) circle (0.055cm);
 }
 \node[fill=white, fill opacity=0.92, text opacity=1, inner sep=1.2pt, rounded corners=1.2pt, align=center, font=\fontsize{7.4}{8.4}\selectfont\bfseries]
-    at (2.78, 18.20) {$\mathrm{Li_xC_6}$\\[-1pt]$D_s(T)$};
+    at (2.78, 18.06) {$\mathrm{Li_xC_6}$\\[-1pt]$D_s(T)$};
 \node[fill=white, draw=black, line width=0.45pt, rounded corners=1.2pt, inner sep=1.6pt, font=\fontsize{7.0}{8.0}\selectfont\bfseries]
-    at (2.94, 19.52) {Porous SEI ($\delta_{\mathrm{SEI}}$)};
+    (seipill) at (2.78, 19.56) {Porous SEI ($\delta_{\mathrm{SEI}}$)};
+\draw[->, line width=0.55pt] (seipill.south) -- (2.78, 19.01);
 
 \node[draw=black, line width=0.55pt, fill=white, rounded corners=2pt, align=left, font=\fontsize{6.8}{8.2}\selectfont, inner sep=2.2pt]
-    (seibadge) at (3.24, 16.36) {
+    (seibadge) at (3.24, 16.22) {
         $\bullet$ Traps $\mathrm{Li^+}$ (LLI)\\
         $\bullet$ $\uparrow \Delta R_{\mathrm{SEI}}$ \& fade
     };
-\draw[->, line width=0.55pt] (seibadge.north) -- (3.24, 17.28);
+\draw[->, line width=0.55pt] (seibadge.north) -- (3.24, 17.16);
 
-% Bottom Anode Particle + Realistic Multi-Branch Cold Li0 Plating Dendrites
-\filldraw[fill=seifill, draw=black, line width=0.65pt, densely dashed] (1.44, 14.84) circle (0.50cm);
-\shade[outer color=graphcore, inner color=graphrim] (1.44, 14.84) circle (0.37cm);
-\draw[line width=0.75pt] (1.44, 14.84) circle (0.37cm);
-\node[font=\fontsize{6.8}{7.8}\selectfont\bfseries] at (1.44, 14.84) {$\mathrm{Li_xC_6}$};
+% Bottom Anode Particle + Realistic Multi-Branched Crystalline Cold Li0 Plating Dendrite
+\filldraw[fill=seifill, draw=black, line width=0.65pt, densely dashed] (1.40, 14.84) circle (0.48cm);
+\shade[outer color=graphcore, inner color=graphrim] (1.40, 14.84) circle (0.35cm);
+\draw[line width=0.75pt] (1.40, 14.84) circle (0.35cm);
+\node[font=\fontsize{6.8}{7.8}\selectfont\bfseries] at (1.40, 14.84) {$\mathrm{Li_xC_6}$};
 
-\filldraw[fill=dendritefill, draw=black, line width=0.55pt]
-    (1.90, 15.06) -- (2.24, 15.26) -- (2.14, 15.06) -- (2.50, 15.18) -- (2.26, 14.92)
-    -- (2.48, 14.72) -- (2.12, 14.78) -- (2.20, 14.56) -- (1.90, 14.68) -- cycle;
+\draw[line width=1.15pt, draw=black, line cap=round] (1.76, 14.84) -- (2.42, 14.84);
+\draw[line width=0.9pt, draw=black, line cap=round] (1.96, 14.84) -- (2.26, 15.14) -- (2.44, 15.22);
+\draw[line width=0.75pt, draw=black, line cap=round] (2.14, 15.02) -- (2.20, 15.26);
+\draw[line width=0.9pt, draw=black, line cap=round] (2.06, 14.84) -- (2.34, 14.56) -- (2.50, 14.48);
+\draw[line width=0.75pt, draw=black, line cap=round] (2.24, 14.84) -- (2.46, 15.02);
+\foreach \tx/\ty in {2.42/14.84, 2.44/15.22, 2.20/15.26, 2.50/14.48, 2.46/15.02} {
+    \filldraw[fill=dendritefill, draw=black, line width=0.45pt] (\tx, \ty) circle (0.045cm);
+}
 \node[draw=black, line width=0.5pt, fill=hdrrose, rounded corners=1.5pt, inner sep=2.0pt, align=center, font=\fontsize{6.8}{8.0}\selectfont\bfseries]
     (libadge) at (3.72, 14.84) {Cold $\mathrm{Li}^0$\\Plating ($0^\circ\mathrm{C}$)};
-\draw[->, line width=0.55pt] (libadge.west) -- (2.50, 14.84);
+\draw[->, line width=0.55pt] (libadge.west) -- (2.54, 14.84);
 
 % 3. Electrolyte, Desolvation & Microporous Separator (x = 4.86 to 9.24, width 4.38 cm)
 \shade[left color=elytebg, right color=elytebg!65!white] (4.86, 13.95) rectangle (9.24, 20.02);
@@ -480,6 +486,8 @@ def get_mechanism_tex(data):
     height=8.12cm,
     xmin=0, xmax=100,
     ymin=3.05, ymax=4.32,
+    ytick={3.2, 3.4, 3.6, 3.8, 4.0, 4.2},
+    yticklabels={3.2, 3.4, 3.6, 3.8, 4.0, 4.2},
     xlabel={State of Charge, SOC (\%)},
     ylabel={Open-Circuit Potential, $V_{\mathrm{ocv}}$ (V)},
     xlabel style={font=\fontsize{9.2}{11}\selectfont\bfseries, text=black},
@@ -704,24 +712,24 @@ def get_framework_tex():
 \node[anchor=west, font=\fontsize{10.8}{12.2}\selectfont\bfseries] at (0.24, 21.40)
     {(a) Closed-Loop Hybrid PIDKF Architecture with Butler--Volmer Passivity and Exogenous Decoupling};
 
-% Three Stage Containers (y = 9.24 to 20.98)
-\filldraw[colbox] (0.24, 9.24) rectangle (6.24, 20.98);
-\filldraw[colbox, fill=cdekf] (6.84, 9.24) rectangle (17.16, 20.98);
-\filldraw[colbox, fill=cmlp] (17.92, 9.24) rectangle (29.16, 20.98);
+% Three Stage Containers with widened inter-stage signal corridors (y = 9.24 to 20.98)
+\filldraw[colbox] (0.24, 9.24) rectangle (6.08, 20.98);
+\filldraw[colbox, fill=cdekf] (6.92, 9.24) rectangle (17.08, 20.98);
+\filldraw[colbox, fill=cmlp] (18.00, 9.24) rectangle (29.16, 20.98);
 
-% --- STAGE 1: Plant, Sensing & Rest Gate (x = 0.24 to 6.24, 6.00 cm wide) ---
-\filldraw[colhdr, fill=hdrslate] (0.24, 20.46) rectangle (6.24, 20.98);
-\node[font=\fontsize{8.5}{9.8}\selectfont\bfseries] at (3.24, 20.72) {1.\ Plant, Sensing \& Rest Gate};
+% --- STAGE 1: Plant, Sensing & Rest Gate (x = 0.24 to 6.08, 5.84 cm wide) ---
+\filldraw[colhdr, fill=hdrslate] (0.24, 20.46) rectangle (6.08, 20.98);
+\node[font=\fontsize{8.4}{9.6}\selectfont\bfseries] at (3.16, 20.72) {1.\ Plant, Sensing \& Rest Gate};
 
 % 1A: Cell Plant
-\draw[subcard] (0.42, 17.56) rectangle (6.06, 19.74);
-\filldraw[fill=hdrgreen, draw=black, line width=0.7pt, rounded corners=1.5pt] (0.58, 18.04) rectangle (1.08, 19.16);
-\filldraw[fill=hdrslate, draw=black, line width=0.7pt] (0.72, 19.16) rectangle (0.94, 19.30);
-\draw[line width=0.55pt] (0.66, 18.36) -- (1.00, 18.36);
-\draw[line width=0.55pt] (0.66, 18.76) -- (1.00, 18.76);
-\node[font=\fontsize{6.4}{7.3}\selectfont\bfseries] at (0.83, 18.96) {$+$};
-\node[font=\fontsize{6.4}{7.3}\selectfont\bfseries] at (0.83, 18.18) {$-$};
-\node[anchor=west, align=left, font=\fontsize{6.9}{8.3}\selectfont] at (1.20, 18.65) {
+\draw[subcard] (0.40, 17.56) rectangle (5.92, 19.74);
+\filldraw[fill=hdrgreen, draw=black, line width=0.7pt, rounded corners=1.5pt] (0.56, 18.04) rectangle (1.06, 19.16);
+\filldraw[fill=hdrslate, draw=black, line width=0.7pt] (0.70, 19.16) rectangle (0.92, 19.30);
+\draw[line width=0.55pt] (0.64, 18.36) -- (0.98, 18.36);
+\draw[line width=0.55pt] (0.64, 18.76) -- (0.98, 18.76);
+\node[font=\fontsize{6.4}{7.3}\selectfont\bfseries] at (0.81, 18.96) {$+$};
+\node[font=\fontsize{6.4}{7.3}\selectfont\bfseries] at (0.81, 18.18) {$-$};
+\node[anchor=west, align=left, font=\fontsize{6.8}{8.2}\selectfont] at (1.16, 18.65) {
     \textbf{Multi-Chemistry Cell Plant}\\[1.5pt]
     NMC811: \texttt{INR18650-20R} ($2.00\;\mathrm{Ah}$)\\
     LFP: \texttt{ANR26650M1-B} ($2.30\;\mathrm{Ah}$)\\
@@ -729,39 +737,39 @@ def get_framework_tex():
 };
 
 % 1B: Causal BMS Telemetry (1 Hz)
-\draw[subcard] (0.42, 13.56) rectangle (6.06, 17.08);
-\node[font=\fontsize{7.8}{9.0}\selectfont\bfseries] at (3.24, 16.80) {Causal BMS Telemetry ($1\;\mathrm{Hz}$)};
-\draw[line width=0.5pt, draw=black!45] (0.72, 16.04) -- (5.76, 16.04);
+\draw[subcard] (0.40, 13.56) rectangle (5.92, 17.08);
+\node[font=\fontsize{7.8}{9.0}\selectfont\bfseries] at (3.16, 16.80) {Causal BMS Telemetry ($1\;\mathrm{Hz}$)};
+\draw[line width=0.5pt, draw=black!45] (0.70, 16.04) -- (5.62, 16.04);
 \draw[line width=0.9pt, draw=black]
-    (0.72, 16.04) -- (1.26, 16.04) -- (1.26, 16.36) -- (2.04, 16.36) -- (2.04, 15.72)
-    -- (2.68, 15.72) -- (2.68, 16.22) -- (3.52, 16.22) -- (3.52, 16.04) -- (4.26, 16.04)
-    -- (4.26, 16.38) -- (5.16, 16.38) -- (5.16, 16.04) -- (5.76, 16.04);
-\node[align=center, font=\fontsize{7.1}{8.5}\selectfont] at (3.24, 14.54) {
+    (0.70, 16.04) -- (1.22, 16.04) -- (1.22, 16.36) -- (1.98, 16.36) -- (1.98, 15.72)
+    -- (2.60, 15.72) -- (2.60, 16.22) -- (3.42, 16.22) -- (3.42, 16.04) -- (4.16, 16.04)
+    -- (4.16, 16.38) -- (5.04, 16.38) -- (5.04, 16.04) -- (5.62, 16.04);
+\node[align=center, font=\fontsize{7.0}{8.4}\selectfont] at (3.16, 14.54) {
     Current: $I_k = I_{\mathrm{true},k} + I_{\mathrm{bias}} + n_{i,k}$\\[1.5pt]
     Voltage: $V_{\mathrm{meas},k} = V_{t,k} + v_k$\\[1.5pt]
     Surface Temperature: $T_k$
 };
-\draw[arr] (3.24, 17.56) -- (3.24, 17.08);
+\draw[arr] (3.16, 17.56) -- (3.16, 17.08);
 
 % 1C: Hard Rest-Period Innovation Gate
-\draw[subcard, fill=cgate] (0.42, 9.48) rectangle (6.06, 13.06);
-\node[font=\fontsize{7.8}{9.0}\selectfont\bfseries] at (3.24, 12.74) {Hard Rest-Period Innovation Gate};
-\draw[line width=0.8pt] (0.86, 11.96) -- (1.46, 11.96);
-\draw[line width=1.0pt] (1.46, 11.96) -- (2.06, 12.22);
-\filldraw[fill=white, draw=black, line width=0.65pt] (1.46, 11.96) circle (1.4pt);
-\filldraw[fill=white, draw=black, line width=0.65pt] (2.10, 11.96) circle (1.4pt);
-\draw[line width=0.8pt] (2.10, 11.96) -- (2.56, 11.96);
-\node[anchor=west, align=left, font=\fontsize{6.9}{8.0}\selectfont\bfseries] at (2.66, 11.98)
+\draw[subcard, fill=cgate] (0.40, 9.48) rectangle (5.92, 13.06);
+\node[font=\fontsize{7.7}{8.9}\selectfont\bfseries] at (3.16, 12.74) {Hard Rest-Period Innovation Gate};
+\draw[line width=0.8pt] (0.82, 11.96) -- (1.40, 11.96);
+\draw[line width=1.0pt] (1.40, 11.96) -- (2.00, 12.22);
+\filldraw[fill=white, draw=black, line width=0.65pt] (1.40, 11.96) circle (1.4pt);
+\filldraw[fill=white, draw=black, line width=0.65pt] (2.04, 11.96) circle (1.4pt);
+\draw[line width=0.8pt] (2.04, 11.96) -- (2.48, 11.96);
+\node[anchor=west, align=left, font=\fontsize{6.8}{7.9}\selectfont\bfseries] at (2.56, 11.98)
     {$|I_k| < 10\;\mathrm{mA}$: Freeze Gains};
-\node[align=center, font=\fontsize{6.8}{8.2}\selectfont] at (3.24, 10.46) {
+\node[align=center, font=\fontsize{6.7}{8.1}\selectfont] at (3.16, 10.46) {
     Set $\mathbf{K}_k = \mathbf{0},\;\; \mathbf{K}_{\theta,k} = \mathbf{0}$ during rest\\[1.5pt]
     Enforces $\|\mathbf{F}_k\|_2 = \|\mathbf{A}_k\|_2 \le 1$ (Passivity)
 };
-\draw[arr] (3.24, 13.56) -- (3.24, 13.06);
+\draw[arr] (3.16, 13.56) -- (3.16, 13.06);
 
 
-% --- STAGE 2: Dual EKF Backbone (x = 6.84 to 17.16, 10.32 cm wide — plenty of equation air!) ---
-\filldraw[colhdr, fill=hdrblue] (6.84, 20.46) rectangle (17.16, 20.98);
+% --- STAGE 2: Dual EKF Backbone (x = 6.92 to 17.08, 10.16 cm wide) ---
+\filldraw[colhdr, fill=hdrblue] (6.92, 20.46) rectangle (17.08, 20.98);
 \node[font=\fontsize{8.5}{9.8}\selectfont\bfseries] at (12.00, 20.72) {2.\ Dual EKF Backbone ($980\;\mathrm{FLOPs/Step}$)};
 
 % 2A: Fast State Filter (x = 7.04 to 16.96, 9.92 cm wide, y = 14.34 to 19.74)
@@ -816,19 +824,19 @@ def get_framework_tex():
     Thermal Inversion:\; $\mathrm{SOH}_{\mathrm{ref},k} \equiv \dfrac{\hat{Q}_{\mathrm{act},k}(T_k)}{Q_{\mathrm{init}}\,f_Q(T_k)} = \dfrac{1}{Q_{\mathrm{init}}\,\hat{\theta}_{2,k}\,f_Q(T_k)}$
 };
 
-% Routing Stage 1 -> Stage 2
-\draw[arr] (6.06, 15.45) -- (7.20, 15.45);
-\node[fill=white, draw=black, line width=0.45pt, rounded corners=1pt, inner sep=1.2pt, font=\fontsize{6.5}{7.3}\selectfont\bfseries]
-    at (6.54, 15.82) {$I_k, T_k$};
-\draw[darr] (6.06, 11.18) -- (7.04, 11.18);
-\draw[darr] (6.54, 11.18) |- (7.20, 17.50);
-\filldraw[fill=black] (6.54, 11.18) circle (1.4pt);
-\node[fill=cgate, draw=black, line width=0.45pt, rounded corners=1pt, inner sep=1.2pt, font=\fontsize{6.5}{7.3}\selectfont\bfseries]
-    at (6.54, 13.40) {Gate};
+% Routing Stage 1 -> Stage 2 (strictly centered in open corridor [6.08, 6.92])
+\draw[arr] (5.92, 15.45) -- (7.20, 15.45);
+\node[fill=white, draw=black, line width=0.45pt, rounded corners=1pt, inner sep=1.1pt, font=\fontsize{5.9}{6.7}\selectfont\bfseries]
+    at (6.50, 15.82) {$I_k, T_k$};
+\draw[darr] (5.92, 11.18) -- (7.04, 11.18);
+\draw[darr] (6.50, 11.18) |- (7.20, 17.50);
+\filldraw[fill=black] (6.50, 11.18) circle (1.4pt);
+\node[fill=cgate, draw=black, line width=0.45pt, rounded corners=1pt, inner sep=1.1pt, font=\fontsize{5.9}{6.7}\selectfont\bfseries]
+    at (6.50, 13.40) {Gate};
 
 
-% --- STAGE 3: Residual MLP, Butler-Volmer Passivity & Innovation Synthesis (x = 17.92 to 29.16) ---
-\filldraw[colhdr, fill=hdrgreen] (17.92, 20.46) rectangle (29.16, 20.98);
+% --- STAGE 3: Residual MLP, Butler-Volmer Passivity & Innovation Synthesis (x = 18.00 to 29.16) ---
+\filldraw[colhdr, fill=hdrgreen] (18.00, 20.46) rectangle (29.16, 20.98);
 \node[font=\fontsize{8.5}{9.8}\selectfont\bfseries] at (23.54, 20.72)
     {3.\ Residual MLP Compensator \& Innovation Synthesis};
 
@@ -895,22 +903,22 @@ def get_framework_tex():
     {$|\delta\hat{V}|\le V_{\mathrm{pol}}^{\max} \le 20.0\;\mathrm{mV}$;\; $I_k\cdot\delta\hat{V}\le 0$};
 
 
-% --- DEDICATED CONFLICT-FREE SIGNAL BUSES ---
+% --- DEDICATED CONFLICT-FREE SIGNAL BUSES (open corridor [17.08, 18.00] centered at 17.54) ---
 % 1. Direct BMS Bus cleanly routed along y = 20.08 above ALL subcards -> V_meas down x=29.06 to Sigma_2!
-\draw[arr] (6.06, 16.40) -- (6.54, 16.40) -- (6.54, 20.08) -- (29.06, 20.08) -- (29.06, 13.88) -- (27.74, 13.88);
+\draw[arr] (5.92, 16.40) -- (6.50, 16.40) -- (6.50, 20.08) -- (29.06, 20.08) -- (29.06, 13.88) -- (27.74, 13.88);
 \node[fill=white, draw=black, line width=0.45pt, rounded corners=1.5pt, inner sep=1.6pt, font=\fontsize{6.8}{7.8}\selectfont\bfseries]
     at (16.50, 20.08) {Direct BMS Bus: $(I_k, T_k)\to$ MLP Inputs \& $V_{\mathrm{meas},k}\to \Sigma_2$};
 
 \filldraw[fill=black] (17.54, 20.08) circle (1.4pt);
-\draw[line width=0.85pt] (17.54, 20.08) -- (17.54, 18.02);
-\draw[arr, line width=0.85pt] (17.54, 18.60) -- (18.12, 18.60);
-\draw[arr, line width=0.85pt] (17.54, 18.02) -- (18.12, 18.02);
-\filldraw[fill=black] (17.54, 18.60) circle (1.3pt);
+\draw[line width=0.85pt] (17.54, 20.08) -- (17.54, 18.00);
+\draw[arr, line width=0.85pt] (17.54, 18.58) -- (18.12, 18.58);
+\draw[arr, line width=0.85pt] (17.54, 18.00) -- (18.12, 18.00);
+\filldraw[fill=black] (17.54, 18.58) circle (1.3pt);
 
 % 2. Fast State Output \hat{x}_k^- straight horizontally into MLP pins 3-5
-\draw[arr, line width=0.9pt] (16.96, 16.86) -- (18.12, 16.86);
-\node[fill=white, draw=black, line width=0.4pt, rounded corners=1pt, inner sep=1.2pt, font=\fontsize{6.6}{7.4}\selectfont\bfseries]
-    at (17.54, 17.26) {$\hat{\mathbf{x}}_k^-$};
+\draw[arr, line width=0.9pt] (16.96, 16.84) -- (18.12, 16.84);
+\node[fill=white, draw=black, line width=0.4pt, rounded corners=1pt, inner sep=1.1pt, font=\fontsize{6.2}{7.0}\selectfont\bfseries]
+    at (17.54, 17.24) {$\hat{\mathbf{x}}_k^-$};
 
 % 3. Dedicated V_{t,ECM,k}^- rail along y = 13.88 BELOW MLP into Sigma_1
 \draw[arr, line width=0.9pt] (16.80, 15.00) -- (17.24, 15.00) -- (17.24, 13.88) -- (24.90, 13.88);
@@ -920,8 +928,8 @@ def get_framework_tex():
 % 4. SOH_{ref,k} exits Slow Filter along x=17.54 with IEEE bridge hop over y=13.88 into MLP pin 6
 \draw[line width=0.9pt] (16.96, 11.16) -- (17.54, 11.16) -- (17.54, 13.75);
 \draw[line width=0.9pt] (17.54, 13.75) arc (-90:90:0.13cm);
-\draw[arr, line width=0.9pt] (17.54, 14.01) -- (17.54, 15.70) -- (18.12, 15.70);
-\node[fill=white, draw=black, line width=0.45pt, rounded corners=1pt, inner sep=1.2pt, font=\fontsize{6.3}{7.2}\selectfont\bfseries]
+\draw[arr, line width=0.9pt] (17.54, 14.01) -- (17.54, 15.68) -- (18.12, 15.68);
+\node[fill=white, draw=black, line width=0.45pt, rounded corners=1pt, inner sep=1.0pt, font=\fontsize{5.8}{6.6}\selectfont\bfseries]
     at (17.54, 12.40) {$\mathrm{SOH}_{\mathrm{ref}}$};
 
 % 5. Exact Cascaded Summing Junctions along y = 13.88
@@ -958,11 +966,11 @@ def get_framework_tex():
     \textbf{Mean-Square UUB (Eqs.\ 24--25):}\; $\limsup_{k\to\infty}\mathbb{E}[\|\mathbf{e}_k^-\|^2] \le n\bar{p} + \left(\dfrac{c\bar{A}\bar{K}\bar{\varepsilon}}{1-\rho}\right)^2 < \infty$
 };
 
-% Clean Unobstructed Bottom Feedback Return Rail (y = 8.90)
-\draw[line width=0.9pt] (23.54, 9.48) -- (23.54, 8.90) -- (6.54, 8.90);
+% Clean Unobstructed Bottom Feedback Return Rail (y = 8.90 -> aligned cleanly to x=6.50 return!)
+\draw[line width=0.9pt] (23.54, 9.48) -- (23.54, 8.90) -- (6.50, 8.90);
 \draw[arr, line width=0.9pt] (12.00, 8.90) -- (12.00, 9.48);
 \filldraw[fill=black] (12.00, 8.90) circle (1.4pt);
-\draw[arr, line width=0.9pt] (6.54, 8.90) -- (6.54, 17.98) -- (7.20, 17.98);
+\draw[arr, line width=0.9pt] (6.50, 8.90) -- (6.50, 17.98) -- (7.20, 17.98);
 \node[fill=cgate, draw=black, line width=0.5pt, rounded corners=1.5pt, inner sep=1.6pt, font=\fontsize{7.0}{8.0}\selectfont\bfseries]
     at (17.54, 8.90) {Closed-Loop Innovation Feedback: $e_{k,\mathrm{PIDKF}}$};
 

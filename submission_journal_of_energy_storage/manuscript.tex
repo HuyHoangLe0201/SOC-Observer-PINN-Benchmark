@@ -418,7 +418,7 @@ PINN-SOC & 2.781 & 2.278 & 7.317 \\
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.82\linewidth]{fig1_udds_tracking_errors.png}
+\includegraphics[width=0.82\linewidth]{fig1_udds_tracking_errors.pdf}
 \caption{Dynamic SOC tracking and error comparison across 6 algorithms under a 60-min continuous concatenated UDDS schedule ($3600\text{ s}$) at $25^\circ\text{C}$ and $100\%$ SOH\label{fig:udds}}
 \end{figure}
 
@@ -451,7 +451,7 @@ PINN-SOC & 2.781\% & 3.081\% & 3.551\% & 4.177\% & 4.911\% & +76.6\% \\
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.82\linewidth]{fig2_aging_degradation.png}
+\includegraphics[width=0.82\linewidth]{fig2_aging_degradation.pdf}
 \caption{Evolution of SOC estimation error as battery SOH degrades from $100\%$ down to $80\%$, illustrating the 45-fold accuracy degradation of standard EKF versus the resilience of DEKF\label{fig:aging}}
 \end{figure}
 
@@ -482,7 +482,7 @@ PINN-SOC & 6.307 & 2.781 & 9.644 \\
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.82\linewidth]{fig3_thermal_robustness.png}
+\includegraphics[width=0.82\linewidth]{fig3_thermal_robustness.pdf}
 \caption{Algorithmic tracking performance under cold ($0^\circ\text{C}$), nominal ($25^\circ\text{C}$), and elevated ($45^\circ\text{C}$) ambient temperatures\label{fig:thermal}}
 \end{figure}
 
@@ -514,7 +514,7 @@ PINN-SOC & N/A$^*$ & N/A$^*$ & 2.229 & 6.84 \\
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.82\linewidth]{fig4_initial_error_convergence.png}
+\includegraphics[width=0.82\linewidth]{fig4_initial_error_convergence.pdf}
 \caption{Transient convergence trajectories from a $-40\%$ initial SOC estimation error across the $0\text{--}800\text{ s}$ window\label{fig:conv}}
 \end{figure}
 
@@ -523,7 +523,7 @@ Figure~\ref{fig:radar} synthesizes algorithmic trade-offs across 5 normalized di
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.82\linewidth]{fig5_radar_tradeoff.png}
+\includegraphics[width=0.82\linewidth]{fig5_radar_tradeoff.pdf}
 \caption{Multi-attribute radar comparison across 5 engineering dimensions illustrating algorithmic trade-offs\label{fig:radar}}
 \end{figure}
 
@@ -556,7 +556,7 @@ PINN-SOC & 2.781\% & 4.872\% (Max 8.74\%) & \textbf{1.720\%} (Max 3.48\%) & +75.
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.82\linewidth]{fig6_lfp_plateau_tracking.png}
+\includegraphics[width=0.82\linewidth]{fig6_lfp_plateau_tracking.pdf}
 \caption{Estimation performance on $\text{LiFePO}_4$ (LFP) chemistry over the flat voltage plateau where $d V_{\text{ocv}}/d\text{SOC} \approx 0$\label{fig:lfp}}
 \end{figure}
 
@@ -584,7 +584,7 @@ SMO & 5.035 & 14.458 & \textbf{1.024} & High \\
 \end{table}
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.82\linewidth]{fig7_sensor_bias_drift_stress.png}
+\includegraphics[width=0.82\linewidth]{fig7_sensor_bias_drift_stress.pdf}
 \caption{Observer robustness under current sensor bias drift ($+0.25\text{ A}$) and high-frequency inverter EMI noise\label{fig:sensor}}
 \end{figure}
 
@@ -593,7 +593,7 @@ Figure~\ref{fig:eis} depicts model-based Randles--CPE Nyquist spectra ($100\text
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.82\linewidth]{fig8_eis_nyquist_aging.png}
+\includegraphics[width=0.82\linewidth]{fig8_eis_nyquist_aging.pdf}
 \caption{Model-based EIS Nyquist spectra across progressive aging stages ($100\%$ down to $80\%$ SOH)\label{fig:eis}}
 \end{figure}
 
@@ -620,7 +620,7 @@ Distributed DEKF & Weakest Cell SOC & \textbf{0.337} & \textbf{0.963} & Bounded 
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.82\linewidth]{fig9_pack_cell_inconsistency.png}
+\includegraphics[width=0.82\linewidth]{fig9_pack_cell_inconsistency.pdf}
 \caption{Series-connected 8S battery pack estimation comparing lumped model deficiency with distributed DEKF weakest cell tracking\label{fig:pack}}
 \end{figure}
 
@@ -653,7 +653,7 @@ PINN-SOC & 12,800 & 21,501 & 1,200 & 16,500 & 127.98 & 44.79 & High (CMSIS-NN Re
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.82\linewidth]{fig10_embedded_resource_tradeoff.png}
+\includegraphics[width=0.82\linewidth]{fig10_embedded_resource_tradeoff.pdf}
 \caption{Pareto efficiency frontier: SOC estimation RMSE versus measured ARM Cortex-M4 execution latency on degraded cells ($85\%$ SOH, UDDS), contrasted against fresh-cell baselines ($100\%$ SOH)\label{fig:embedded}}
 \end{figure}
 
@@ -698,7 +698,7 @@ Across aging ($25^\circ\text{C}$), PIDKF maintains sub-$0.5\%$ RMSE: for NMC, $0
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.82\linewidth]{fig11_pidkf_hybrid_benchmark.png}
+\includegraphics[width=0.82\linewidth]{fig11_pidkf_hybrid_benchmark.pdf}
 \caption{Hybrid PIDKF tracking ($<0.5\%$ error) on degraded cells ($85\%$ SOH, UDDS, $25^\circ\text{C}$)\label{fig:pidkf}}
 \end{figure}
 
