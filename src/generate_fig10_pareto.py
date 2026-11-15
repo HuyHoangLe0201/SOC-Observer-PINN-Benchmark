@@ -24,7 +24,7 @@ ax.axvspan(0.8, 20.0, alpha=0.075, color="#0F766E", zorder=0)
 ax.axvline(20.0, color="#0F766E", linestyle="--", linewidth=1.1, alpha=0.85, zorder=2)
 ax.text(
     4.0,
-    4.86,
+    5.15,
     r"Real-Time BMS Window ($<20\;\mu\mathrm{s}$)",
     ha="center",
     va="top",
@@ -133,7 +133,7 @@ ax.set_ylabel("SOC Estimation RMSE (%) [Lower is Better]")
 ax.set_title("Pareto Frontier: Estimation Accuracy vs. Cortex-M4 Latency on Aged Cells (85% SOH)", fontweight="bold")
 ax.grid(True, which="both")
 ax.set_xlim(0.85, 6500.0)
-ax.set_ylim(-0.25, 5.15)
+ax.set_ylim(-0.30, 5.45)
 style_legend(ax.legend(loc="upper right", fontsize=8.0))
 
 out_path = os.path.join("results", "fig10_embedded_resource_tradeoff.png")

@@ -174,7 +174,7 @@ def plot_aging_degradation_trend(soh_levels, rmse_by_model, save_path="../result
     ax.annotate(
         r"DEKF Tracks $\hat{R}_0, \hat{Q}_{\mathrm{act}}$" + "\n(Stays <0.6% RMSE)",
         xy=(80.2, 0.62),
-        xytext=(83.8, 1.18),
+        xytext=(82.4, 1.48),
         arrowprops=dict(arrowstyle="->", color=PALETTE["DEKF"], lw=1.1),
         fontsize=7.6,
         color=PALETTE["DEKF"],
@@ -243,7 +243,7 @@ def plot_thermal_regimes_bar(temp_labels, rmse_data, save_path="../results/fig3_
     ax.set_ylabel("SOC Estimation RMSE (%)")
     ax.set_title("Thermal Sensitivity Benchmark across Temperature Regimes", fontweight="bold")
     ax.grid(True, axis="y", zorder=0)
-    ax.set_ylim(0.0, 12.1)
+    ax.set_ylim(0.0, 12.6)
     style_legend(ax.legend(loc="upper center", ncol=4, fontsize=7.8, columnspacing=1.1, handlelength=1.6))
 
     save_pub_figure(fig, save_path)
@@ -322,7 +322,7 @@ def plot_convergence_trajectories(data, results_converge, save_path="../results/
     ax2.annotate(
         "DEKF Contraction\nEntry: 725 s | Settle: 732 s",
         xy=(725.0, 2.0),
-        xytext=(615.0, 14.2),
+        xytext=(575.0, 14.2),
         arrowprops=dict(arrowstyle="->", color=PALETTE["DEKF"], lw=1.05),
         fontsize=7.5,
         color="#15803D",
@@ -332,7 +332,7 @@ def plot_convergence_trajectories(data, results_converge, save_path="../results/
     )
 
     # Secondary inset focused on DEKF crossing 2% band cleanly clear of upper-right legend
-    ax2_ins = add_zoom_inset(ax2, [0.105, 0.29, 0.34, 0.46], xlim=(670.0, 770.0), ylim=(0.0, 4.9), loc1=3, loc2=4)
+    ax2_ins = add_zoom_inset(ax2, [0.105, 0.29, 0.34, 0.46], xlim=(670.0, 770.0), ylim=(0.0, 5.4), loc1=3, loc2=4)
     ax2_ins.axhspan(0.0, 2.0, color="#16A34A", alpha=0.08)
     ax2_ins.axhline(2.0, color="#DC2626", linestyle="--", linewidth=0.85)
     ax2_ins.axvline(725.0, color=PALETTE["DEKF"], linestyle=":", linewidth=1.0)
@@ -340,10 +340,12 @@ def plot_convergence_trajectories(data, results_converge, save_path="../results/
         if name in results_converge:
             err = np.abs((results_converge[name]["soc_est"][:horizon] - data["soc_true"][:horizon]) * 100.0)
             ax2_ins.plot(time_sec, err, color=PALETTE[name], linewidth=1.3 if name == "DEKF" else 0.95, alpha=0.9)
+    ax2_ins.set_xticks([690, 725, 760])
+    ax2_ins.set_yticks([1, 2, 3, 4])
     ax2_ins.text(
-        0.54, 0.87, "DEKF Entry Zoom (670–770 s)",
+        0.69, 0.88, "DEKF Entry Zoom (670–770 s)",
         transform=ax2_ins.transAxes, ha="center", va="center",
-        fontsize=6.1, fontweight="bold", color="#1E293B",
+        fontsize=5.9, fontweight="bold", color="#1E293B",
         bbox=dict(boxstyle="round,pad=0.12", facecolor="white", edgecolor="#CBD5E1", alpha=0.96, lw=0.5),
     )
 
@@ -399,19 +401,39 @@ def plot_radar_summary(metrics_dict, save_path="../results/fig5_radar_tradeoff.p
         ax.fill(angles, values, color=col, alpha=0.04, zorder=2)
 
     ax.set_xticks(angles[:-1])
-    ax.tick_params(axis="x", pad=20)
-    ax.set_xticklabels(categories, fontsize=9.2, fontweight="bold", color="#111827")
+    ax.set_xticklabels([])  # Drawn radially outward with explicit alignment so zero label grazes the outer ring
+    out_cfg = [
+        (0.0, categories[0], "left", "center"),
+        (angles[1], categories[1], "center", "bottom"),
+        (angles[2], categories[2], "right", "center"),
+        (angles[3], categories[3], "right", "center"),
+        (angles[4], categories[4], "center", "top"),
+    ]
+    for ang, lbl_txt, ha_v, va_v in out_cfg:
+        ax.text(ang, 11.45, lbl_txt, ha=ha_v, va=va_v, fontsize=9.1, fontweight="bold", color="#111827")
+
     ax.set_ylim(0, 10.6)
     ax.set_yticks([2, 4, 6, 8, 10])
-    ax.set_yticklabels(["2", "4", "6", "8", "10"], fontsize=8.0, fontweight="bold", color="#334155")
-    for lbl in ax.get_yticklabels():
-        lbl.set_bbox(dict(boxstyle="round,pad=0.14", facecolor="white", edgecolor="none", alpha=0.88))
+    ax.set_yticklabels([])
+    for rv in [2, 4, 6, 8, 10]:
+        ax.text(
+            np.deg2rad(54.0),
+            rv,
+            str(rv),
+            ha="center",
+            va="center",
+            fontsize=7.6,
+            fontweight="bold",
+            color="#334155",
+            bbox=dict(boxstyle="round,pad=0.13", facecolor="white", edgecolor="#CBD5E1", alpha=0.95, lw=0.45),
+            zorder=15,
+        )
 
     ax.grid(True, color="#94A3B8", linestyle="--", linewidth=0.65, alpha=0.65)
     ax.spines["polar"].set_color("#64748B")
     ax.spines["polar"].set_linewidth(0.8)
-    ax.set_title("Multi-Attribute Performance Trade-Off Benchmark (Score / 10)", y=1.12, fontweight="bold")
-    style_legend(ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.10), ncol=3, fontsize=8.4, columnspacing=1.3))
+    ax.set_title("Multi-Attribute Performance Trade-Off Benchmark (Score / 10)", y=1.18, fontweight="bold")
+    style_legend(ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.15), ncol=3, fontsize=8.4, columnspacing=1.3))
 
     save_pub_figure(fig, save_path)
     print(f"[Visualizer] Saved Fig 5 (PNG 600 DPI + PDF) to {save_path}")

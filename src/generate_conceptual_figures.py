@@ -231,9 +231,9 @@ def get_mechanism_tex(data):
 
 \node[fill=white, draw=black, line width=0.45pt, rounded corners=1.2pt, inner sep=1.4pt, font=\fontsize{7.0}{8.0}\selectfont\bfseries]
     at (7.05, 19.52) {Separator};
-\filldraw[fill=sepfill, draw=black, line width=0.55pt, densely dashed] (6.87, 16.40) rectangle (7.23, 19.16);
-\foreach \yy in {16.54, 16.96, 17.38, 17.80, 18.22, 18.64} {
-    \draw[line width=0.5pt, fill=white] (6.94, \yy) rectangle (7.16, \yy+0.18);
+\filldraw[fill=sepfill, draw=black, line width=0.55pt, densely dashed] (6.87, 16.96) rectangle (7.23, 19.18);
+\foreach \yy in {17.08, 17.46, 17.84, 18.22, 18.60, 18.92} {
+    \draw[line width=0.5pt, fill=white] (6.94, \yy) rectangle (7.16, \yy+0.16);
 }
 
 \filldraw[fill=nmcpart, draw=black, line width=0.65pt] (5.50, 18.30) circle (0.16cm);
@@ -358,11 +358,11 @@ def get_mechanism_tex(data):
 \node[font=\fontsize{8.8}{9.8}\selectfont\bfseries] at (15.26, 15.80) {$-$};
 \draw[line width=0.95pt] (15.86, 16.64) -- (15.86, 17.02);
 
-% Diamond Dependent Hysteresis Voltage Source
+% Diamond Dependent Hysteresis Voltage Source (widened cleanly so label sits strictly inside)
 \filldraw[fill=hdramber, draw=black, line width=0.85pt]
-    (15.86, 18.18) -- (16.40, 17.60) -- (15.86, 17.02) -- (15.32, 17.60) -- cycle;
-\node[align=center, font=\fontsize{7.2}{8.2}\selectfont\bfseries] at (15.86, 17.60) {$\pm V_{h,k}$\\[-2pt]\fontsize{6.0}{7.0}\selectfont (LFP)};
-\draw[line width=0.95pt] (15.86, 18.18) -- (top_l);
+    (15.86, 18.24) -- (16.64, 17.60) -- (15.86, 16.96) -- (15.08, 17.60) -- cycle;
+\node[align=center, font=\fontsize{6.6}{7.4}\selectfont\bfseries] at (15.86, 17.60) {$\pm V_{h,k}$\\[-2pt]\fontsize{5.6}{6.4}\selectfont (LFP)};
+\draw[line width=0.95pt] (15.86, 18.24) -- (top_l);
 
 % R0(T, SOH) + DEKF pill cleanly placed UNDER R0 (completely eliminates top-label overlap!)
 \draw[line width=0.95pt] (top_l) -- (16.58, 18.78);
@@ -538,15 +538,15 @@ def get_mechanism_tex(data):
 
 % Authentic Eq. (15) Numerically Simulated Hysteresis Inset cleanly tucked at bottom-right (y <= 3.55 cm -> well BELOW platbox!)
 \filldraw[fill=white, draw=black, line width=0.7pt, rounded corners=2.5pt, drop shadow={opacity=0.07, shadow xshift=0.8pt, shadow yshift=-0.8pt}]
-    (7.65, 1.32) rectangle (13.92, 3.62);
-\node[font=\fontsize{7.1}{8.1}\selectfont\bfseries] at (10.785, 3.43)
+    (7.58, 1.32) rectangle (13.94, 3.68);
+\node[font=\fontsize{7.1}{8.1}\selectfont\bfseries] at (10.76, 3.48)
     {Eq.\ (15) Hysteresis Loop ($\beta = 45$)};
 
 \begin{axis}[
-    at={(8.56cm, 1.62cm)},
+    at={(8.58cm, 1.66cm)},
     anchor=south west,
-    width=5.06cm,
-    height=1.62cm,
+    width=5.02cm,
+    height=1.56cm,
     scale only axis,
     xmin=35, xmax=65,
     ymin=-38, ymax=38,
@@ -555,7 +555,7 @@ def get_mechanism_tex(data):
     ytick={-30, 0, 30},
     yticklabels={$-30$, $0$, $+30$},
     ylabel={$V_h$ (mV)},
-    ylabel style={font=\fontsize{6.4}{7.2}\selectfont\bfseries, text=black, yshift=-6pt},
+    ylabel style={font=\fontsize{6.3}{7.1}\selectfont\bfseries, text=black, yshift=-4pt},
     tick label style={font=\fontsize{6.0}{6.8}\selectfont, text=black},
     grid=major,
     grid style={dotted, black!25},
@@ -894,8 +894,8 @@ def get_framework_tex():
 \draw[line width=0.65pt, densely dashed, draw=black!75] (24.68, 15.76) -- (28.44, 15.76);
 \draw[arr, line width=0.8pt] (24.52, 16.96) -- (28.64, 16.96);
 \draw[arr, line width=0.8pt] (26.56, 15.52) -- (26.56, 18.46);
-\node[font=\fontsize{6.8}{7.6}\selectfont\bfseries] at (28.56, 17.18) {$I_k$};
-\node[font=\fontsize{6.8}{7.6}\selectfont\bfseries] at (27.22, 18.50) {$\delta\hat{V}_{t,\mathrm{comp},k}$};
+\node[font=\fontsize{6.8}{7.6}\selectfont\bfseries] at (28.76, 17.16) {$I_k$};
+\node[font=\fontsize{6.8}{7.6}\selectfont\bfseries] at (27.22, 18.54) {$\delta\hat{V}_{t,\mathrm{comp},k}$};
 \node[font=\fontsize{6.6}{7.6}\selectfont\bfseries] at (25.62, 17.34) {Charge OK};
 \node[font=\fontsize{6.6}{7.6}\selectfont\bfseries] at (27.52, 16.52) {Disch.\ OK};
 \node[font=\fontsize{5.9}{6.8}\selectfont] at (27.50, 17.78) {Clamped ($I_k\delta\hat{V}\!>\!0$)};
@@ -1006,7 +1006,7 @@ def get_framework_tex():
     xbar=0pt,
     bar shift=0pt,
     xmode=log,
-    xmin=1, xmax=26000,
+    xmin=1, xmax=35000,
     ymin=0.35, ymax=8.65,
     width=10.60cm,
     height=1.84cm,
@@ -1025,7 +1025,7 @@ def get_framework_tex():
     clip=false
 ]
     \draw[densely dashed, black!80, line width=0.7pt] (axis cs:20, 0.35) -- (axis cs:20, 8.65);
-    \node[font=\fontsize{5.8}{6.6}\selectfont\bfseries, anchor=south west] at (axis cs:21.5, 7.75) {RT $<20\;\mu\mathrm{s}$};
+    \node[font=\fontsize{5.8}{6.6}\selectfont\bfseries, anchor=south west] at (axis cs:22.0, 7.75) {RT $<20\;\mu\mathrm{s}$};
 
     \addplot[fill=barslate, draw=black, line width=0.5pt] coordinates {
         (1.67, 8) (3.87, 7) (12.42, 4)
@@ -1040,15 +1040,16 @@ def get_framework_tex():
         (14.20, 3)
     };
 
-    % Exact aligned numeric labels centered on each horizontal bar with white pills over dashed line!
-    \node[anchor=west, font=\fontsize{5.9}{6.7}\selectfont\bfseries, inner xsep=1pt, inner ysep=0.2pt, fill=white, fill opacity=0.92, text opacity=1] at (axis cs:1.80, 8) {$1.67\;\mu\mathrm{s}$};
-    \node[anchor=west, font=\fontsize{5.9}{6.7}\selectfont\bfseries, inner xsep=1pt, inner ysep=0.2pt, fill=white, fill opacity=0.92, text opacity=1] at (axis cs:4.18, 7) {$3.87\;\mu\mathrm{s}$};
-    \node[anchor=west, font=\fontsize{5.9}{6.7}\selectfont\bfseries, inner xsep=1pt, inner ysep=0.2pt, fill=white, fill opacity=0.92, text opacity=1] at (axis cs:5.66, 6) {$5.24\;\mu\mathrm{s}$};
-    \node[anchor=west, font=\fontsize{5.9}{6.7}\selectfont\bfseries, inner xsep=1pt, inner ysep=0.2pt, fill=white, fill opacity=0.92, text opacity=1] at (axis cs:9.30, 5) {$8.63\;\mu\mathrm{s}$};
-    \node[anchor=west, font=\fontsize{5.9}{6.7}\selectfont\bfseries, inner xsep=1pt, inner ysep=0.2pt, fill=white, fill opacity=0.92, text opacity=1] at (axis cs:13.4, 4) {$12.42\;\mu\mathrm{s}$};
-    \node[anchor=west, font=\fontsize{5.9}{6.7}\selectfont\bfseries, inner xsep=1pt, inner ysep=0.2pt, fill=white, fill opacity=0.94, text opacity=1] at (axis cs:15.4, 3) {\textbf{$14.20\;\mu\mathrm{s}$ ($172\times$ vs.\ LSTM)}};
-    \node[anchor=west, font=\fontsize{5.9}{6.7}\selectfont\bfseries, inner sep=1pt] at (axis cs:138, 2) {$127.98\;\mu\mathrm{s}$};
-    \node[anchor=west, font=\fontsize{5.9}{6.7}\selectfont\bfseries, inner sep=1pt] at (axis cs:2640, 1) {$2.44\;\mathrm{ms}$};
+    % Exact aligned numeric labels strictly clear of the vertical x=20 dashed boundary
+    \node[anchor=west, font=\fontsize{5.9}{6.7}\selectfont\bfseries, inner xsep=1pt, inner ysep=0.2pt] at (axis cs:1.80, 8) {$1.67\;\mu\mathrm{s}$};
+    \node[anchor=west, font=\fontsize{5.9}{6.7}\selectfont\bfseries, inner xsep=1pt, inner ysep=0.2pt] at (axis cs:4.18, 7) {$3.87\;\mu\mathrm{s}$};
+    \node[anchor=west, font=\fontsize{5.9}{6.7}\selectfont\bfseries, inner xsep=1pt, inner ysep=0.2pt] at (axis cs:5.66, 6) {$5.24\;\mu\mathrm{s}$};
+    \node[anchor=west, font=\fontsize{5.9}{6.7}\selectfont\bfseries, inner xsep=1pt, inner ysep=0.2pt] at (axis cs:9.30, 5) {$8.63\;\mu\mathrm{s}$};
+    \node[anchor=east, font=\fontsize{5.6}{6.4}\selectfont\bfseries, inner xsep=1pt, inner ysep=0.2pt] at (axis cs:11.3, 4) {$12.42\;\mu\mathrm{s}$};
+    \node[anchor=east, font=\fontsize{5.7}{6.5}\selectfont\bfseries, inner xsep=1pt, inner ysep=0.2pt] at (axis cs:13.0, 3) {\textbf{$14.20\;\mu\mathrm{s}$}};
+    \node[anchor=west, font=\fontsize{5.8}{6.6}\selectfont\bfseries, inner xsep=1.2pt, inner ysep=0.4pt, fill=white, fill opacity=0.95, text opacity=1] at (axis cs:23.0, 3) {(\textbf{$172\times$ vs.\ LSTM})};
+    \node[anchor=west, font=\fontsize{5.9}{6.7}\selectfont\bfseries, inner sep=1pt] at (axis cs:142, 2) {$127.98\;\mu\mathrm{s}$};
+    \node[anchor=west, font=\fontsize{5.9}{6.7}\selectfont\bfseries, inner sep=1pt] at (axis cs:2720, 1) {$2.44\;\mathrm{ms}$};
 \end{axis}
 
 % Pillar 3: Bare-Metal MCU Profiling + Crisp IC Package (x = 21.46 to 29.16, 7.70 cm wide!)

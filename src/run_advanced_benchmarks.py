@@ -137,18 +137,20 @@ def run_advanced_experiments():
     ax1.set_title(r"(a) LiFePO$_4$ Tracking Across Flat Plateau (20%–80% SOC) with Hysteresis", loc="left", fontweight="bold")
     ax1.grid(True)
     ax1.set_xlim(0.0, 60.5)
-    ax1.set_ylim(34.0, 102.0)
+    ax1.set_ylim(34.0, 106.5)
     style_legend(ax1.legend(loc="lower left", ncol=3, fontsize=7.6, columnspacing=1.0))
 
     # Zoom inset showing plateau separation among DEKF / EKF / AEKF cleanly in top-right open sky
-    ax1_ins = add_zoom_inset(ax1, [0.55, 0.58, 0.42, 0.37], xlim=(42.0, 60.0), ylim=(54.5, 68.0), loc1=2, loc2=4)
+    ax1_ins = add_zoom_inset(ax1, [0.53, 0.61, 0.44, 0.34], xlim=(42.0, 60.0), ylim=(54.5, 68.0), loc1=2, loc2=4)
     ax1_ins.plot(time_min, soc_lfp_true * 100.0, color=PALETTE["True"], linewidth=1.8, zorder=6)
     for name in ["AEKF", "EKF", "DEKF"]:
         ax1_ins.plot(time_min, lfp_models[name] * 100.0, color=PALETTE[name], linewidth=1.4, alpha=0.92)
+    ax1_ins.set_xticks([45, 50, 55, 60])
+    ax1_ins.set_yticks([57, 61, 65])
     ax1_ins.text(
-        0.54, 0.86, "Plateau End (42–60 min)",
+        0.55, 0.87, "Plateau End (42–60 min)",
         transform=ax1_ins.transAxes, ha="center", va="center",
-        fontsize=6.4, fontweight="bold", color="#1E293B",
+        fontsize=6.3, fontweight="bold", color="#1E293B",
         bbox=dict(boxstyle="round,pad=0.14", facecolor="white", edgecolor="#CBD5E1", alpha=0.95, lw=0.5),
     )
 
@@ -178,6 +180,8 @@ def run_advanced_experiments():
     for name in ["AEKF", "EKF", "DEKF"]:
         err = (lfp_models[name] - soc_lfp_true) * 100.0
         ax2_ins.plot(time_min, err, color=PALETTE[name], linewidth=1.35)
+    ax2_ins.set_xticks([35, 42, 50, 58])
+    ax2_ins.set_yticks([-4, -2, 0])
     ax2_ins.text(
         0.5, 0.87, "DEKF 0.87% | EKF 1.14%",
         transform=ax2_ins.transAxes, ha="center", va="center",

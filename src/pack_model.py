@@ -237,6 +237,8 @@ def run_pack_inconsistency_benchmark():
         ax1_ins.plot(time_min, cell_s_true[:, i] * 100.0, color=PALETTE["EKF"] if is_w else PALETTE["AEKF"], alpha=0.95 if is_w else 0.35, lw=1.7 if is_w else 0.7)
     ax1_ins.plot(time_min, soc_lumped_est * 100.0, "--", color=PALETTE["True"], lw=1.35)
     ax1_ins.plot(time_min, distributed_weakest_est * 100.0, ":", color=PALETTE["DEKF"], lw=1.8)
+    ax1_ins.set_xticks([38, 41, 44, 46])
+    ax1_ins.set_yticks([86, 88, 90])
     ax1_ins.text(
         0.5, 0.86, "8S Cell Spread (36–46 min)",
         transform=ax1_ins.transAxes, ha="center", va="center",

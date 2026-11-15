@@ -320,6 +320,8 @@ def run_pidkf_comparative_experiment():
     ax1_ins.plot(time_min, s_ekf_lfp * 100.0, color=PALETTE["EKF"], lw=1.3)
     ax1_ins.plot(time_min, s_dekf_lfp * 100.0, color=PALETTE["DEKF"], lw=1.35)
     ax1_ins.plot(time_min, s_pidkf_lfp * 100.0, color=PALETTE["PIDKF"], lw=1.8, zorder=6)
+    ax1_ins.set_xticks([38, 42, 46])
+    ax1_ins.set_yticks([73, 75, 77])
     ax1_ins.text(
         0.54, 0.86, "Plateau Lock (36–48 min)",
         transform=ax1_ins.transAxes, ha="center", va="center",
