@@ -208,12 +208,12 @@ def get_mechanism_tex(data):
 \draw[->, line width=0.55pt] (seibadge.north) -- (3.24, 17.16);
 
 % Bottom Anode Particle + Realistic Multi-Branched Crystalline Cold Li0 Plating Dendrite
-\filldraw[fill=seifill, draw=black, line width=0.65pt, densely dashed] (1.40, 14.84) circle (0.48cm);
-\shade[outer color=graphcore, inner color=graphrim] (1.40, 14.84) circle (0.35cm);
-\draw[line width=0.75pt] (1.40, 14.84) circle (0.35cm);
-\node[font=\fontsize{6.8}{7.8}\selectfont\bfseries] at (1.40, 14.84) {$\mathrm{Li_xC_6}$};
+\filldraw[fill=seifill, draw=black, line width=0.65pt, densely dashed] (1.40, 14.84) circle (0.50cm);
+\shade[outer color=graphcore, inner color=graphrim] (1.40, 14.84) circle (0.40cm);
+\draw[line width=0.75pt] (1.40, 14.84) circle (0.40cm);
+\node[font=\fontsize{6.2}{7.2}\selectfont\bfseries] at (1.40, 14.84) {$\mathrm{Li_xC_6}$};
 
-\draw[line width=1.15pt, draw=black, line cap=round] (1.76, 14.84) -- (2.42, 14.84);
+\draw[line width=1.15pt, draw=black, line cap=round] (1.80, 14.84) -- (2.42, 14.84);
 \draw[line width=0.9pt, draw=black, line cap=round] (1.96, 14.84) -- (2.26, 15.14) -- (2.44, 15.22);
 \draw[line width=0.75pt, draw=black, line cap=round] (2.14, 15.02) -- (2.20, 15.26);
 \draw[line width=0.9pt, draw=black, line cap=round] (2.06, 14.84) -- (2.34, 14.56) -- (2.50, 14.48);
@@ -236,18 +236,19 @@ def get_mechanism_tex(data):
     \draw[line width=0.5pt, fill=white] (6.94, \yy) rectangle (7.16, \yy+0.16);
 }
 
-\filldraw[fill=nmcpart, draw=black, line width=0.65pt] (5.50, 18.30) circle (0.16cm);
-\node[font=\fontsize{6.3}{7.3}\selectfont\bfseries] at (5.50, 18.30) {$\mathrm{Li^+}$};
+\filldraw[fill=nmcpart, draw=black, line width=0.65pt] (5.54, 18.30) circle (0.21cm);
+\node[font=\fontsize{5.8}{6.6}\selectfont\bfseries] at (5.54, 18.30) {$\mathrm{Li^+}$};
 \foreach \ang in {40, 140, 220, 320} {
-    \filldraw[fill=hdramber, draw=black, line width=0.45pt] ($(5.50,18.30)+(\ang:0.26cm)$) circle (0.07cm);
+    \filldraw[fill=hdramber, draw=black, line width=0.45pt] ($(5.54,18.30)+(\ang:0.32cm)$) circle (0.07cm);
 }
-\node[font=\fontsize{6.8}{7.8}\selectfont\bfseries] at (5.60, 18.84) {$\mathrm{Li^+(EC)_4}$};
+\node[font=\fontsize{6.4}{7.4}\selectfont\bfseries] at (5.54, 18.92) {$\mathrm{Li^+(EC)_4}$};
 
-\draw[arr, line width=0.95pt] (5.84, 18.30) -- (8.94, 18.30);
-\filldraw[fill=hdrgreen, draw=black, line width=0.65pt] (8.18, 18.30) circle (0.16cm);
-\node[font=\fontsize{6.3}{7.3}\selectfont\bfseries] at (8.18, 18.30) {$\mathrm{Li^+}$};
-\node[fill=white, draw=black, line width=0.45pt, rounded corners=1.2pt, inner sep=1.3pt, font=\fontsize{6.5}{7.5}\selectfont\bfseries]
-    at (8.22, 18.82) {Discharge ($I\!>\!0$)};
+\draw[line width=0.90pt] (5.96, 18.30) -- (7.96, 18.30);
+\draw[arr, line width=0.90pt] (8.50, 18.30) -- (9.16, 18.30);
+\filldraw[fill=hdrgreen, draw=black, line width=0.65pt] (8.24, 18.30) circle (0.21cm);
+\node[font=\fontsize{5.8}{6.6}\selectfont\bfseries] at (8.24, 18.30) {$\mathrm{Li^+}$};
+\node[fill=white, draw=black, line width=0.45pt, rounded corners=1.2pt, inner sep=1.1pt, align=center, font=\fontsize{5.8}{6.6}\selectfont\bfseries]
+    at (8.24, 18.92) {Discharge\\[-1.5pt]($I\!>\!0$)};
 
 \draw[darr, line width=0.85pt] (8.94, 17.24) -- (5.14, 17.24);
 \node[fill=white, draw=black, line width=0.45pt, rounded corners=1.2pt, inner sep=1.3pt, font=\fontsize{6.5}{7.5}\selectfont]
@@ -265,15 +266,15 @@ def get_mechanism_tex(data):
 % 4. Dual Cathode Comparison (x = 9.24 to 13.74, width 4.50 cm!) + Al Foil (13.74 to 14.18)
 % Upper: NMC811
 \filldraw[fill=nmcbg, draw=black, line width=0.65pt] (9.24, 16.98) rectangle (13.74, 20.02);
-\shade[outer color=nmcpart, inner color=white] (9.94, 18.80) circle (0.44cm);
-\draw[line width=0.75pt] (9.94, 18.80) circle (0.44cm);
+\shade[outer color=nmcpart, inner color=white] (10.06, 18.80) circle (0.44cm);
+\draw[line width=0.75pt] (10.06, 18.80) circle (0.44cm);
 \foreach \dy in {-0.22, -0.11, 0.0, 0.11, 0.22} {
-    \draw[line width=0.45pt, draw=nmcline] (9.60, 18.80+\dy) -- (10.28, 18.80+\dy);
+    \draw[line width=0.45pt, draw=nmcline] (9.72, 18.80+\dy) -- (10.40, 18.80+\dy);
 }
-\node[fill=white, draw=black, line width=0.45pt, rounded corners=1pt, inner sep=1.1pt, align=center, font=\fontsize{5.8}{6.7}\selectfont\bfseries]
-    (onelbl) at (9.94, 17.64) {1-Phase\\[-1pt]Host};
-\draw[->, line width=0.45pt] (onelbl.north) -- (9.94, 18.34);
-\node[anchor=west, align=left, font=\fontsize{6.6}{8.0}\selectfont] at (10.58, 18.52) {
+\node[fill=white, draw=black, line width=0.45pt, rounded corners=1pt, inner sep=1.1pt, align=center, font=\fontsize{5.6}{6.5}\selectfont\bfseries]
+    (onelbl) at (10.06, 17.64) {1-Phase\\[-1pt]Host};
+\draw[->, line width=0.45pt] (onelbl.north) -- (10.06, 18.34);
+\node[anchor=west, align=left, font=\fontsize{6.0}{7.3}\selectfont] at (10.60, 18.52) {
     \textbf{NMC811} (\texttt{INR20R})\\[1pt]
     Solid-solution host\\[0.5pt]
     $V_{\mathrm{ocv}}'\!\in\![0.481, 4.674]\;\mathrm{V}$\\[0.5pt]
@@ -282,13 +283,13 @@ def get_mechanism_tex(data):
 
 % Lower: LFP Core-Shell
 \filldraw[fill=lfpbg, draw=black, line width=0.65pt] (9.24, 13.95) rectangle (13.74, 16.98);
-\shade[outer color=lfpshell, inner color=lfpshell!55] (9.92, 15.72) circle (0.46cm);
-\draw[line width=0.75pt] (9.92, 15.72) circle (0.46cm);
-\filldraw[fill=fepcore, draw=black, line width=0.65pt, densely dashed] (9.92, 15.72) circle (0.23cm);
-\node[fill=white, draw=black, line width=0.45pt, rounded corners=1pt, inner sep=1.1pt, align=center, font=\fontsize{5.8}{6.8}\selectfont\bfseries]
-    (corelbl) at (9.92, 14.56) {Core: $\mathrm{FePO_4}$\\[-1pt]Shell: $\mathrm{LiFePO_4}$};
-\draw[->, line width=0.45pt] (corelbl.north) -- (9.92, 15.48);
-\node[anchor=west, align=left, font=\fontsize{6.6}{8.0}\selectfont] at (10.56, 15.46) {
+\shade[outer color=lfpshell, inner color=lfpshell!55] (10.04, 15.72) circle (0.45cm);
+\draw[line width=0.75pt] (10.04, 15.72) circle (0.45cm);
+\filldraw[fill=fepcore, draw=black, line width=0.65pt, densely dashed] (10.04, 15.72) circle (0.22cm);
+\node[fill=white, draw=black, line width=0.45pt, rounded corners=1pt, inner sep=1.0pt, align=center, font=\fontsize{5.4}{6.3}\selectfont\bfseries]
+    (corelbl) at (10.04, 14.56) {Core: $\mathrm{FePO_4}$\\[-1pt]Shell: $\mathrm{LiFePO_4}$};
+\draw[->, line width=0.45pt] (corelbl.north) -- (10.04, 15.49);
+\node[anchor=west, align=left, font=\fontsize{6.0}{7.3}\selectfont] at (10.60, 15.46) {
     \textbf{$\mathrm{LiFePO_4}$} (\texttt{ANR26650})\\[1pt]
     Biphasic ($F'\!=\!C\!-\!P\!=\!0$)\\[0.5pt]
     $V_{\mathrm{ocv}}'\!\approx\!0.08\;\mathrm{V} + V_h$\\[0.5pt]
@@ -307,31 +308,31 @@ def get_mechanism_tex(data):
 \node[font=\fontsize{8.4}{9.6}\selectfont\bfseries] at (7.20, 13.54)
     {Closed Electro-Thermal-Aging Loop (Arrhenius Kinetics \& Energy Balance)};
 
-\draw[card, fill=thermbg] (0.38, 11.38) rectangle (4.60, 13.16);
-\node[align=center, font=\fontsize{6.4}{7.8}\selectfont] at (2.49, 12.27) {
+\draw[card, fill=thermbg] (0.34, 11.38) rectangle (4.62, 13.16);
+\node[align=center, font=\fontsize{5.9}{7.2}\selectfont] at (2.48, 12.27) {
     \textbf{Thermal Balance (Eq.\ 5)}\\[1.5pt]
     $C_{\mathrm{th}}\dfrac{dT}{dt} = I^2 R_0 + I(U_1+U_2)$\\[1.5pt]
     $- IT\dfrac{\partial V_{\mathrm{ocv}}}{\partial T} - \dfrac{T-T_{\mathrm{amb}}}{R_{\mathrm{th}}}$
 };
 
-\draw[card, fill=arrhbg] (5.10, 11.38) rectangle (9.32, 13.16);
-\node[align=center, font=\fontsize{6.4}{7.8}\selectfont] at (7.21, 12.27) {
+\draw[card, fill=arrhbg] (5.04, 11.38) rectangle (9.36, 13.16);
+\node[align=center, font=\fontsize{5.9}{7.2}\selectfont] at (7.20, 12.27) {
     \textbf{Arrhenius \& Aging (Eqs.\ 8--10)}\\[2pt]
     $R_i(T,\mathrm{SOH}) = R_{i,\mathrm{nom}}\,f_{T,i}(T)$\\[2pt]
     $\times\,[1 + \kappa_{R_i}(1-\mathrm{SOH})]$
 };
 
-\draw[card, fill=capbg] (9.82, 11.38) rectangle (14.02, 13.16);
-\node[align=center, font=\fontsize{6.4}{7.8}\selectfont] at (11.92, 12.27) {
+\draw[card, fill=capbg] (9.78, 11.38) rectangle (14.06, 13.16);
+\node[align=center, font=\fontsize{5.9}{7.2}\selectfont] at (11.92, 12.27) {
     \textbf{Usable Capacity (Eq.\ 10)}\\[2pt]
     $Q_{\mathrm{act}} = \mathrm{SOH}\cdot Q_{\mathrm{init}}\,f_Q(T)$\\[2pt]
     $0.890\times\,(0^\circ\mathrm{C}),\;\; 1.030\times\,(45^\circ\mathrm{C})$
 };
 
-\draw[arr, line width=0.85pt] (4.60, 12.27) -- (5.10, 12.27);
-\node[font=\fontsize{7.0}{8.0}\selectfont\bfseries] at (4.85, 12.52) {$T_k$};
-\draw[arr, line width=0.85pt] (9.32, 12.27) -- (9.82, 12.27);
-\node[font=\fontsize{7.0}{8.0}\selectfont\bfseries] at (9.57, 12.52) {$R_i$};
+\draw[arr, line width=0.85pt] (4.62, 12.27) -- (5.04, 12.27);
+\node[font=\fontsize{6.8}{7.8}\selectfont\bfseries] at (4.83, 12.52) {$T_k$};
+\draw[arr, line width=0.85pt] (9.36, 12.27) -- (9.78, 12.27);
+\node[font=\fontsize{6.8}{7.8}\selectfont\bfseries] at (9.57, 12.52) {$R_i$};
 
 \draw[arr, line width=0.85pt] (11.92, 11.38) -- (11.92, 10.98) -- (2.49, 10.98) -- (2.49, 11.38);
 \node[fill=anodebg, inner sep=2.0pt, font=\fontsize{7.0}{8.0}\selectfont\bfseries] at (7.20, 10.98)
@@ -351,71 +352,71 @@ def get_mechanism_tex(data):
 \coordinate (bot_l) at (15.86, 15.18);
 \coordinate (top_l) at (15.86, 18.78);
 
-\draw[line width=0.95pt] (bot_l) -- (15.86, 15.64);
-\filldraw[fill=hdrblue, draw=black, line width=0.9pt] (15.86, 16.16) circle (0.48cm);
-\node[font=\fontsize{7.8}{9.0}\selectfont\bfseries] at (15.86, 16.16) {$V_{\mathrm{ocv}}(z)$};
-\node[font=\fontsize{8.8}{9.8}\selectfont\bfseries] at (15.26, 16.50) {$+$};
-\node[font=\fontsize{8.8}{9.8}\selectfont\bfseries] at (15.26, 15.80) {$-$};
-\draw[line width=0.95pt] (15.86, 16.64) -- (15.86, 17.02);
+\draw[line width=0.95pt] (bot_l) -- (15.86, 15.55);
+\filldraw[fill=hdrblue, draw=black, line width=0.9pt] (15.86, 16.06) circle (0.51cm);
+\node[font=\fontsize{6.8}{7.8}\selectfont\bfseries] at (15.86, 16.06) {$V_{\mathrm{ocv}}(z)$};
+\node[font=\fontsize{8.4}{9.4}\selectfont\bfseries] at (15.22, 16.42) {$+$};
+\node[font=\fontsize{8.4}{9.4}\selectfont\bfseries] at (15.22, 15.70) {$-$};
+\draw[line width=0.95pt] (15.86, 16.57) -- (15.86, 16.91);
 
-% Diamond Dependent Hysteresis Voltage Source (widened cleanly so label sits strictly inside)
+% Diamond Dependent Hysteresis Voltage Source (generous inner padding around V_{h,k} & LFP!)
 \filldraw[fill=hdramber, draw=black, line width=0.85pt]
-    (15.86, 18.24) -- (16.64, 17.60) -- (15.86, 16.96) -- (15.08, 17.60) -- cycle;
-\node[align=center, font=\fontsize{6.6}{7.4}\selectfont\bfseries] at (15.86, 17.60) {$\pm V_{h,k}$\\[-2pt]\fontsize{5.6}{6.4}\selectfont (LFP)};
-\draw[line width=0.95pt] (15.86, 18.24) -- (top_l);
+    (15.86, 18.19) -- (16.62, 17.55) -- (15.86, 16.91) -- (15.10, 17.55) -- cycle;
+\node[align=center, inner sep=0.5pt, font=\fontsize{5.6}{6.4}\selectfont\bfseries] at (15.86, 17.55) {$\pm V_{h,k}$\\[1.2pt]\normalfont\fontsize{4.8}{5.5}\selectfont LFP};
+\draw[line width=0.95pt] (15.86, 18.19) -- (top_l);
 
-% R0(T, SOH) + DEKF pill cleanly placed UNDER R0 (completely eliminates top-label overlap!)
-\draw[line width=0.95pt] (top_l) -- (16.58, 18.78);
-\draw[resistor] (16.58, 18.78) -- (17.80, 18.78);
-\draw[line width=0.95pt] (17.80, 18.78) -- (18.42, 18.78);
-\filldraw[fill=black] (18.42, 18.78) circle (1.6pt);
-\node[font=\fontsize{7.5}{8.6}\selectfont\bfseries] at (17.19, 19.34) {$R_0(T,\mathrm{SOH})$};
-\node[draw=black, line width=0.5pt, fill=hdrblue, rounded corners=1.8pt, inner sep=1.6pt, font=\fontsize{6.5}{7.5}\selectfont\bfseries]
-    at (17.20, 17.98) {DEKF Tracks $\hat{R}_0$};
+% R0(T, SOH) + DEKF pill cleanly placed UNDER R0 (0.34 cm clear gap from diamond & RC1!)
+\draw[line width=0.95pt] (top_l) -- (17.20, 18.78);
+\draw[resistor] (17.20, 18.78) -- (18.40, 18.78);
+\draw[line width=0.95pt] (18.40, 18.78) -- (18.96, 18.78);
+\filldraw[fill=black] (18.96, 18.78) circle (1.6pt);
+\node[font=\fontsize{7.3}{8.4}\selectfont\bfseries] at (17.80, 19.34) {$R_0(T,\mathrm{SOH})$};
+\node[draw=black, line width=0.5pt, fill=hdrblue, rounded corners=1.8pt, inner sep=1.4pt, font=\fontsize{5.8}{6.8}\selectfont\bfseries]
+    at (17.80, 17.98) {DEKF Tracks $\hat{R}_0$};
 
-% RC1 Parallel Branch (Centered cleanly at x = 19.86)
-\draw[line width=0.9pt] (18.42, 18.08) -- (18.42, 19.48);
-\draw[line width=0.9pt] (21.30, 18.08) -- (21.30, 19.48);
-\filldraw[fill=black] (21.30, 18.78) circle (1.6pt);
-\draw[line width=0.9pt] (18.42, 19.48) -- (19.04, 19.48);
-\draw[resistor] (19.04, 19.48) -- (20.68, 19.48);
-\draw[line width=0.9pt] (20.68, 19.48) -- (21.30, 19.48);
-\node[font=\fontsize{7.4}{8.5}\selectfont\bfseries] at (19.86, 20.02) {$R_1$ (Charge Transfer)};
-\draw[line width=0.9pt] (18.42, 18.08) -- (19.72, 18.08);
-\draw[line width=1.35pt] (19.72, 17.80) -- (19.72, 18.36);
-\draw[line width=1.35pt] (20.00, 17.80) -- (20.00, 18.36);
-\draw[line width=0.9pt] (20.00, 18.08) -- (21.30, 18.08);
-\node[align=center, font=\fontsize{6.9}{8.0}\selectfont] at (19.86, 17.12)
+% RC1 Parallel Branch (Centered cleanly at x = 20.26)
+\draw[line width=0.9pt] (18.96, 18.08) -- (18.96, 19.48);
+\draw[line width=0.9pt] (21.56, 18.08) -- (21.56, 19.48);
+\filldraw[fill=black] (21.56, 18.78) circle (1.6pt);
+\draw[line width=0.9pt] (18.96, 19.48) -- (19.50, 19.48);
+\draw[resistor] (19.50, 19.48) -- (21.02, 19.48);
+\draw[line width=0.9pt] (21.02, 19.48) -- (21.56, 19.48);
+\node[font=\fontsize{6.8}{7.8}\selectfont\bfseries] at (20.26, 20.02) {$R_1$ (Charge-Transfer)};
+\draw[line width=0.9pt] (18.96, 18.08) -- (20.12, 18.08);
+\draw[line width=1.35pt] (20.12, 17.80) -- (20.12, 18.36);
+\draw[line width=1.35pt] (20.40, 17.80) -- (20.40, 18.36);
+\draw[line width=0.9pt] (20.40, 18.08) -- (21.56, 18.08);
+\node[align=center, font=\fontsize{6.5}{7.5}\selectfont] at (20.26, 17.12)
     {$C_1$ ($\tau_1 = 24.0 / 37.5\;\mathrm{s}$)\\[1pt]$+\;\; U_{1,k}\;\; -$};
 
-\draw[line width=0.95pt] (21.30, 18.78) -- (21.92, 18.78);
-\filldraw[fill=black] (21.92, 18.78) circle (1.6pt);
+\draw[line width=0.95pt] (21.56, 18.78) -- (22.02, 18.78);
+\filldraw[fill=black] (22.02, 18.78) circle (1.6pt);
 
-% RC2 Parallel Branch (Centered cleanly at x = 23.36 — 3.50 cm spacing!)
-\draw[line width=0.9pt] (21.92, 18.08) -- (21.92, 19.48);
-\draw[line width=0.9pt] (24.80, 18.08) -- (24.80, 19.48);
-\filldraw[fill=black] (24.80, 18.78) circle (1.6pt);
-\draw[line width=0.9pt] (21.92, 19.48) -- (22.54, 19.48);
-\draw[resistor] (22.54, 19.48) -- (24.18, 19.48);
-\draw[line width=0.9pt] (24.18, 19.48) -- (24.80, 19.48);
-\node[font=\fontsize{7.4}{8.5}\selectfont\bfseries] at (23.36, 20.02) {$R_2$ (Warburg Diffusion)};
-\draw[line width=0.9pt] (21.92, 18.08) -- (23.22, 18.08);
-\draw[line width=1.35pt] (23.22, 17.80) -- (23.22, 18.36);
-\draw[line width=1.35pt] (23.50, 17.80) -- (23.50, 18.36);
-\draw[line width=0.9pt] (23.50, 18.08) -- (24.80, 18.08);
-\node[align=center, font=\fontsize{6.9}{8.0}\selectfont] at (23.36, 17.12)
+% RC2 Parallel Branch (Centered cleanly at x = 23.38)
+\draw[line width=0.9pt] (22.02, 18.08) -- (22.02, 19.48);
+\draw[line width=0.9pt] (24.74, 18.08) -- (24.74, 19.48);
+\filldraw[fill=black] (24.74, 18.78) circle (1.6pt);
+\draw[line width=0.9pt] (22.02, 19.48) -- (22.62, 19.48);
+\draw[resistor] (22.62, 19.48) -- (24.14, 19.48);
+\draw[line width=0.9pt] (24.14, 19.48) -- (24.74, 19.48);
+\node[font=\fontsize{6.8}{7.8}\selectfont\bfseries] at (23.38, 20.02) {$R_2$ (Diffusion)};
+\draw[line width=0.9pt] (22.02, 18.08) -- (23.24, 18.08);
+\draw[line width=1.35pt] (23.24, 17.80) -- (23.24, 18.36);
+\draw[line width=1.35pt] (23.52, 17.80) -- (23.52, 18.36);
+\draw[line width=0.9pt] (23.52, 18.08) -- (24.74, 18.08);
+\node[align=center, font=\fontsize{6.5}{7.5}\selectfont] at (23.38, 17.12)
     {$C_2$ ($\tau_2 = 112.5 / 144.0\;\mathrm{s}$)\\[1pt]$+\;\; U_{2,k}\;\; -$};
 
 % Controlled Dependent Diamond Neural Source: delta V_{t,comp,k} (Centered cleanly at x = 26.40)
-\draw[line width=0.95pt] (24.80, 18.78) -- (25.44, 18.78);
+\draw[line width=0.95pt] (24.74, 18.78) -- (25.44, 18.78);
 \filldraw[fill=hdrgreen, draw=black, line width=0.9pt, drop shadow={opacity=0.07, shadow xshift=0.8pt, shadow yshift=-0.8pt}]
     (26.40, 19.48) -- (27.36, 18.78) -- (26.40, 18.08) -- (25.44, 18.78) -- cycle;
 \node[align=center, font=\fontsize{6.9}{8.0}\selectfont\bfseries] at (26.40, 18.78)
     {$\delta\hat{V}_{t,\mathrm{comp},k}$\\[-1pt]MLP};
-\node[font=\fontsize{8.0}{8.8}\selectfont\bfseries] at (25.34, 18.42) {$-$};
+\node[font=\fontsize{8.0}{8.8}\selectfont\bfseries] at (25.30, 18.42) {$-$};
 \node[font=\fontsize{8.0}{8.8}\selectfont\bfseries] at (27.44, 18.42) {$+$};
 \draw[darr, line width=0.75pt] (26.40, 19.92) -- (26.40, 19.48);
-\node[draw=black, line width=0.45pt, fill=white, rounded corners=1.5pt, inner sep=1.5pt, font=\fontsize{6.5}{7.5}\selectfont\bfseries]
+\node[draw=black, line width=0.45pt, fill=white, rounded corners=1.5pt, inner sep=1.4pt, font=\fontsize{6.2}{7.2}\selectfont\bfseries]
     at (26.40, 20.16) {Passivity: $I_k\cdot\delta\hat{V} \le 0$};
 \node[font=\fontsize{6.6}{7.6}\selectfont] at (26.40, 17.78) {$\mathcal{NN}(\mathbf{u}_k)$ Control};
 \draw[line width=0.95pt] (27.36, 18.78) -- (28.14, 18.78);
@@ -443,33 +444,33 @@ def get_mechanism_tex(data):
 \node[font=\fontsize{8.4}{9.6}\selectfont\bfseries] at (21.98, 13.54)
     {Observer Parameter Allocation \& Structural Identifiability Matrix};
 
-\filldraw[fill=anodebg, draw=black, line width=0.55pt] (14.98, 12.82) rectangle (18.18, 13.30);
-\filldraw[fill=anodebg, draw=black, line width=0.55pt] (18.18, 12.82) rectangle (24.12, 13.30);
-\filldraw[fill=anodebg, draw=black, line width=0.55pt] (24.12, 12.82) rectangle (28.98, 13.30);
-\node[font=\fontsize{7.2}{8.4}\selectfont\bfseries] at (16.58, 13.06) {Observer Class};
-\node[font=\fontsize{7.2}{8.4}\selectfont\bfseries] at (21.15, 13.06) {Online Parameter \& Residual Ownership};
-\node[font=\fontsize{7.2}{8.4}\selectfont\bfseries] at (26.55, 13.06) {Identifiability / Drift Impact};
+\filldraw[fill=anodebg, draw=black, line width=0.55pt] (14.98, 12.82) rectangle (18.02, 13.30);
+\filldraw[fill=anodebg, draw=black, line width=0.55pt] (18.02, 12.82) rectangle (24.44, 13.30);
+\filldraw[fill=anodebg, draw=black, line width=0.55pt] (24.44, 12.82) rectangle (28.98, 13.30);
+\node[font=\fontsize{6.6}{7.8}\selectfont\bfseries] at (16.50, 13.06) {Observer Class};
+\node[font=\fontsize{6.6}{7.8}\selectfont\bfseries] at (21.23, 13.06) {Online Parameter \& Residual Ownership};
+\node[font=\fontsize{6.6}{7.8}\selectfont\bfseries] at (26.71, 13.06) {Identifiability / Drift Impact};
 
-\draw[draw=black, line width=0.5pt] (14.98, 12.14) rectangle (18.18, 12.82);
-\draw[draw=black, line width=0.5pt] (18.18, 12.14) rectangle (24.12, 12.82);
-\draw[draw=black, line width=0.5pt] (24.12, 12.14) rectangle (28.98, 12.82);
-\node[align=center, font=\fontsize{6.6}{7.8}\selectfont\bfseries] at (16.58, 12.48) {Fixed-Prior Filters\\(EKF, AEKF, SMO)};
-\node[align=center, font=\fontsize{6.5}{7.7}\selectfont] at (21.15, 12.48) {Freeze fresh $(R_0, R_1, R_2, C_1, C_2, Q_{\mathrm{init}})$};
-\node[align=center, font=\fontsize{6.5}{7.7}\selectfont] at (26.55, 12.48) {$45.7\times$ EKF surge ($80\%$ SOH)};
+\draw[draw=black, line width=0.5pt] (14.98, 12.14) rectangle (18.02, 12.82);
+\draw[draw=black, line width=0.5pt] (18.02, 12.14) rectangle (24.44, 12.82);
+\draw[draw=black, line width=0.5pt] (24.44, 12.14) rectangle (28.98, 12.82);
+\node[align=center, font=\fontsize{6.4}{7.5}\selectfont\bfseries] at (16.50, 12.48) {Fixed-Prior Filters\\(EKF, AEKF, SMO)};
+\node[align=center, font=\fontsize{6.2}{7.4}\selectfont] at (21.23, 12.48) {Freeze fresh $(R_0, R_1, R_2, C_1, C_2, Q_{\mathrm{init}})$};
+\node[align=center, font=\fontsize{6.2}{7.4}\selectfont] at (26.71, 12.48) {$45.7\times$ EKF surge ($80\%$ SOH)};
 
-\filldraw[fill=nmcbg, draw=black, line width=0.5pt] (14.98, 11.45) rectangle (18.18, 12.14);
-\filldraw[fill=nmcbg, draw=black, line width=0.5pt] (18.18, 11.45) rectangle (24.12, 12.14);
-\filldraw[fill=nmcbg, draw=black, line width=0.5pt] (24.12, 11.45) rectangle (28.98, 12.14);
-\node[align=center, font=\fontsize{6.6}{7.8}\selectfont\bfseries] at (16.58, 11.795) {Dual EKF (DEKF)};
-\node[align=center, font=\fontsize{6.4}{7.6}\selectfont] at (21.15, 11.795) {Tracks $[\hat{R}_{0,k}, 1/\hat{Q}_{\mathrm{act},k}]^T$; freezes $R_{1,2}, C_{1,2}$};
-\node[align=center, font=\fontsize{6.5}{7.7}\selectfont] at (26.55, 11.795) {Avoids collinearity; leaves $V_{\mathrm{pol}}$ bias};
+\filldraw[fill=nmcbg, draw=black, line width=0.5pt] (14.98, 11.45) rectangle (18.02, 12.14);
+\filldraw[fill=nmcbg, draw=black, line width=0.5pt] (18.02, 11.45) rectangle (24.44, 12.14);
+\filldraw[fill=nmcbg, draw=black, line width=0.5pt] (24.44, 11.45) rectangle (28.98, 12.14);
+\node[align=center, font=\fontsize{6.4}{7.5}\selectfont\bfseries] at (16.50, 11.795) {Dual EKF (DEKF)};
+\node[align=center, font=\fontsize{6.2}{7.4}\selectfont] at (21.23, 11.795) {Tracks $[\hat{R}_{0,k}, 1/\hat{Q}_{\mathrm{act},k}]^T$; freezes $R_{1,2}, C_{1,2}$};
+\node[align=center, font=\fontsize{6.2}{7.4}\selectfont] at (26.71, 11.795) {Avoids collinearity; leaves $V_{\mathrm{pol}}$ bias};
 
-\filldraw[fill=lfpbg, draw=black, line width=0.6pt] (14.98, 10.76) rectangle (18.18, 11.45);
-\filldraw[fill=lfpbg, draw=black, line width=0.6pt] (18.18, 10.76) rectangle (24.12, 11.45);
-\filldraw[fill=lfpbg, draw=black, line width=0.6pt] (24.12, 10.76) rectangle (28.98, 11.45);
-\node[align=center, font=\fontsize{6.6}{7.8}\selectfont\bfseries] at (16.58, 11.105) {Hybrid PIDKF\\(Proposed)};
-\node[align=center, font=\fontsize{6.4}{7.6}\selectfont] at (21.15, 11.105) {DEKF tracks $(\hat{R}_{0,k}, \hat{Q}_{\mathrm{act},k})$ + $[16,8]$ MLP};
-\node[align=center, font=\fontsize{6.3}{7.4}\selectfont\bfseries] at (26.55, 11.105) {Unbiased $\delta V_{\mathrm{pol}}^*$ under BV passivity};
+\filldraw[fill=lfpbg, draw=black, line width=0.6pt] (14.98, 10.76) rectangle (18.02, 11.45);
+\filldraw[fill=lfpbg, draw=black, line width=0.6pt] (18.02, 10.76) rectangle (24.44, 11.45);
+\filldraw[fill=lfpbg, draw=black, line width=0.6pt] (24.44, 10.76) rectangle (28.98, 11.45);
+\node[align=center, font=\fontsize{6.4}{7.5}\selectfont\bfseries] at (16.50, 11.105) {Hybrid PIDKF\\(Proposed)};
+\node[align=center, font=\fontsize{6.2}{7.4}\selectfont] at (21.23, 11.105) {DEKF tracks $(\hat{R}_{0,k}, \hat{Q}_{\mathrm{act},k})$ + $[16,8]$ MLP};
+\node[align=center, font=\fontsize{6.1}{7.2}\selectfont\bfseries] at (26.71, 11.105) {Unbiased $\delta V_{\mathrm{pol}}^*$ under BV passivity};
 
 
 % =========================================================================
@@ -480,14 +481,15 @@ def get_mechanism_tex(data):
     {(c) Calibrated Open-Circuit Voltage \& LFP Hysteresis};
 
 \begin{axis}[
-    at={(1.56cm, 1.18cm)},
+    at={(1.68cm, 1.18cm)},
     anchor=south west,
-    width=12.50cm,
-    height=8.12cm,
+    scale only axis,
+    width=12.36cm,
+    height=8.02cm,
     xmin=0, xmax=100,
-    ymin=3.05, ymax=4.32,
-    ytick={3.2, 3.4, 3.6, 3.8, 4.0, 4.2},
-    yticklabels={3.2, 3.4, 3.6, 3.8, 4.0, 4.2},
+    ymin=2.75, ymax=4.35,
+    ytick={2.8, 3.0, 3.2, 3.4, 3.6, 3.8, 4.0, 4.2},
+    yticklabels={2.8, 3.0, 3.2, 3.4, 3.6, 3.8, 4.0, 4.2},
     xlabel={State of Charge, SOC (\%)},
     ylabel={Open-Circuit Potential, $V_{\mathrm{ocv}}$ (V)},
     xlabel style={font=\fontsize{9.2}{11}\selectfont\bfseries, text=black},
@@ -507,9 +509,9 @@ def get_mechanism_tex(data):
         row sep=1.4pt
     }
 ]
-    \fill[platshade] (axis cs:20, 3.05) rectangle (axis cs:80, 4.32);
-    \draw[densely dotted, black!65, line width=0.7pt] (axis cs:20, 3.05) -- (axis cs:20, 4.32);
-    \draw[densely dotted, black!65, line width=0.7pt] (axis cs:80, 3.05) -- (axis cs:80, 4.32);
+    \fill[platshade] (axis cs:20, 2.75) rectangle (axis cs:80, 4.35);
+    \draw[densely dotted, black!65, line width=0.7pt] (axis cs:20, 2.75) -- (axis cs:20, 4.35);
+    \draw[densely dotted, black!65, line width=0.7pt] (axis cs:80, 2.75) -- (axis cs:80, 4.35);
 
     \addplot[draw=lfpline!70, fill=green!22, line width=0.5pt] coordinates {
         """ + data["lfp_env_hi"] + " " + data["lfp_env_lo"] + r"""
@@ -528,25 +530,25 @@ def get_mechanism_tex(data):
 
     % Shifted comfortably up/left so ZERO intersection occurs with bottom-right inset!
     \node[draw=black, line width=0.6pt, fill=white, rounded corners=2pt, align=center, font=\fontsize{7.2}{8.5}\selectfont, inner sep=2.6pt]
-        (platbox) at (axis cs:33, 3.63) {
+        (platbox) at (axis cs:33, 3.68) {
             \textbf{Biphasic Plateau (20\%--80\% SOC)}\\
             $\mathrm{LiFePO_4 \leftrightarrow FePO_4}$ ($F' = C - P = 0$)\\
             Flat Slope $\approx 0.08\;\mathrm{V}$ ($0.8\;\mathrm{mV/\%}$)
         };
-    \draw[-{Latex[length=1.9mm]}, line width=0.9pt, draw=black] (platbox.south) -- (axis cs:33, 3.455);
+    \draw[-{Latex[length=1.9mm]}, line width=0.9pt, draw=black] (platbox.south) -- (axis cs:33, 3.44);
 \end{axis}
 
-% Authentic Eq. (15) Numerically Simulated Hysteresis Inset cleanly tucked at bottom-right (y <= 3.55 cm -> well BELOW platbox!)
+% Authentic Eq. (15) Hysteresis Inset strictly inside [1.68..14.04] x [1.18..9.20] and below LFP envelope!
 \filldraw[fill=white, draw=black, line width=0.7pt, rounded corners=2.5pt, drop shadow={opacity=0.07, shadow xshift=0.8pt, shadow yshift=-0.8pt}]
-    (7.58, 1.32) rectangle (13.94, 3.68);
-\node[font=\fontsize{7.1}{8.1}\selectfont\bfseries] at (10.76, 3.48)
+    (7.52, 1.32) rectangle (13.86, 3.58);
+\node[font=\fontsize{6.8}{7.8}\selectfont\bfseries] at (10.69, 3.39)
     {Eq.\ (15) Hysteresis Loop ($\beta = 45$)};
 
 \begin{axis}[
-    at={(8.58cm, 1.66cm)},
+    at={(8.46cm, 1.66cm)},
     anchor=south west,
-    width=5.02cm,
-    height=1.56cm,
+    width=5.12cm,
+    height=1.46cm,
     scale only axis,
     xmin=35, xmax=65,
     ymin=-38, ymax=38,
@@ -574,10 +576,10 @@ def get_mechanism_tex(data):
     \addplot[color=lfpderiv, line width=1.3pt, dashed] coordinates {
         """ + data["vh_dis"] + r"""
     };
-    \draw[-{Latex[length=1.4mm]}, line width=0.75pt, draw=nmcline] (axis cs:43, 18.5) -- (axis cs:51, 27.0);
-    \draw[-{Latex[length=1.4mm]}, line width=0.75pt, draw=lfpderiv] (axis cs:57, -18.5) -- (axis cs:49, -27.0);
-    \node[font=\fontsize{6.0}{6.8}\selectfont\bfseries, anchor=west] at (axis cs:49.5, 22) {Charge};
-    \node[font=\fontsize{6.0}{6.8}\selectfont\bfseries, anchor=east] at (axis cs:50.5, -22) {Discharge};
+    \draw[-{Latex[length=1.4mm]}, line width=0.75pt, draw=nmcline] (axis cs:41.5, 16.5) -- (axis cs:49.5, 25.5);
+    \draw[-{Latex[length=1.4mm]}, line width=0.75pt, draw=lfpderiv] (axis cs:58.5, -16.5) -- (axis cs:50.5, -25.5);
+    \node[font=\fontsize{5.9}{6.7}\selectfont\bfseries, anchor=west] at (axis cs:51.5, 13.0) {Charge};
+    \node[font=\fontsize{5.9}{6.7}\selectfont\bfseries, anchor=east] at (axis cs:48.5, -13.0) {Discharge};
 \end{axis}
 
 
@@ -589,10 +591,11 @@ def get_mechanism_tex(data):
     {(d) Analytical Observability Slope $dV_{\mathrm{ocv}}/dz$ \& Condition Surge};
 
 \begin{axis}[
-    at={(16.40cm, 1.18cm)},
+    at={(16.50cm, 1.18cm)},
     anchor=south west,
-    width=12.46cm,
-    height=8.12cm,
+    scale only axis,
+    width=12.34cm,
+    height=8.02cm,
     ymode=log,
     xmin=0, xmax=100,
     ymin=0.0018, ymax=9.5,
@@ -637,8 +640,8 @@ def get_mechanism_tex(data):
         (axis cs:50, 0.072) -- (axis cs:50, 0.675);
 
     \node[draw=black, line width=0.6pt, fill=white, rounded corners=2pt, inner sep=2.4pt, align=center, font=\fontsize{6.9}{8.2}\selectfont\bfseries]
-        (gapbox) at (axis cs:65.5, 0.25) {Plateau Collapse (@ 50\%)\\$0.743 \to 0.065\;\mathrm{V}$ ($11.5\times$)\\(Mean $V_{\mathrm{ocv}}' \approx 0.08\;\mathrm{V}$)};
-    \draw[-{Latex[length=1.7mm]}, line width=0.8pt, draw=black] (gapbox.west) -- (axis cs:50.6, 0.25);
+        (gapbox) at (axis cs:68.5, 0.27) {Plateau Collapse (@ 50\%)\\$0.743 \to 0.065\;\mathrm{V}$ ($11.5\times$)\\(Mean $V_{\mathrm{ocv}}' \approx 0.08\;\mathrm{V}$)};
+    \draw[-{Latex[length=1.7mm]}, line width=0.8pt, draw=black] (gapbox.west) -- (axis cs:50.8, 0.27);
 
     \filldraw[fill=lfpderiv, draw=black, line width=0.55pt] (axis cs:12, 0.00278) circle (2.3pt);
     \node[draw=black, line width=0.55pt, fill=white, rounded corners=1.8pt, inner sep=2.2pt, align=left, font=\fontsize{7.0}{8.2}\selectfont\bfseries, anchor=west]
@@ -1184,9 +1187,15 @@ def compile_vector_and_png(tex_str, basename, folders, dpi=600):
     with open(tex_path, "w", encoding="utf-8") as f:
         f.write(tex_str)
 
+    import time
     cmd = [PDFLATEX, "-interaction=nonstopmode", f"{basename}.tex"]
-    res = subprocess.run(cmd, cwd=work_dir, capture_output=True, text=True)
-    if res.returncode != 0 or not os.path.exists(pdf_path):
+    for attempt in range(4):
+        res = subprocess.run(cmd, cwd=work_dir, capture_output=True, text=True)
+        if res.returncode == 0 and os.path.exists(pdf_path):
+            break
+        if attempt < 3 and "can't write on file" in res.stdout:
+            time.sleep(0.6)
+            continue
         print(res.stdout[-2500:])
         print(res.stderr[-2500:])
         raise RuntimeError(f"Failed to compile {tex_path}")
@@ -1229,10 +1238,19 @@ def compile_vector_and_png(tex_str, basename, folders, dpi=600):
         if os.path.exists(p):
             os.remove(p)
 
+    import time
     for folder in folders[1:]:
         os.makedirs(folder, exist_ok=True)
-        shutil.copy2(pdf_path, os.path.join(folder, f"{basename}.pdf"))
-        shutil.copy2(png_path, os.path.join(folder, f"{basename}.png"))
+        for src_p, ext in [(pdf_path, "pdf"), (png_path, "png")]:
+            dst_p = os.path.join(folder, f"{basename}.{ext}")
+            for attempt in range(5):
+                try:
+                    shutil.copy2(src_p, dst_p)
+                    break
+                except OSError:
+                    if attempt == 4:
+                        raise
+                    time.sleep(0.4)
         print(f"Copied vector PDF & 600-DPI PNG for {basename} to {folder}/")
 
     print(f"Built vector {pdf_path} & 600-DPI {png_path}")

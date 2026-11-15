@@ -59,8 +59,8 @@ def plot_tracking_and_errors(data, results, save_path="../results/fig1_udds_trac
     ax1.set_title(r"(a) SOC Tracking under Dynamic UDDS Cycle ($25^\circ\mathrm{C}$, SOH $= 100\%$)", loc="left", fontweight="bold")
     ax1.grid(True)
     ax1.set_xlim(0.0, 60.5)
-    ax1.set_ylim(76.5, 100.5)
-    style_legend(ax1.legend(handles_a, labels_a, loc="lower left", ncol=4, fontsize=7.6, columnspacing=1.0, handlelength=1.8))
+    ax1.set_ylim(71.5, 101.8)
+    style_legend(ax1.legend(handles_a, labels_a, loc="lower left", ncol=4, fontsize=7.3, columnspacing=0.95, handlelength=1.65))
 
     # Panel (b): Error Residuals
     band = ax2.axhspan(-2.0, 2.0, color="#16A34A", alpha=0.075, label=r"$\pm 2\%$ Corridor", zorder=0)
@@ -82,19 +82,21 @@ def plot_tracking_and_errors(data, results, save_path="../results/fig1_udds_trac
             zorder=2 if is_dl else 5,
         )
 
-    # Embedded zoom inset in quiet upper-left window highlighting sub-1% Kalman precision
-    axins = add_zoom_inset(ax2, [0.055, 0.56, 0.34, 0.38], xlim=(14.0, 22.0), ylim=(-1.75, 2.25), loc1=3, loc2=4)
+    # Embedded zoom inset in quiet upper-left window + top-right legend completely above +7.3% peaks
+    axins = add_zoom_inset(ax2, [0.055, 0.56, 0.32, 0.37], xlim=(14.0, 22.0), ylim=(-1.75, 2.25), loc1=3, loc2=4)
     axins.axhspan(-1.75, 2.0, color="#16A34A", alpha=0.06, zorder=0)
     axins.axhline(0.0, color="#111827", linestyle="--", linewidth=0.6)
     for name in ["SMO", "AEKF", "DEKF", "EKF"]:
         if name in results:
             err = (results[name]["soc_est"] - data["soc_true"]) * 100.0
             axins.plot(time_min, err, color=PALETTE[name], linewidth=1.15 if name != "SMO" else 0.75, alpha=0.55 if name == "SMO" else 0.90)
+    axins.set_xticks([15, 18, 21])
+    axins.set_yticks([-1, 0, 1])
     axins.text(
-        0.5, 0.88, r"Sub-2% Regime (14–22 min)",
+        0.5, 0.87, r"Sub-2% Regime (14–22 min)",
         transform=axins.transAxes, ha="center", va="center",
-        fontsize=6.4, fontweight="bold", color="#1E293B",
-        bbox=dict(boxstyle="round,pad=0.14", facecolor="white", edgecolor="#CBD5E1", alpha=0.95, lw=0.5),
+        fontsize=6.2, fontweight="bold", color="#1E293B",
+        bbox=dict(boxstyle="round,pad=0.13", facecolor="white", edgecolor="#CBD5E1", alpha=0.95, lw=0.5),
     )
 
     ax2.set_xlabel("Time (minutes)")
@@ -102,8 +104,8 @@ def plot_tracking_and_errors(data, results, save_path="../results/fig1_udds_trac
     ax2.set_title(r"(b) Estimation Error Residuals ($e_k = \hat{s}_k - s_k$) & RMSE Summary", loc="left", fontweight="bold")
     ax2.grid(True)
     ax2.set_xlim(0.0, 60.5)
-    ax2.set_ylim(-7.8, 12.6)
-    style_legend(ax2.legend(loc="upper right", ncol=2, fontsize=7.3, columnspacing=0.9, handlelength=1.5))
+    ax2.set_ylim(-7.8, 15.2)
+    style_legend(ax2.legend(loc="upper right", ncol=3, fontsize=6.75, columnspacing=0.75, handlelength=1.35))
 
     save_pub_figure(fig, save_path)
     print(f"[Visualizer] Saved Fig 1 (PNG 600 DPI + PDF) to {save_path}")
