@@ -67,7 +67,7 @@ Reliable state-of-charge (SOC) estimation is foundational to battery management 
 \entry{$R_{\text{ohm}}, R_{\text{ct}}, R_{\text{sei}}$}{metallic ohmic, charge-transfer, and solid-electrolyte interphase (SEI) resistances ($\Omega$)}
 \entry{$S_k, \mathbf{x}_k, y_k$}{sliding manifold, state vector, and scalar terminal voltage observation}
 \entry{$T, T_{\text{amb}}$}{battery core temperature and ambient temperature ($\text{K}$ or $^\circ\text{C}$)}
-\entry{$U_1, U_2, \delta V_{\text{pol}}$}{resistor--capacitor (RC) overpotentials and unmodeled polarization residual ($\text{V}$)}
+\entry{$U_1, U_2, \delta V_{\text{pol},k}^*$}{resistor--capacitor (RC) overpotentials and unmodeled polarization residual ($\text{V}$)}
 \entry{$V_t, V_k, V_{\text{ocv}}, V_{\text{pol}}^{\max}$}{terminal voltage, sampled voltage, open-circuit voltage (OCV), and polarization bound ($\text{V}$)}
 \entry{$\mathbf{w}_k, v_k$}{discrete process noise vector and scalar voltage measurement noise}
 \entry{$z, Z(j\omega), Z_w$}{normalized state-of-charge ($\text{SOC} \in [0, 1]$), electrochemical impedance, and Warburg impedance ($\Omega$)}
@@ -78,7 +78,7 @@ Reliable state-of-charge (SOC) estimation is foundational to battery management 
 \entry{$\gamma(\hat{z}), \Phi_d$}{effective sliding manifold injection gain and bounded disturbance limit ($\text{V}$)}
 \entry{$\Delta t, \mu$}{discrete sampling interval ($1.0\;\text{s}$) and sliding mode boundary layer thickness ($\text{V}$)}
 \entry{$\eta, \kappa$}{Faradaic coulombic efficiency and matrix condition number}
-\entry{$\kappa_0, \kappa_1$}{Butler-Volmer neural overpotential envelope bound coefficients}
+\entry{$\kappa_0, \kappa_1$}{Butler--Volmer neural overpotential envelope bound coefficients}
 \entry{$\tau_1, \tau_2$}{electrochemical polarization time constants ($\tau_i = R_i C_i$, $\text{s}$)}
 \entry{$\boldsymbol{\theta}_k$}{parameter state vector in Dual Extended Kalman Filter ($[R_{0,k}, 1/Q_{\text{act},k}]^T$)}
 
@@ -108,7 +108,7 @@ Through this comparative investigation, we demonstrate why fixed-parameter filte
 \section{Electrochemical Battery Modeling and Degradation Dynamics}
 
 \subsection{Second-Order Dual Polarization (2-RC) Model Formulation}
-The electrical response of a lithium-ion cell is modeled using a second-order Dual Polarization equivalent circuit, widely recognized as an effective compromise between physical fidelity and real-time tractability~\cite{Hu2012ecm,Xiong2014}. The circuit couples an open-circuit voltage source $V_{\text{ocv}}(\text{SOC})$ in series with an effective ohmic resistance $R_0$ and two parallel resistor--capacitor ($R_i \parallel C_i$, $i \in \{1, 2\}$) branches representing fast interfacial charge-transfer kinetics and slower solid-state lithium diffusion, respectively:
+The electrical response of a lithium-ion cell is modeled using a second-order Dual Polarization equivalent circuit, widely recognized as an effective compromise between physical fidelity and real-time tractability~\cite{Hu2012ecm,Xiong2014}. The circuit couples an open-circuit voltage source $V_{\text{ocv}}(\text{SOC})$ in series with an effective ohmic series resistance $R_0 = R_{\text{ohm}} + R_{\text{sei}}$ (combining metallic ohmic resistance $R_{\text{ohm}}$ and SEI film resistance $R_{\text{sei}}$) and two parallel resistor--capacitor ($R_i \parallel C_i$, $i \in \{1, 2\}$) branches representing fast interfacial charge-transfer kinetics and slower solid-state lithium diffusion, respectively:
 \begin{align}
 \frac{d\,\text{SOC}(t)}{dt} &= -\frac{\eta(T)}{3600\,Q_{\text{act}}}\,I(t), \label{eqn:soc_diff}\\
 \frac{d U_1(t)}{dt} &= -\frac{U_1(t)}{R_1 C_1} + \frac{I(t)}{C_1}, \quad \frac{d U_2(t)}{dt} = -\frac{U_2(t)}{R_2 C_2} + \frac{I(t)}{C_2}, \label{eqn:u12_diff}
@@ -162,7 +162,7 @@ where $\kappa_{R_i}$ are resistance degradation sensitivity factors, $f_Q(T)$ ca
 
 Crucially, we enforce a strict structural parameter allocation between the physical battery plant and the compared estimators. Whereas aging modulates every circuit parameter in the plant, fixed-parameter observers (EKF, AEKF, SMO) lock parameters at nominal fresh values to expose degradation drift. Conversely, DEKF tracks only the orthogonal parameter vector $\hat{\boldsymbol{\theta}}_k = [\hat{R}_{0,k}, 1/\hat{Q}_{\text{act},k}]^T$ while freezing the RC branches to avoid parameter collinearity; the resulting unmodeled polarization mismatch $\delta V_{\text{pol},k}^*$ between plant states $U_{i,k}^{\text{plant}}$ and fixed-RC model states $\hat{U}_{i,k}^{\text{ECM}}$ is precisely what the proposed PIDKF compensates online.
 
-\subsection{OCV-SOC Monotonicity and Dynamic Hysteresis}
+\subsection{OCV--SOC Monotonicity and Dynamic Hysteresis}
 To preclude spurious local extrema in gradient-based observers, the NMC open-circuit potential $V_{\text{ocv}}(z)$ is calibrated as a strictly monotonic fifth-order polynomial:
 \begin{equation}\label{eqn:ocv_poly}
 V_{\text{ocv}}(z) = p_5 z^5 + p_4 z^4 + p_3 z^3 + p_2 z^2 + p_1 z + p_0,
@@ -195,7 +195,7 @@ Terminal voltage becomes:
 \begin{equation}\label{eqn:vt_lfp}
 V_{t,k} = V_{\text{ocv}}(\text{SOC}_k) - V_{h,k} - U_{1,k} - U_{2,k} - I_k R_0 + v_k,
 \end{equation}
-and the augmented local observability determinant expands to:
+and over short frozen-coefficient windows ($a_h \equiv a_{h,k}$), the augmented local observability determinant expands to:
 \begin{equation}\label{eqn:det_obs_lfp}
 |\det(\mathcal{O}_{4,k})| = V_{\text{ocv}}'(z_k)(1 - a_h)|a_1 - a_2|\prod_{i=1}^2 (1 - a_i)|a_i - a_h|.
 \end{equation}
@@ -235,7 +235,7 @@ where $\mathbf{P}_k^-$ and $\mathbf{P}_k^+$ denote the \emph{a priori} and \emph
 \subsection{Adaptive Extended Kalman Filter (AEKF)}
 Fixed noise covariances degrade accuracy whenever sensor noise or unmodeled polarization shifts across regimes. The AEKF augments EKF with a Sage--Husa (SH) online adaptive noise estimator~\cite{Han2019aekf}:
 \begin{align}
-\hat{r}_k &= (1 - d_k)\hat{r}_{k-1} + d_k \left( V_k - \hat{V}_k^- \right), \label{eqn:sh_mean}\\
+\hat{r}_k &= (1 - d_k)\hat{r}_{k-1} + d_k \left( V_k - \hat{V}_{t,k}^- \right), \label{eqn:sh_mean}\\
 \hat{R}_{v,k} &= (1 - d_k)\hat{R}_{v,k-1} + d_k \left( e_k^2 - \mathbf{H}_k \mathbf{P}_k^- \mathbf{H}_k^T \right), \label{eqn:sh_meas_cov}
 \end{align}
 where $\hat{r}_k$ is the estimated innovation bias, $\hat{R}_{v,k}$ is the adaptive scalar measurement noise variance, and $d_k$ is an exponential weighting sequence controlled by forgetting factor $\lambda_{\text{SH}}$ (Appendix~\ref{app:parameters}). Because process covariance $\mathbf{Q}$ and measurement variance $R_v$ cannot both be uniquely identified from a single scalar innovation sequence, $\mathbf{Q}$ remains fixed at its calibrated baseline while $\hat{R}_{v,k}$ is projected onto a strictly positive lower variance floor $R_{v,\min} > 0$ to preserve positive-definiteness.
@@ -261,7 +261,7 @@ with continuous saturation function $\operatorname{sat}(\cdot)$ and scheduled st
 \begin{equation}
 \mathbf{L}(\hat{z}) = \left[\frac{l_{\text{smo}}}{\max(\alpha_{\min}, V_{\text{ocv}}^\prime(\hat{z}))},\, 0,\, 0,\, (0)\right]^T,
 \end{equation}
-where $l_{\text{smo}}$ is the scalar injection gain and $\alpha_{\min}$ is the minimum derivative regularization threshold (Appendix~\ref{app:parameters}). Whenever $V_{\text{ocv}}^\prime(\hat{z}) \ge \alpha_{\min}$, the effective manifold gain $\gamma(\hat{z}) \equiv \mathbf{H}_k\mathbf{L}(\hat{z}) = l_{\text{smo}}$ strictly exceeds the nominal disturbance bound $\Phi_d$, while setting polarization and hysteresis injection gains to zero ($l_2 = l_3 = l_h = 0$) lets internal overpotentials evolve along passive dissipative dynamics without chattering (discrete quasi-sliding mode proof in Appendix~\ref{app:lyapunov}).
+where $l_{\text{smo}}$ is the scalar injection gain, $\alpha_{\min}$ is the minimum derivative regularization threshold, and the parenthesized fourth entry applies to the four-state LFP model (Appendix~\ref{app:parameters}). Whenever $V_{\text{ocv}}^\prime(\hat{z}) \ge \alpha_{\min}$, the effective manifold gain $\gamma(\hat{z}) \equiv \mathbf{H}_k\mathbf{L}(\hat{z}) = l_{\text{smo}}$ strictly exceeds the nominal disturbance bound $\Phi_d$, while setting polarization and hysteresis injection gains to zero ($l_2 = l_3 = l_h = 0$) lets internal overpotentials evolve along passive dissipative dynamics without chattering (discrete quasi-sliding mode proof in Appendix~\ref{app:lyapunov}).
 
 \subsection{Bidirectional LSTM with Self-Attention (BiLSTM-Attn)}
 As the data-driven sequence baseline, BiLSTM-Attn maps a causal sliding window of current, voltage, and temperature measurements:
@@ -331,7 +331,7 @@ Thus, even when observability vanishes temporarily at rest, any initialization o
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.98\textwidth]{fig0_pidkf_framework.pdf}
-\caption{Proposed hybrid PIDKF architecture and 10-phase benchmarking framework: (a)~closed-loop interaction between the Dual EKF state/parameter backbone, the compact $[16, 8]$ neural overpotential compensator, dissipative Butler--Volmer passivity projection ($I_k \cdot \delta\hat{V}_{t,\text{comp},k} \le 0$), and exogenous Jacobian sensitivity decoupling; and (b)~strict cell-batch validation split (Batch~A $\perp$ Batch~B), 8-estimator benchmark taxonomy, bare-metal STM32F407VG (ARM Cortex-M4 with floating-point unit, Cortex-M4F) deployment, and the 10 experimental evaluation phases.\label{fig:0_framework}}
+\caption{Proposed hybrid PIDKF architecture and 10-phase benchmarking framework: (a)~closed-loop interaction between the Dual EKF state/parameter backbone, the compact $[16, 8]$ neural overpotential compensator, dissipative Butler--Volmer passivity projection ($I_k \cdot \delta\hat{V}_{t,\text{comp},k} \le 0$), and exogenous Jacobian sensitivity decoupling; and (b)~strict cell-batch validation split (disjoint Batch~A and Batch~B), 8-estimator benchmark taxonomy, bare-metal STM32F407VG (ARM Cortex-M4 with floating-point unit, Cortex-M4F) deployment, and the 10 experimental evaluation phases.\label{fig:0_framework}}
 \end{figure}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Experimental Benchmarking Platform and Methodology\label{sec:exp_setup}}
@@ -388,7 +388,7 @@ PINN-SOC & 2.781 & 2.278 & 7.317 \\
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.88\linewidth]{fig1_udds_tracking_errors.pdf}
-\caption{Dynamic SOC tracking and error comparison across 6 algorithms under a 60-min continuous concatenated UDDS schedule ($3600\text{ s}$) at $25^\circ\text{C}$ and $100\%$ SOH\label{fig:udds}}
+\caption{Dynamic SOC tracking and error comparison across 6 algorithms under a 60-min continuous concatenated UDDS schedule ($3600\text{ s}$) at $25^\circ\text{C}$ and $100\%$ SOH.\label{fig:udds}}
 \end{figure}
 
 \subsection[Phase 2: Progressive Aging Degradation]{Phase 2: Progressive Aging Degradation ($100\% \rightarrow 80\%$ SOH)}
@@ -399,13 +399,13 @@ As capacity fades from $100\%$ to $80\%$ SOH, fixed-parameter EKF suffers a \tex
 Conversely, DEKF continuously co-estimates $\hat{R}_0$ and $\hat{Q}_{\text{act}}$ online, confining severely aged RMSE below $0.6\%$. Standalone PINN-SOC and BiLSTM-Attn exhibit lower relative aging sensitivity (ASF) than fixed filters, but their absolute errors still climb substantially under uncompensated impedance growth.
 
 \begin{table}[htbp]
-\caption{Degradation benchmark across progressive SOH stages [Tier~2 Calibrated Co-Simulation, anchored to Tier~1 RPT checkpoints at $100\%, 90\%, 80\%$ SOH; $95\%, 85\%$ SOH evaluated via Eq.~\eqref{eqn:aging_q}--\eqref{eqn:aging_r1}]\label{tab:2_aging}}
+\caption{Degradation benchmark across progressive SOH stages [Tier~2 Calibrated Co-Simulation, anchored to Tier~1 RPT checkpoints at $100\%, 90\%, 80\%$ SOH; $95\%, 85\%$ SOH evaluated via Eqs.~\eqref{eqn:aging_r0}--\eqref{eqn:aging_q}].\label{tab:2_aging}}
 \centering{%
-\renewcommand{\arraystretch}{1.25}%
-\resizebox{\linewidth}{!}{%
-\begin{tabular}{lcccccc}
+\small\renewcommand{\arraystretch}{1.25}%
+\setlength{\tabcolsep}{3pt}
+\begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccccc}
 \toprule
-Algorithm & SOH 100\% & SOH 95\% & SOH 90\% & SOH 85\% & SOH 80\% & \shortstack{Aging Sensitivity\\Factor (ASF)} \\
+Algorithm & SOH 100\% & SOH 95\% & SOH 90\% & SOH 85\% & SOH 80\% & ASF (\%) \\
 \midrule
 EKF & \textbf{0.065\%} & 0.553\% & 1.189\% & 1.988\% & 2.973\% & +4473.8\% \\
 AEKF & 0.759\% & 0.523\% & 1.675\% & 3.834\% & 5.406\% & +612.3\% \\
@@ -414,15 +414,14 @@ SMO & 0.941\% & 1.745\% & 3.002\% & 4.254\% & 5.428\% & +476.8\% \\
 BiLSTM-Attn & 2.813\% & 2.917\% & 3.405\% & 4.202\% & 5.128\% & +82.3\% \\
 PINN-SOC & 2.781\% & 3.081\% & 3.551\% & 4.177\% & 4.911\% & +76.6\% \\
 \bottomrule
-\end{tabular}%
-}%
+\end{tabular*}%
 }%
 \end{table}
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.88\linewidth]{fig2_aging_degradation.pdf}
-\caption{Evolution of SOC estimation error as battery SOH degrades from $100\%$ down to $80\%$, illustrating the 45-fold accuracy degradation of standard EKF versus the resilience of DEKF\label{fig:aging}}
+\caption{Evolution of SOC estimation error as battery SOH degrades from $100\%$ down to $80\%$, illustrating the 45-fold accuracy degradation of standard EKF versus the resilience of DEKF.\label{fig:aging}}
 \end{figure}
 
 \subsection[Phase 3: Thermal Robustness Across Wide Environmental Regimes (0 to 45 deg C)]{Phase 3: Thermal Robustness Across Wide Environmental Regimes ($0^\circ\text{C}$ to $45^\circ\text{C}$)}
@@ -433,7 +432,7 @@ At $0^\circ\text{C}$, sluggish $\text{Li}^+$ desolvation expands charge-transfer
 This cold-weather vulnerability directly motivates the proposed PIDKF, whose neural compensator absorbs cold charge-transfer overpotentials to sharply reduce aged cold-climate error across both chemistries (Table~\ref{tab:9_pidkf}). Meanwhile, pure data-driven BiLSTM-Attn and PINN-SOC suffer severe out-of-distribution drift at both $0^\circ\text{C}$ and $45^\circ\text{C}$, whereas SMO maintains strong thermal invariance across all ambient temperatures via discontinuous manifold clamping.
 
 \begin{table}[htbp]
-\caption{Thermal robustness comparison across ambient temperatures [Tier~1 Experimental Cycler Data] (RMSE in \%)\label{tab:3_thermal}}
+\caption{Thermal robustness comparison across ambient temperatures [Tier~1 Experimental Cycler Data] (RMSE in \%).\label{tab:3_thermal}}
 \centering{%
 \renewcommand{\arraystretch}{1.25}%
 \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lccc}
@@ -454,7 +453,7 @@ PINN-SOC & 6.307 & 2.781 & 9.644 \\
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.88\linewidth]{fig3_thermal_robustness.pdf}
-\caption{Algorithmic tracking performance under cold ($0^\circ\text{C}$), nominal ($25^\circ\text{C}$), and elevated ($45^\circ\text{C}$) ambient temperatures\label{fig:thermal}}
+\caption{Algorithmic tracking performance under cold ($0^\circ\text{C}$), nominal ($25^\circ\text{C}$), and elevated ($45^\circ\text{C}$) ambient temperatures.\label{fig:thermal}}
 \end{figure}
 
 \subsection[Phase 4: Convergence Under Large Initial State Uncertainty]{Phase 4: Convergence Under Large Initial State Uncertainty ($\Delta\text{SOC}_0 = -40\%$)}
@@ -463,7 +462,7 @@ In real-world BMS operation, initialization errors arise from prolonged parking,
 Under this offset, EKF and AEKF converge within seconds into both the $\le 2\%$ tolerance band and $\le 5\%$ operational corridor via large initial innovation gains (Table~\ref{tab:4_conv}, Fig.~\ref{fig:conv}). SMO enters the tolerances rapidly but exits the $5\%$ corridor during subsequent high-rate pulses ($t_{\text{settle}}^{(5\%)} =$ not applicable [N/A]), whereas BiLSTM-Attn must flush its full historical input buffer before stabilizing. For DEKF, large initial voltage innovation transiently perturbs parameter adaptation and prolongs permanent settling, while memoryless feedforward PINN-SOC inference exhibits no recursive settling trajectory ($t_{\text{reach}}^{(2\%)} = \text{N/A}$).
 
 \begin{table}[htbp]
-\caption{Convergence metrics under initial state uncertainty [Tier~2 Co-Simulation] ($-40\%$ initial SOC error into $\le 2\%$ tolerance band and $\le 5\%$ operational corridor)\label{tab:4_conv}}
+\caption{Convergence metrics under initial state uncertainty [Tier~2 Co-Simulation] ($-40\%$ initial SOC error into $\le 2\%$ tolerance band and $\le 5\%$ operational corridor).\label{tab:4_conv}}
 \centering{%
 \small\renewcommand{\arraystretch}{1.25}
 \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccc}
@@ -486,7 +485,7 @@ PINN-SOC & N/A$^*$ & N/A$^*$ & 2.229 & 6.84 \\
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.88\linewidth]{fig4_initial_error_convergence.pdf}
-\caption{Transient convergence trajectories from a $-40\%$ initial SOC estimation error across the $0\text{--}800\text{ s}$ window\label{fig:conv}}
+\caption{Transient convergence trajectories from a $-40\%$ initial SOC estimation error across the $0\text{--}800\text{ s}$ window.\label{fig:conv}}
 \end{figure}
 
 \subsection{Phase 5: Multi-Attribute Radar Trade-Off and Pareto Analysis}
@@ -495,7 +494,7 @@ Figure~\ref{fig:radar} synthesizes algorithmic trade-offs across 5 normalized di
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.88\linewidth]{fig5_radar_tradeoff.pdf}
-\caption{Multi-attribute radar comparison across 5 engineering dimensions illustrating algorithmic trade-offs\label{fig:radar}}
+\caption{Multi-attribute radar comparison across 5 engineering dimensions illustrating algorithmic trade-offs.\label{fig:radar}}
 \end{figure}
 
 \subsection[Phase 6: Multi-Chemistry Generalization: LiFePO4 (LFP) Flat Plateau]{Phase 6: Multi-Chemistry Generalization: $\text{LiFePO}_4$ (LFP) Flat Plateau}
@@ -504,7 +503,7 @@ Figure~\ref{fig:lfp} and Table~\ref{tab:5_lfp} evaluate estimation performance o
 Incorporating dynamic hysteresis transforms this observability landscape. Whereas a three-state model loses practical observability across the plateau, coupling the hysteresis state under bidirectional current reversals provides an effective switching slope across the loop that maintains a strictly positive-definite LTV observability Gramian, enabling DEKF to achieve sub-percent tracking as the strongest classical LFP estimator (conversely, purely unidirectional current saturates hysteresis and reverts toward open-loop integration). Equally important, because the capacity-sensitivity Jacobian in Eq.~\eqref{eqn:dekf_param_jacobian} scales linearly with $V_{\text{ocv}}'(\hat{z}_k^+)$, $Q_{\text{act}}$ adaptation automatically freezes across the flat plateau and concentrates parameter updates strictly within the steep upper and lower knees, while rest intervals apply innovation gating ($\mathbf{K}_k = \mathbf{0}, \mathbf{K}_{\theta,k} = \mathbf{0}$) to preserve stability. Meanwhile, standalone neural networks suffer substantial zero-shot transfer errors across chemistries due to unmodeled hysteresis, though chemistry-specific retraining restores accuracy below $2\%$ RMSE.
 
 \begin{table}[htbp]
-\caption{Cross-Chemistry Benchmark Comparing NMC and $\text{LiFePO}_4$ [Tier~1 Experimental Data; ZS: zero-shot, Ret.: retrained, Max: MaxE]\label{tab:5_lfp}}
+\caption{Cross-Chemistry Benchmark Comparing NMC and $\text{LiFePO}_4$ [Tier~1 Experimental Data; ZS: zero-shot, Ret.: retrained, Max: MaxE].\label{tab:5_lfp}}
 \centering{%
 \small\renewcommand{\arraystretch}{1.25}
 \setlength{\tabcolsep}{1.8pt}
@@ -526,7 +525,7 @@ PINN-SOC & 2.781\% & 4.872\% (Max 8.74\%) & \textbf{1.720\%} (Max 3.48\%) & +75.
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.88\linewidth]{fig6_lfp_plateau_tracking.pdf}
-\caption{Estimation performance on $\text{LiFePO}_4$ (LFP) chemistry over the flat voltage plateau where $d V_{\text{ocv}}/d\text{SOC} \approx 0$\label{fig:lfp}}
+\caption{Estimation performance on $\text{LiFePO}_4$ (LFP) chemistry over the flat voltage plateau where $d V_{\text{ocv}}/d\text{SOC} \approx 0$.\label{fig:lfp}}
 \end{figure}
 
 \subsection{Phase 7: Sensor Corruption and Environmental Stress Testing}
@@ -535,7 +534,7 @@ Table~\ref{tab:6_sensor} and Fig.~\ref{fig:sensor} document observer resilience 
 Without closed-loop voltage feedback, open-loop Coulomb counting diverges linearly into multi-percent end-of-cycle drift (Table~\ref{tab:6_sensor}, Fig.~\ref{fig:sensor}). Closed-loop observers arrest this runaway via contrasting mechanisms: Kalman filters (EKF, AEKF, DEKF) attenuate high-frequency EMI ripple to deliver the lowest instantaneous tracking RMSE, whereas SMO clamps long-term DC current bias on the sliding manifold to achieve the lowest end-of-cycle drift at the cost of higher EMI-induced chattering.
 
 \begin{table}[htbp]
-\caption{Robustness under Hall current bias ($+0.25\text{ A}$) and inverter EMI ($25\text{ mV}$) [Tier~2 Co-Simulation]\label{tab:6_sensor}}
+\caption{Robustness under Hall current bias ($+0.25\text{ A}$) and inverter EMI ($25\text{ mV}$) [Tier~2 Co-Simulation].\label{tab:6_sensor}}
 \centering{%
 \small\renewcommand{\arraystretch}{1.25}
 \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccc}
@@ -554,7 +553,7 @@ SMO & 5.035 & 14.458 & \textbf{1.024} & High \\
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.88\linewidth]{fig7_sensor_bias_drift_stress.pdf}
-\caption{Observer robustness under current sensor bias drift ($+0.25\text{ A}$) and high-frequency inverter EMI noise\label{fig:sensor}}
+\caption{Observer robustness under current sensor bias drift ($+0.25\text{ A}$) and high-frequency inverter EMI noise.\label{fig:sensor}}
 \end{figure}
 
 \subsection{Phase 8: Model-Based Electrochemical Impedance Spectroscopy (EIS) Analysis Across Aging}
@@ -567,56 +566,57 @@ Across aging down to $80\%$ SOH (Table~\ref{tab:ecm_params}), ohmic resistance $
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.88\linewidth]{fig8_eis_nyquist_aging.pdf}
-\caption{Model-based EIS Nyquist spectra across progressive aging stages ($100\%$ down to $80\%$ SOH)\label{fig:eis}}
+\caption{Model-based EIS Nyquist spectra across progressive aging stages ($100\%$ down to $80\%$ SOH).\label{fig:eis}}
 \end{figure}
 
 \subsection{Phase 9: Module and Pack-Level Scaling (8S Series Pack)}
-Table~\ref{tab:7_pack} and Fig.~\ref{fig:pack} evaluate scalability to an 8S series battery pack under realistic cell-to-cell capacity and resistance tolerances ($\sigma_Q = 3.0\%$, $\sigma_R = 10.0\%$)~\cite{Yang2024degradation,Zheng2018inconsistency}. Under dynamic UDDS cycling, reduced cooling conductance at the interior cells (\#4 and \#5) elevates their steady-state temperature by $+3.2^\circ\text{C}$ above perimeter cells (\#1 and \#8). Governed by Arrhenius SEI reaction kinetics (activation energy $E_{a,\text{sei}}$), this interior thermal elevation accelerates capacity fade on cell~\#4 by $1.24\times$ relative to edge cells.
+Table~\ref{tab:7_pack} and Fig.~\ref{fig:pack} evaluate scalability to an 8S series battery pack under realistic cell-to-cell capacity and resistance dispersion standard deviations ($\sigma_Q = 3.0\%$, $\sigma_R = 10.0\%$)~\cite{Yang2024degradation,Zheng2018inconsistency}. Under dynamic UDDS cycling, reduced cooling conductance at the interior cells (\#4 and \#5) elevates their steady-state temperature by $+3.2^\circ\text{C}$ above perimeter cells (\#1 and \#8). Governed by Arrhenius SEI reaction kinetics (activation energy $E_{a,\text{sei}}$), this interior thermal elevation accelerates capacity fade on cell~\#4 by $1.24\times$ relative to edge cells.
 
 Regarding sensing topology, a lumped observer driven solely by total pack terminal voltage $V_{\text{string}}$ captures mean pack SOC accurately but fails to track cell-to-cell divergence as cell~\#4 approaches its lower cutoff ($2.50\text{ V}$), exposing the weakest cell to overdischarge and lithium plating risk (Table~\ref{tab:7_pack}). Conversely, distributed per-cell DEKF exploits individual cell voltage telemetry to confine weakest-cell RMSE below $0.4\%$ without requiring dedicated per-cell EIS hardware.
 
 \begin{table}[htbp]
-\caption{Series 8S pack benchmark with cell-to-cell parameter inconsistency [Tier~2 Co-Simulation]\label{tab:7_pack}}
+\caption{Series 8S pack benchmark with cell-to-cell parameter inconsistency [Tier~2 Co-Simulation].\label{tab:7_pack}}
 \centering{%
-\renewcommand{\arraystretch}{1.25}%
+\small\renewcommand{\arraystretch}{1.25}
+\setlength{\tabcolsep}{3.5pt}
 \begin{tabular*}{\linewidth}{@{\extracolsep{\fill}}lcccc}
 \toprule
-\shortstack[l]{Estimation\\Architecture} & \shortstack[c]{Target\\State} & \shortstack[c]{RMSE\\(\%)} & \shortstack[c]{MaxE\\(\%)} & \shortstack[c]{Safety Margin\\Risk} \\
+Architecture & Target State & RMSE (\%) & MaxE (\%) & Safety Margin Risk \\
 \midrule
 Lumped Pack Observer & Mean Pack SOC & \textbf{0.128} & 0.443 & Moderate \\
 Distributed DEKF & Mean Pack SOC & 0.149 & \textbf{0.336} & None (Optimal) \\
 Lumped Pack Observer & Weakest Cell SOC & 1.744 & 2.302 & High (Overdischarge Risk) \\
 Distributed DEKF & Weakest Cell SOC & \textbf{0.337} & \textbf{0.963} & Bounded Error ($<1\%$) \\
 \bottomrule
-\end{tabular*}
+\end{tabular*}%
 }%
 \end{table}
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.88\linewidth]{fig9_pack_cell_inconsistency.pdf}
-\caption{Series-connected 8S battery pack estimation comparing lumped model deficiency with distributed DEKF weakest cell tracking\label{fig:pack}}
+\caption{Series-connected 8S battery pack estimation comparing lumped model deficiency with distributed DEKF weakest cell tracking.\label{fig:pack}}
 \end{figure}
 
 \subsection{Phase 10: Embedded Hardware Execution on ARM Cortex-M and PIDKF Superiority}\label{sec:hw_profiling}
 Computational complexity was measured via hardware \texttt{DWT->CYCCNT} cycle counters on ARM Cortex-M4 (M4, STM32F407VG, 168~MHz) and projected via constant instructions-per-cycle (IPC) clock-scaling to Cortex-M7 (M7, 480~MHz) using CMSIS-DSP (Table~\ref{tab:8_embedded}, Fig.~\ref{fig:embedded}).
 
 \begin{table}[htbp]
-\caption{Embedded execution profiling on ARM Cortex-M architectures (ARM GCC 12.3 \texttt{-O3}; DWT cycles and latencies measured on 168\,MHz Cortex-M4 [M4]; 480\,MHz Cortex-M7 [M7] values represent constant-IPC clock-scaled estimates; RAM: random-access memory, Est.: estimated)\label{tab:8_embedded}}
+\caption{Embedded execution profiling on ARM Cortex-M architectures (ARM GCC 12.3 \texttt{-O3}; DWT cycles and latencies measured on 168\,MHz Cortex-M4 [M4]; 480\,MHz Cortex-M7 [M7] values represent constant-IPC clock-scaled estimates; RAM: random-access memory, Est.: estimated).\label{tab:8_embedded}}
 \centering{%
 \small\renewcommand{\arraystretch}{1.25}
 \setlength{\tabcolsep}{3.5pt}
 \resizebox{\linewidth}{!}{%
 \begin{tabular}{lccccccc}
 \toprule
-Algorithm & FLOPs/Step & M4 DWT Cycles & RAM (B) & Flash (B) & Measured M4 ($\upmu\mathrm{s}$) & Est.\ M7 (480\,MHz, $\upmu\mathrm{s}$) & Feasibility \\
+Algorithm & FLOPs/Step & M4 Cycles & RAM (B) & Flash (B) & M4 ($\upmu\mathrm{s}$) & Est.\ M7 ($\upmu\mathrm{s}$) & Feasibility \\
 \midrule
 EKF & 420 & 650 & 280 & 3,400 & 3.87 & 1.35 & Excellent \\
 AEKF & 580 & 880 & 340 & 4,200 & 5.24 & 1.83 & Excellent \\
 UKF & 1,350 & 2,087 & 780 & 6,200 & 12.42 & 4.35 & High \\
 DEKF & 980 & 1,450 & 620 & 5,800 & 8.63 & 3.02 & Excellent \\
 SMO & 180 & 281 & 140 & 2,100 & 1.67 & 0.58 & Ideal (Ultra-light) \\
-BiLSTM-Attn & 245,000 & 410,000 & 18,400 & 98,000 & 2440.48 & 854.17 & Marginal (39.0\% Load/16-Cell) \\
+BiLSTM-Attn & 245,000 & 410,000 & 18,400 & 98,000 & 2440.48 & 854.17 & Marginal (39.0\% Load) \\
 PINN-SOC & 12,800 & 21,501 & 1,200 & 16,500 & 127.98 & 44.79 & High (CMSIS-NN Ready) \\
 \textbf{PIDKF (Proposed)} & \textbf{1,540} & \textbf{2,386} & \textbf{850} & \textbf{8,200} & \textbf{14.20} & \textbf{4.97} & \textbf{Optimal (Pareto Peak)} \\
 \bottomrule
@@ -624,17 +624,17 @@ PINN-SOC & 12,800 & 21,501 & 1,200 & 16,500 & 127.98 & 44.79 & High (CMSIS-NN Re
 }%
 }%
 \vspace{1pt}
-{\scriptsize Note: B denotes bytes; Est.\ denotes estimated; CMSIS-NN denotes the CMSIS neural-network library.\par}
+{\scriptsize Note: B denotes bytes; Est.\ denotes estimated; CMSIS-NN denotes the CMSIS neural-network library; BiLSTM-Attn load ($39.0\%$) corresponds to a 16-cell pack.\par}
 \end{table}
 
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.88\linewidth]{fig10_embedded_resource_tradeoff.pdf}
-\caption{Pareto efficiency frontier: SOC estimation RMSE versus measured ARM Cortex-M4 execution latency on degraded cells ($85\%$ SOH, UDDS), contrasted against fresh-cell baselines ($100\%$ SOH)\label{fig:embedded}}
+\caption{Pareto efficiency frontier: SOC estimation RMSE versus measured ARM Cortex-M4 execution latency on degraded cells ($85\%$ SOH, UDDS), contrasted against fresh-cell baselines ($100\%$ SOH).\label{fig:embedded}}
 \end{figure}
 
 \begin{table}[htbp]
-\caption{Ablation and experimental validation of PIDKF on degraded cells\label{tab:9_pidkf}}
+\caption{Ablation and experimental validation of PIDKF on degraded cells.\label{tab:9_pidkf}}
 \centering{%
 \small\renewcommand{\arraystretch}{1.25}
 \setlength{\tabcolsep}{2.5pt}
@@ -673,7 +673,7 @@ Table~\ref{tab:9_pidkf} and Fig.~\ref{fig:pidkf} reveal a complementary chemistr
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.88\linewidth]{fig11_pidkf_hybrid_benchmark.pdf}
-\caption{Hybrid PIDKF tracking ($<0.5\%$ error) on degraded cells ($85\%$ SOH, UDDS, $25^\circ\text{C}$)\label{fig:pidkf}}
+\caption{Hybrid PIDKF tracking ($<0.5\%$ error) on degraded cells ($85\%$ SOH, UDDS, $25^\circ\text{C}$).\label{fig:pidkf}}
 \end{figure}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -735,14 +735,10 @@ Across nominal cycles ($\le 2.5\text{C}$ NMC, $\le 2\text{C}$ LFP), summing ohmi
 
 \section{Calibrated Model Constants, Hyperparameters, and Riccati Invariance\label{app:parameters}}
 \subsection{Electro-Thermal, Aging, and OCV Parameters}
-Calibrated 2-RC and hysteresis parameters across thermal and degradation regimes are consolidated in Table~\ref{tab:ecm_params}. Lumped thermal parameters are $C_{\text{th}} = 35.8\text{ J/K}$, $R_{\text{th}} = 12.5\text{ K/W}$ for 18650 NMC (INR20R) and $C_{\text{th}} = 65.2\text{ J/K}$, $R_{\text{th}} = 8.4\text{ K/W}$ for 26650 LFP (ANR26650) under natural convection ($\text{Bi} \approx 0.096$, core-to-surface differential $\le 0.42^\circ\text{C}$ at $2\text{C}$), with mean entropic slopes $\partial V_{\text{ocv}}/\partial T$ of $-0.033\text{ mV/K}$ (NMC, inverting above $z > 0.75$) and $-0.065\text{ mV/K}$ (LFP).
+Calibrated 2-RC and hysteresis parameters across thermal and degradation regimes are consolidated in Table~\ref{tab:ecm_params}.
 
-Piecewise Arrhenius resistance scaling obeys $f_{T,i}(T) = \exp[\tfrac{E_{a,i}}{R}(\tfrac{1}{T} - \tfrac{1}{T_{\text{ref}}})]$ ($T_{\text{ref}} = 298.15\text{ K}$, $R = 8.314\text{ J}\cdot\text{mol}^{-1}\cdot\text{K}^{-1}$) with activation energies $E_{a,0}^{\text{cold}} = 20.5$, $E_{a,0}^{\text{hot}} = 14.1$, $E_{a,1}^{\text{cold}} = 28.4$, $E_{a,1}^{\text{hot}} = 16.9$, and $E_{a,2} = 28.4\text{ kJ/mol}$. Thermal capacity scaling follows $f_Q(T) = \exp[-\tfrac{E_{a,Q}}{R}(\tfrac{1}{T} - \tfrac{1}{T_{\text{ref}}})]$ for $T < T_{\text{ref}}$ ($E_{a,Q} = 3.2\text{ kJ/mol}$) and $f_Q(T) = 1.0 + \kappa_{T,\text{hot}}(T - T_{\text{ref}})$ for $T \ge T_{\text{ref}}$ ($\kappa_{T,\text{hot}} = 0.0015\text{ K}^{-1}$). Aging multipliers are $\kappa_{R_0} = 2.50$, $\kappa_{R_1} = 7.50$, $\kappa_{R_2} = 4.00$ (NMC) / $5.00$ (LFP), $\gamma_{C,1} = 1.25$ (NMC) / $1.00$ (LFP), and $\gamma_{C,2} = 0.78$ (NMC) / $0.875$ (LFP) via $C_i(\text{SOH}) = C_{i,\text{nom}}[1.0 - \gamma_{C,i}(1.0 - \text{SOH})]$. Under field BMS bias ($I_{\text{bias}} \le 0.005\text{ A}$), branch resistance mismatch ($\delta R_i \le 0.0028\,\Omega$), and $I_{\text{RMS}} = 1.0\text{ A}$, unmodeled disturbance $\tilde{D}_{U_i} = R_i(T,\text{SOH})I_{\text{bias}} + \delta R_i I_{\text{RMS}}$ remains $\le 3.5\text{ mV}$ across $0^\circ\text{C}\text{--}45^\circ\text{C}$ ($\le 2.2\text{ mV}$ at $25^\circ\text{C}$).
-
-For NMC, the strictly monotonic fifth-order OCV polynomial Eq.~\eqref{eqn:ocv_poly} uses $p_5 = 9.204$, $p_4 = -28.841$, $p_3 = 33.376$, $p_2 = -17.419$, $p_1 = 4.674$, and $p_0 = 3.212$, spanning slope bounds $[\alpha_{\text{NMC}}, V'_{\max}] = [0.481, 4.674]\text{ V}$ with distinct RC constants $\tau_1 = 24.0\text{ s}$ and $\tau_2 = 112.5\text{ s}$. For LFP ($z \in [0.12, 0.95]$, cutoff $V_t \le 2.00\text{ V}$), equilibrium slope satisfies $V_{\text{ocv}}'(z) \ge \alpha_{\text{LFP}} = 0.00275\text{ V}$ (plateau $V_{\text{ocv}}' \approx 0.08\text{ V}$, condition number $\kappa(\mathcal{O}_k)$ shifting from $3.2 \times 10^4$ to $>1.99 \times 10^5$) with hysteresis bound $M_{\max} = 35\text{ mV}$.
-
-\begin{table}[htbp]
-\caption{Calibrated 2-RC model parameters across thermal and aging regimes\label{tab:ecm_params}}
+\begin{table}[!htbp]
+\caption{Calibrated 2-RC model parameters across thermal and aging regimes.\label{tab:ecm_params}}
 \centering{%
 \small\renewcommand{\arraystretch}{1.25}
 \setlength{\tabcolsep}{2.5pt}
@@ -771,10 +767,28 @@ Hysteresis $M_0$ (mV) & --- & --- & 30.0 & 30.0 \\
 }%
 \end{table}
 
+Lumped thermal parameters are $C_{\text{th}} = 35.8\text{ J/K}$, $R_{\text{th}} = 12.5\text{ K/W}$ for 18650 NMC (INR20R) and $C_{\text{th}} = 65.2\text{ J/K}$, $R_{\text{th}} = 8.4\text{ K/W}$ for 26650 LFP (ANR26650) under natural convection ($\text{Bi} \approx 0.096$, core-to-surface differential $\le 0.42^\circ\text{C}$ at $2\text{C}$), with mean entropic slopes $\partial V_{\text{ocv}}/\partial T$ of $-0.033\text{ mV/K}$ (NMC, inverting above $z > 0.75$) and $-0.065\text{ mV/K}$ (LFP). Temperature and aging scalings follow ($T_{\text{ref}} = 298.15\text{ K}$, $R = 8.314\text{ J}\cdot\text{mol}^{-1}\cdot\text{K}^{-1}$):
+\begin{align*}
+f_{T,i}(T) &= \exp\!\left[\frac{E_{a,i}}{R}\left(\frac{1}{T} - \frac{1}{T_{\text{ref}}}\right)\right], &
+C_i(\text{SOH}) &= C_{i,\text{nom}}\left[1.0 - \gamma_{C,i}(1.0 - \text{SOH})\right], \\
+f_Q(T) &= \exp\!\left[-\frac{E_{a,Q}}{R}\left(\frac{1}{T} - \frac{1}{T_{\text{ref}}}\right)\right] \;\; (T < T_{\text{ref}}), &
+f_Q(T) &= 1.0 + \kappa_{T,\text{hot}}(T - T_{\text{ref}}) \;\; (T \ge T_{\text{ref}}),
+\end{align*}
+with activation energies $E_{a,0}^{\text{cold}} = 20.5$, $E_{a,0}^{\text{hot}} = 14.1$, $E_{a,1}^{\text{cold}} = 28.4$, $E_{a,1}^{\text{hot}} = 16.9$, $E_{a,2} = 28.4$, and $E_{a,Q} = 3.2\text{ kJ/mol}$, warm coefficient $\kappa_{T,\text{hot}} = 0.0015\text{ K}^{-1}$, and degradation multipliers $\kappa_{R_0} = 2.50$, $\kappa_{R_1} = 7.50$, $\kappa_{R_2} = 4.00$ (NMC) / $5.00$ (LFP), $\gamma_{C,1} = 1.25$ (NMC) / $1.00$ (LFP), and $\gamma_{C,2} = 0.78$ (NMC) / $0.875$ (LFP). Under field BMS bias ($I_{\text{bias}} \le 0.005\text{ A}$), branch resistance mismatch ($\delta R_i \le 0.0028\,\Omega$), and $I_{\text{RMS}} = 1.0\text{ A}$, unmodeled disturbance $\tilde{D}_{U_i} = R_i(T,\text{SOH})I_{\text{bias}} + \delta R_i I_{\text{RMS}}$ remains $\le 3.5\text{ mV}$ across $0^\circ\text{C}\text{--}45^\circ\text{C}$ ($\le 2.2\text{ mV}$ at $25^\circ\text{C}$).
+
+For NMC, the strictly monotonic fifth-order OCV polynomial Eq.~\eqref{eqn:ocv_poly} uses $p_5 = 9.204$, $p_4 = -28.841$, $p_3 = 33.376$, $p_2 = -17.419$, $p_1 = 4.674$, and $p_0 = 3.212$, spanning slope bounds $[\alpha_{\text{NMC}}, V'_{\max}] = [0.481, 4.674]\text{ V}$ with distinct RC constants $\tau_1 = 24.0\text{ s}$ and $\tau_2 = 112.5\text{ s}$. For LFP ($z \in [0.12, 0.95]$, cutoff $V_t \le 2.00\text{ V}$), equilibrium slope satisfies $V_{\text{ocv}}'(z) \ge \alpha_{\text{LFP}} = 0.00275\text{ V}$ (plateau $V_{\text{ocv}}' \approx 0.08\text{ V}$, condition number $\kappa(\mathcal{O}_k)$ shifting from $3.2 \times 10^4$ to $>1.99 \times 10^5$) with hysteresis bound $M_{\max} = 35\text{ mV}$.
+
 \subsection{Standardized Estimator Hyperparameters and Riccati Contraction}
 All filters share identical initialization and embedded ARM GCC 12.3 (\texttt{-O3}, CMSIS-DSP v5.9.0) compilation, with clock frequency $f_{\text{clk}}$ scaled via $t = N_{\text{cyc}}/f_{\text{clk}}$ from STM32F407VG ($168\text{ MHz}$) to Cortex-M7 ($480\text{ MHz}$): EKF ($\mathbf{P}_0 = \operatorname{diag}(10^{-2}, 10^{-4}, 10^{-4})$, $\mathbf{Q} = \operatorname{diag}(10^{-6}, 10^{-5}, 10^{-5})$, $R_v = 10^{-3}\text{ V}^2$); UKF ($\alpha_{\text{UT}} = 10^{-3}$, $\beta_{\text{UT}} = 2$, $\kappa_{\text{UT}} = 0$, $7$ sigma points); AEKF ($\lambda_{\text{SH}} = 0.985$, $d_k = (1 - \lambda_{\text{SH}})/(1 - \lambda_{\text{SH}}^k)$, $R_{v,\min} = 10^{-4}\text{ V}^2$); DEKF ($\mathbf{P}_{\theta,0} = \operatorname{diag}(10^{-4}, 10^{-4})$, $\mathbf{Q}_\theta = \operatorname{diag}(10^{-8}, 10^{-9})$, $R_{\theta,v} = 10^{-2}\text{ V}^2$); SMO ($l_{\text{smo}} = 0.025\text{ V}$, $\mu = 0.02\text{ V}$, $\alpha_{\min} = 0.40/0.00275\text{ V}$ for NMC/LFP); BiLSTM-Attn ($W = 30\text{ s}$, 1 layer, $D = 32$, $24,500$ parameters, $98\text{ KB}$ Flash); PINN-SOC (4-layer $[64, 64, 32]$ GELU MLP, AdamW, 5 seeds, $\lambda_{\text{Faraday}} = 0.40$, $\lambda_{\text{KVL}} = 0.30$, $\lambda_{\text{mono}} = 0.10$); and PIDKF (2-hidden-layer $[16, 8]$ GELU MLP, $257$ parameters, $1.03\text{ KB}$ Flash, $560$ FLOPs/step, AdamW, 200 epochs, $\sigma_{\text{NN}} = 5.8\text{ mV}$, $\sigma_{\text{approx}} = 1.9\text{ mV}$, $R_{\text{eff},k} = R_v + \sigma_{\text{NN}}^2 + \sigma_{\text{approx}}^2 = 1.04 \times 10^{-3}\text{ V}^2$, $R_{\theta,\text{eff}} = R_{\theta,v} + \sigma_{\text{NN}}^2$, hold-out bound $\bar{\varepsilon}_{\text{emp}} = 20.0\text{ mV}$, rest gating threshold $I_{\text{rest,th}} = 10\text{ mA}$, max rest $T_{\max} = 120\text{ s}$, exogenous Jacobian discrepancy $<3.8\%$ on $\tilde{\mathbf{H}}_k$ and $<0.12\%$ on $\Delta\mathbf{K}_\theta$).
 
-For discrete-time Riccati invariance and multi-cycle PIDKF contraction, let $\boldsymbol{\Phi}_F(k, j) \equiv \prod_{l=j}^{k-1}\mathbf{F}_l$ denote the closed-loop error transition matrix over $k > j$ with uniform norm bound $\bar{F} \ge \sup_k \|\mathbf{F}_k\|$. Each active--rest cycle of length $L_m = N + T_{\text{rest},m} \le N + T_{\max}$ ($N = 30\text{ s}$) contracts by $\|\boldsymbol{\Phi}_F(k_m + L_m, k_m)\| \le \rho_{\text{PE}} < 1$. Partitioning $[j, k]$ into $M = \lfloor (k - j)/(N + T_{\max}) \rfloor$ full cycles and partial boundary segments gives uniform exponential decay $\|\boldsymbol{\Phi}_F(k, j)\| \le c\rho^{k-j}$ with $\rho \equiv \rho_{\text{PE}}^{1/(N + T_{\max})} < 1$ and $c \equiv \bar{F}^{N + T_{\max}} \rho^{-(N + T_{\max})} \ge 1$. Under Joseph-stabilized recursions with upper norm bound $\bar{a} \equiv \sup_k \|\mathbf{A}_k\|_2$, $\underline{q}\mathbf{I} \preceq \mathbf{Q}_k \preceq \bar{q}\mathbf{I}$, and $0 < \underline{r} \le R_{\text{eff},k} \le \bar{r}$, UCO ($\mathcal{G}_o \succeq \alpha_o \mathbf{I}$) guarantees $\underline{p}\mathbf{I} \preceq \mathbf{P}_k^+ \preceq \bar{p}\mathbf{I}$ ($\underline{p} = \underline{q}$, $\bar{p} = (\alpha_o^{-1} + N\bar{q})\bar{a}^{2N}$), uniformly bounding Kalman gain $\|\mathbf{K}_k\|_2 \le \bar{p}\|\mathbf{H}_k\|_2/\underline{r} \le \bar{K} < \infty$ and validating Eqs.~\eqref{eqn:bibs_pidkf}--\eqref{eqn:ms_pidkf}.
+For discrete-time Riccati invariance and multi-cycle PIDKF contraction, let $\boldsymbol{\Phi}_F(k, j) \equiv \prod_{l=j}^{k-1}\mathbf{F}_l$ denote the closed-loop error transition matrix over $k > j$ with uniform norm bound $\bar{F} \ge \sup_k \|\mathbf{F}_k\|$. Each active--rest cycle of length $L_m = N + T_{\text{rest},m} \le N + T_{\max}$ ($N = 30\text{ s}$) contracts by $\|\boldsymbol{\Phi}_F(k_m + L_m, k_m)\| \le \rho_{\text{PE}} < 1$. Partitioning $[j, k]$ into $M = \lfloor (k - j)/(N + T_{\max}) \rfloor$ full cycles and partial boundary segments gives uniform exponential contraction alongside Joseph-stabilized Riccati covariance and gain bounds under UCO ($\mathcal{G}_o \succeq \alpha_o \mathbf{I}$), upper plant norm $\bar{a} \equiv \sup_k \|\mathbf{A}_k\|_2$, $\underline{q}\mathbf{I} \preceq \mathbf{Q}_k \preceq \bar{q}\mathbf{I}$, and $0 < \underline{r} \le R_{\text{eff},k} \le \bar{r}$:
+\begin{align*}
+\|\boldsymbol{\Phi}_F(k, j)\| &\le c\rho^{k-j}, &
+\rho &\equiv \rho_{\text{PE}}^{1/(N + T_{\max})} < 1, \qquad c \equiv \bar{F}^{N + T_{\max}} \rho^{-(N + T_{\max})} \ge 1, \\
+\underline{p}\mathbf{I} &\preceq \mathbf{P}_k^+ \preceq \bar{p}\mathbf{I}, &
+\underline{p} &= \underline{q}, \qquad \bar{p} = (\alpha_o^{-1} + N\bar{q})\bar{a}^{2N}, \qquad \|\mathbf{K}_k\|_2 \le \frac{\bar{p}\|\mathbf{H}_k\|_2}{\underline{r}} \le \bar{K} < \infty,
+\end{align*}
+validating Eqs.~\eqref{eqn:bibs_pidkf}--\eqref{eqn:ms_pidkf}.
 
 \bibliographystyle{unsrt}
 \bibliography{references}
