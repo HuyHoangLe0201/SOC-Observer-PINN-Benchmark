@@ -68,7 +68,7 @@ Reliable state-of-charge (SOC) estimation is foundational to battery management 
 \entry{$S_k, \mathbf{x}_k, y_k$}{sliding manifold, state vector, and scalar terminal voltage observation}
 \entry{$T, T_{\text{amb}}$}{battery core temperature and ambient temperature ($\text{K}$ or $^\circ\text{C}$)}
 \entry{$U_1, U_2, \delta V_{\text{pol},k}^*$}{resistor--capacitor (RC) overpotentials and unmodeled polarization residual ($\text{V}$)}
-\entry{$V_t, V_k, V_{\text{ocv}}, V_{\text{pol}}^{\max}$}{terminal voltage, sampled voltage, open-circuit voltage (OCV), and polarization bound ($\text{V}$)}
+\entry{$V_t, V_k, V_{\text{ocv}}, V_{\text{pol}}^{\max}$}{noise-free terminal voltage, sampled voltage ($V_{\text{meas},k}$), open-circuit voltage (OCV), and polarization bound ($\text{V}$)}
 \entry{$\mathbf{w}_k, v_k$}{discrete process noise vector and scalar voltage measurement noise}
 \entry{$z, Z(j\omega), Z_w$}{normalized state-of-charge ($\text{SOC} \in [0, 1]$), electrochemical impedance, and Warburg impedance ($\Omega$)}
 
@@ -170,7 +170,7 @@ V_{\text{ocv}}(z) = p_5 z^5 + p_4 z^4 + p_3 z^3 + p_2 z^2 + p_1 z + p_0,
 \end{equation}
 whose coefficients $p_0,\dots,p_5$ (Appendix~\ref{app:parameters}) yield complex-conjugate derivative roots (with imaginary unit $j = \sqrt{-1}$), guaranteeing a strictly positive slope bounded below by $\alpha_{\text{NMC}} > 0$ up to maximum slope $V'_{\max}$ and ensuring global invertibility via the Inverse Function Theorem. For this three-state system, the discrete observability matrix $\mathcal{O}_k$ admits the Vandermonde determinant:
 \begin{equation}\label{eqn:det_obs}
-\det(\mathcal{O}_k) = V_{\text{ocv}}'(z_k) (1 - a_1)(1 - a_2)(a_1 - a_2),
+\det(\mathcal{O}_k) = V_{\text{ocv}}'(z_k) (1 - a_1)(1 - a_2)(a_2 - a_1),
 \end{equation}
 where $a_i \equiv e^{-\Delta t/\tau_i}$ denote distinct RC decay poles. Because $\tau_1 \ne \tau_2$ and $V_{\text{ocv}}'(z_k) \ge \alpha_{\text{NMC}}$ across NMC operation, $\mathcal{O}_k$ maintains full rank everywhere. In stark contrast, when $V_{\text{ocv}}'(z_k)$ collapses toward zero along the LFP plateau, the condition number $\kappa(\mathcal{O}_k) \equiv \|\mathcal{O}_k\|_2 \|\mathcal{O}_k^{-1}\|_2$ surges by nearly an order of magnitude, revealing the analytical root cause of flat-plateau estimation sensitivity.
 
@@ -192,9 +192,9 @@ where $[B_{1,k}, B_{2,k}, B_{3,k}]^T = \mathbf{B}_k$ from Eq.~\eqref{eqn:Bk_mat}
 \mathbf{B}_k^{\text{LFP}} = [B_{1,k},\, B_{2,k},\, B_{3,k},\, 0]^T, \\
 \mathbf{g}_k &= \left[0,\, 0,\, 0,\, (1 - a_{h,k}) M(z_k) \operatorname{sgn}(I_k)\right]^T.
 \end{align*}
-Terminal voltage becomes:
+Terminal voltage measurement becomes:
 \begin{equation}\label{eqn:vt_lfp}
-V_{t,k} = V_{\text{ocv}}(\text{SOC}_k) - V_{h,k} - U_{1,k} - U_{2,k} - I_k R_0 + v_k,
+y_k = V_k = V_{\text{ocv}}(\text{SOC}_k) - V_{h,k} - U_{1,k} - U_{2,k} - I_k R_0 + v_k,
 \end{equation}
 and over short frozen-coefficient windows ($a_h \equiv a_{h,k}$), the augmented local observability determinant expands to:
 \begin{equation}\label{eqn:det_obs_lfp}
@@ -255,7 +255,7 @@ whose second entry captures how inverse-capacity updates propagate through the \
 \end{align}
 
 \subsection{Sliding Mode Observer (SMO)}
-The SMO enforces robustness against bounded model-plant mismatch by driving voltage tracking errors onto a boundary layer of thickness $\mu$ around the sliding manifold $S_k = V_{\text{meas},k} - \hat{V}_{t,k} = 0$, where $V_{\text{meas},k}$ is the measured terminal voltage~\cite{Kim2011,Chen2016smo}:
+The SMO enforces robustness against bounded model-plant mismatch by driving voltage tracking errors onto a boundary layer of thickness $\mu$ around the sliding manifold $S_k = V_{\text{meas},k} - \hat{V}_{t,k} = 0$, where $V_{\text{meas},k} \equiv V_k$ is the measured terminal voltage~\cite{Kim2011,Chen2016smo}:
 \begin{equation}\label{eqn:smo_state_eq}
 \hat{\mathbf{x}}_{k+1} = \mathbf{A}_k \hat{\mathbf{x}}_k + \mathbf{B}_k I_k + \mathbf{g}_k + \mathbf{L}(\hat{z}_k) \operatorname{sat}\left( \frac{S_k}{\mu} \right),
 \end{equation}
