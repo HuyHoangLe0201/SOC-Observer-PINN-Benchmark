@@ -43,7 +43,7 @@
 \maketitle
 
 \begin{abstract}
-Reliable state-of-charge (SOC) estimation is foundational to battery management systems (BMS) in electric vehicles and grid storage, governing operational safety, range prediction, and power control. In field service, however, progressive aging down to $80\%$ state-of-health (SOH), thermal extremes ($0^\circ\text{C}\text{--}45^\circ\text{C}$), flat voltage plateaus in lithium iron phosphate (LFP) cells, and series-pack inconsistency severely distort internal impedance and collapse voltage observability. Because existing comparative studies predominantly evaluate fresh cells at $25^\circ\text{C}$ on desktop computers, how classical observers and machine-learning models fail across these coupled stressors---and whether they can execute on embedded microcontrollers---remains poorly understood. Here we establish a dual-tier experimental and co-simulation benchmark evaluating six representative model-based and neural estimators across ten operational stress phases, and propose a hybrid Physics-Informed Dual Kalman Filter (PIDKF) that couples online parameter adaptation with a lightweight physics-constrained neural compensator. Our comparison reveals that fixed-parameter filters diverge sharply under aging ($45.7$-fold error surge at $80\%$ SOH) while standalone neural networks suffer poor thermal generalization and high computational overhead; conversely, online parameter and hysteresis tracking stabilizes flat plateaus and multi-cell packs, and PIDKF achieves the optimal accuracy--latency trade-off with sub-$0.5\%$ aged root-mean-square error in $14.20\;\upmu\mathrm{s}$ per step on an ARM Cortex-M4 microcontroller.
+Reliable state-of-charge (SOC) estimation is foundational to battery management systems (BMS) in electric vehicles and grid storage, governing operational safety, range prediction, and power control. In field service, however, progressive aging down to $80\%$ state-of-health (SOH), thermal extremes ($0^\circ\text{C}\text{--}45^\circ\text{C}$), flat voltage plateaus in lithium iron phosphate (LFP) cells, and series-pack inconsistency severely distort internal impedance and collapse voltage observability. Because existing comparative studies predominantly evaluate fresh cells at $25^\circ\text{C}$ on desktop workstations, how classical observers and machine-learning models fail across these coupled stressors---and whether they can execute on embedded microcontrollers---remains poorly understood. Here we establish a dual-tier experimental and co-simulation benchmark evaluating six representative model-based and neural estimators across ten operational stress phases, and propose a hybrid Physics-Informed Dual Kalman Filter (PIDKF) that couples online parameter adaptation with a lightweight physics-constrained neural compensator. Our comparison reveals that fixed-parameter filters diverge sharply under aging ($45.7$-fold error surge at $80\%$ SOH) while standalone neural networks suffer poor thermal generalization and high computational overhead; conversely, online parameter and hysteresis tracking stabilizes flat plateaus and multi-cell packs, and PIDKF achieves the optimal accuracy--latency trade-off with sub-$0.5\%$ aged root-mean-square error in $14.20\;\upmu\mathrm{s}$ per step on an ARM Cortex-M4 microcontroller.
 \end{abstract}
 
 \vspace{0.8em}
@@ -280,12 +280,12 @@ yielding a compact context vector $\mathbf{c}_k$ decoded through fully connected
 \subsection{Physics-Informed Neural Network (PINN-SOC)}
 Rather than treating SOC estimation as unconstrained regression, PINN-SOC embeds physical conservation laws directly into the neural training graph~\cite{Raissi2019pinn,Brancato2026,Li2021oneshot}. The network $\mathcal{NN}_1$ ingests measurable telemetry $\mathbf{u}_k = [t_k, I_k, V_{t,k}, T_k, \hat{\text{SOH}}_{\text{latched}}]^T$ augmented with a quasi-stationary capacity health flag $\hat{\text{SOH}}_{\text{latched}}$ periodically updated during constant-current charging~\cite{Le2026charging}. Because capacity fade evolves orders of magnitude more slowly than individual driving cycles, battery charge depletion satisfies the governing differential conservation law:
 \begin{equation}\label{eqn:pinn_ode}
-\frac{d\,\text{SOC}(t)}{dt} = -\frac{\eta(T, I)\, I(t)}{3600\,Q_{\text{act}}(T, \text{SOH})}.
+\frac{d\,\text{SOC}(t)}{dt} = -\frac{\eta(T)\, I(t)}{3600\,Q_{\text{act}}(T, \text{SOH})}.
 \end{equation}
 Evaluating the predicted trajectory via automatic differentiation yields the chain-rule time derivative $d\hat{z}/dt$ and Faradaic conservation residual $\mathcal{R}_{\text{Faraday}}(t)$:
 \begin{align}
 \frac{d\hat{z}(t)}{dt} &= \frac{\partial \mathcal{NN}_1}{\partial t} + \frac{\partial \mathcal{NN}_1}{\partial I} \frac{dI}{dt} + \frac{\partial \mathcal{NN}_1}{\partial V_t} \frac{dV_t}{dt} + \frac{\partial \mathcal{NN}_1}{\partial T} \frac{dT}{dt}, \label{eqn:pinn_chain}\\
-\mathcal{R}_{\text{Faraday}}(t) &= \frac{d\hat{z}(t)}{dt} + \frac{\eta(T, I)\, I(t)}{3600\,Q_{\text{act}}(T, \text{SOH})}, \label{eqn:res_faraday}
+\mathcal{R}_{\text{Faraday}}(t) &= \frac{d\hat{z}(t)}{dt} + \frac{\eta(T)\, I(t)}{3600\,Q_{\text{act}}(T, \text{SOH})}, \label{eqn:res_faraday}
 \end{align}
 where telemetry time derivatives are evaluated offline via smoothing splines during training while online inference remains strictly causal.
 
@@ -305,7 +305,7 @@ where individual components enforce trajectory, differential, algebraic, and qua
 Trained as a four-layer multi-layer perceptron (MLP) with Gaussian Error Linear Unit (GELU) activations via decoupled weight-decay Adam (AdamW; hyperparameters in Appendix~\ref{app:parameters}), physics regularization reduces error substantially relative to an unconstrained MLP without physical penalties (Table~\ref{tab:1_udds}).
 
 \subsection{Proposed Hybrid Architecture: PIDKF}\label{sec:pidkf}
-To unite the recursive convergence guarantees and parameter adaptability of DEKF with the nonlinear representational capacity of physics-constrained neural networks, we introduce the hybrid \textbf{PIDKF} (Fig.~\ref{fig:0_framework}). In this architecture, a DEKF backbone tracks both state $\hat{\mathbf{x}}_k$ (including dynamic hysteresis $\hat{V}_{h,k}$ via Eq.~\eqref{eqn:vt_lfp} for LFP cells) and parameters $\hat{\boldsymbol{\theta}}_k = [\hat{R}_{0,k}, 1/\hat{Q}_{\text{act},k}]^T$, while a compact feedforward compensator $\mathcal{NN}(\mathbf{u}_k; \boldsymbol{\theta}_{\text{net}})$ with weights $\boldsymbol{\theta}_{\text{net}}$ predicts the unmodeled kinetic and diffusion polarization residual $\delta\hat{V}_{t,\text{comp},k}$ from online measurements and \emph{a priori} states $\mathbf{u}_k = [I_k, T_k, \hat{z}_k^-, \hat{U}_{1,k}^-, \hat{U}_{2,k}^-, \text{SOH}_{\text{ref},k}]^T$ (where $\text{SOH}_{\text{ref},k}$ removes thermal capacity factor $f_Q(T_k)$ from $\hat{Q}_{\text{act},k}$). To prevent unphysical overpotential predictions, the neural output passes through a symmetric saturation operator $\operatorname{clip}(\cdot)$ bounded by a Butler--Volmer current envelope $V_{\text{pol}}^{\max}(I_k) = \kappa_0 + \kappa_1 |I_k|$ (up to rated limit $V_{\text{pol},\max}$ at maximum current $I_{\max}$, with coefficients $\kappa_0, \kappa_1 > 0$).
+To unite the recursive convergence guarantees and parameter adaptability of DEKF with the nonlinear representational capacity of physics-constrained neural networks, we introduce the hybrid \textbf{PIDKF} (Fig.~\ref{fig:0_framework}). In this architecture, a DEKF backbone tracks both state $\hat{\mathbf{x}}_k$ (including dynamic hysteresis $\hat{V}_{h,k}$ via Eq.~\eqref{eqn:vt_lfp} for LFP cells) and parameters $\hat{\boldsymbol{\theta}}_k = [\hat{R}_{0,k}, 1/\hat{Q}_{\text{act},k}]^T$, while a compact feedforward compensator $\mathcal{NN}(\mathbf{u}_k; \boldsymbol{\theta}_{\text{net}})$ with weights $\boldsymbol{\theta}_{\text{net}}$ predicts the unmodeled kinetic and diffusion polarization residual $\delta\hat{V}_{t,\text{comp},k}$ from online measurements and \emph{a priori} states $\mathbf{u}_k = [I_k, T_k, \hat{z}_k^-, \hat{U}_{1,k}^-, \hat{U}_{2,k}^-, \text{SOH}_{\text{ref},k}]^T$ (where $\text{SOH}_{\text{ref},k}$ removes thermal capacity factor $f_Q(T_k)$ from $\hat{Q}_{\text{act},k}$). To prevent unphysical overpotential predictions, the neural output passes through a symmetric saturation operator $\operatorname{clip}(\cdot)$ bounded by a saturated Butler--Volmer current envelope $V_{\text{pol}}^{\max}(I_k) = \kappa_0 + \kappa_1 |I_k|$ (with $\kappa_0, \kappa_1 > 0$, capped at rated maximum current $I_{\max}$).
 
 Strict causality separates offline calibration from online embedded inference. During offline training on Cell Batch~A, target voltage residuals $\delta V_{t,\text{target},k}$ are constructed using forward-simulated fixed-RC circuit states initialized from rest, preventing any dependence on closed-loop ground truth. During real-time BMS operation, adding $\delta\hat{V}_{t,\text{comp},k}$ to the ECM terminal voltage prediction forms the PIDKF voltage innovation $e_{k,\text{PIDKF}}$ driving both state and parameter updates, while additive effective innovation variances $R_{\text{eff},k}$ and $R_{\theta,\text{eff}}$ account for orthogonal neural approximation uncertainty ($\sigma_{\text{NN}}$) and first-order linearization error ($\sigma_{\text{approx}}$) under zero-mean expectation $\mathbb{E}[\cdot]$ (detailed variance budget in Appendix~\ref{app:parameters}).
 
@@ -481,8 +481,8 @@ BiLSTM-Attn & 30.0 & N/A$^\S$ & 5.625 & 39.99 \\
 PINN-SOC & N/A$^*$ & N/A$^*$ & 2.229 & 6.84 \\
 \bottomrule
 \end{tabular*}
-\vspace{1pt}
-\flushleft{\scriptsize $^\dagger\text{MaxE}_{\text{dyn}}$: peak dynamic error after first entry ($t > t_{\text{reach}}^{(2\%)}$). $^\ddagger$DEKF enters $\le 2.0\%$ at $725\text{ s}$ and permanently settles into $\le 5.0\%$ corridor at $732\text{ s}$ ($<2.5\%$ within $350\text{ s}$). $^\S$Exits $\le 5\%$ corridor during high-rate pulses. $^*$Feedforward inference without recursive state settling.}
+\vspace{2pt}
+{\raggedright\scriptsize $^\dagger\text{MaxE}_{\text{dyn}}$: peak dynamic error after first entry ($t > t_{\text{reach}}^{(2\%)}$). $^\ddagger$DEKF enters $\le 2.0\%$ at $725\text{ s}$ and permanently settles into $\le 5.0\%$ corridor at $732\text{ s}$ ($<2.5\%$ within $350\text{ s}$). $^\S$Exits $\le 5\%$ corridor during high-rate pulses. $^*$Feedforward inference without recursive state settling.\par}
 }%
 \end{table}
 
@@ -497,7 +497,7 @@ Figure~\ref{fig:radar} synthesizes algorithmic trade-offs across 5 normalized di
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.88\linewidth]{fig5_radar_tradeoff.pdf}
+\includegraphics[width=0.72\linewidth]{fig5_radar_tradeoff.pdf}
 \caption{Multi-attribute radar comparison across 5 engineering dimensions illustrating algorithmic trade-offs.\label{fig:radar}}
 \end{figure}
 
@@ -565,7 +565,7 @@ Figure~\ref{fig:eis} presents model-based Randles--CPE Nyquist spectra ($100\tex
 \begin{equation}\label{eqn:eis_randles}
 Z(j\omega) = R_0 + \frac{R_{\text{ct}} + Z_w(j\omega)}{1 + (j\omega)^\alpha Q_{\text{cpe}} \left(R_{\text{ct}} + Z_w(j\omega)\right)}, \qquad Z_w(j\omega) = \sigma_w \omega^{-1/2}(1 - j).
 \end{equation}
-Across aging down to $80\%$ SOH (Table~\ref{tab:ecm_params}), ohmic resistance $R_0$ expands by $50\%$, whereas charge-transfer resistance $R_{\text{ct}}$ widens by $150\%$. Viewed through the Laplace-domain 2-RC impedance (Laplace variable $s$), this differential shift between aged and nominal branch dynamics generates an unmodeled kinetic polarization residual $\Delta V_{\text{pol}}(t)$ proportional to sustained load current. Uncompensated EKF misinterprets this expanded polarization voltage as an OCV shift, precipitating its aging divergence; standard DEKF absorbs $R_0$ growth online but omits $R_1$ to avoid branch collinearity, leaving $\Delta V_{\text{pol}}(t)$ to be compensated directly by the PIDKF neural module.
+Across aging down to $80\%$ SOH (Table~\ref{tab:ecm_params}), ohmic resistance $R_0$ expands by $50\%$, whereas charge-transfer resistance $R_{\text{ct}}$ widens by $150\%$. Viewed through the Laplace-domain 2-RC impedance (Laplace variable $s$), this differential shift between aged and nominal branch dynamics generates an unmodeled kinetic polarization residual $\delta V_{\text{pol}}^*(t)$ proportional to sustained load current. Uncompensated EKF misinterprets this expanded polarization voltage as an OCV shift, precipitating its aging divergence; standard DEKF absorbs $R_0$ growth online but omits $R_1$ to avoid branch collinearity, leaving $\delta V_{\text{pol}}^*(t)$ to be compensated directly by the PIDKF neural module.
 
 \begin{figure}[htbp]
 \centering
@@ -627,8 +627,8 @@ PINN-SOC & 12,800 & 21,501 & 1,200 & 16,500 & 127.98 & 44.79 & High (CMSIS-NN Re
 \end{tabular}%
 }%
 }%
-\vspace{1pt}
-{\scriptsize Note: B denotes bytes; Est.\ denotes estimated; CMSIS-NN denotes the CMSIS neural-network library; BiLSTM-Attn load ($39.0\%$) corresponds to a 16-cell pack.\par}
+\vspace{2pt}
+{\raggedright\scriptsize Note: B denotes bytes; Est.\ denotes estimated; CMSIS-NN denotes the CMSIS neural-network library; BiLSTM-Attn load ($39.0\%$) corresponds to a 16-cell pack.\par}
 \end{table}
 
 \begin{figure}[htbp]
@@ -666,8 +666,8 @@ NASA $43^\circ\text{C}$ (EKF / DEKF / \textbf{PIDKF}) & \multicolumn{2}{c}{1.210
 \bottomrule
 \end{tabular*}
 }%
-\vspace{-2pt}
-{\scriptsize $^\dagger$5 seeds. Cell-specific CALCE $85\%$ SOH RMSE: INR20R-3 (DEKF $0.462\%$, PIDKF $0.422\%$), INR20R-4 ($0.474\%$, $0.434\%$), A123-3 ($0.294\%$, $0.154\%$), A123-4 ($0.302\%$, $0.162\%$). NASA constant-current (CC) 4A: \texttt{B0041} ($80\%$ SOH) and \texttt{B0029} ($85\%$ SOH) with $\pm 0.15\%$ reference uncertainty.\par}
+\vspace{2pt}
+{\raggedright\scriptsize $^\dagger$5 seeds. Cell-specific CALCE $85\%$ SOH RMSE: INR20R-3 (DEKF $0.462\%$, PIDKF $0.422\%$), INR20R-4 ($0.474\%$, $0.434\%$), A123-3 ($0.294\%$, $0.154\%$), A123-4 ($0.302\%$, $0.162\%$). NASA constant-current (CC) 4A: \texttt{B0041} ($80\%$ SOH) and \texttt{B0029} ($85\%$ SOH) with $\pm 0.15\%$ reference uncertainty.\par}
 \end{table}
 
 As shown in Table~\ref{tab:8_embedded} and Fig.~\ref{fig:embedded}, classical observers (SMO, EKF, AEKF, DEKF) execute within a few microseconds on Cortex-M4 with negligible RAM and Flash memory overhead. Conversely, BiLSTM-Attn incurs millisecond-scale latency that would monopolize central processing unit (CPU) bandwidth across a 16-cell module. By decoupling neural backpropagation from the Kalman gain, the proposed PIDKF executes in $14.20\;\upmu\text{s}$ per step, occupying the Pareto knee between estimation accuracy and embedded latency.
@@ -684,7 +684,7 @@ Table~\ref{tab:9_pidkf} and Fig.~\ref{fig:pidkf} reveal a complementary chemistr
 \section{Industrial BMS Implementation Guidelines}
 The Pareto frontier identified across our ten-phase benchmark yields direct engineering guidance for selecting estimators across industrial battery applications. For passenger electric vehicles (EVs) and multi-chemistry traction packs that experience wide temperature swings and multi-year capacity fade, the proposed hybrid \textbf{PIDKF} provides the strongest accuracy--compute trade-off across both NMC and LFP chemistries, whereas uncompensated EKF should be avoided because of severe aging divergence. In stationary LFP energy-storage installations operating predominantly along the flat biphasic plateau, deploying DEKF augmented with dynamic hysteresis co-estimation maintains sub-percent plateau accuracy through open-loop Coulomb scaling without requiring auxiliary mechanical strain sensors.
 
-In environments plagued by simultaneous Hall-effect current drift and power-inverter EMI, control architects face a clear design choice between noise suppression and bias rejection: Kalman architectures (EKF and DEKF) attenuate high-frequency voltage ripple to minimize instantaneous tracking error, whereas SMO clamps long-term DC current offset via sliding-manifold switching at the expense of higher switching ripple. Finally, for cloud--edge fleet architectures, running lightweight DEKF or PIDKF kernels directly on automotive microcontrollers ($14.20\;\upmu\text{s}$ per step on Cortex-M4) keeps real-time safety loops strictly deterministic while offloading heavy neural retraining and fleet-wide health analytics to the cloud.
+In environments plagued by simultaneous Hall-effect current drift and power-inverter EMI, control architects face a clear design choice between noise suppression and bias rejection: Kalman architectures (EKF and DEKF) attenuate high-frequency voltage ripple to minimize instantaneous tracking error, whereas SMO clamps long-term DC current offset via sliding-manifold switching at the expense of higher switching ripple. Finally, for cloud--edge fleet architectures, running lightweight DEKF or PIDKF kernels directly on automotive microcontrollers (sub-$15\;\upmu\text{s}$ per step on Cortex-M4) keeps real-time safety loops strictly deterministic while offloading heavy neural retraining and fleet-wide health analytics to the cloud.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Conclusions}
