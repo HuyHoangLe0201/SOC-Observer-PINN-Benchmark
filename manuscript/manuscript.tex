@@ -106,6 +106,7 @@ Through this comparative investigation, we demonstrate why fixed-parameter filte
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Electrochemical Battery Modeling and Degradation Dynamics}
+This section formulates the coupled electro-thermal and aging dynamics of NMC and LFP cells used throughout our benchmark. We first establish the discrete-time equivalent circuit and Arrhenius thermal balance, then define the structural parameter-allocation boundary separating the aging plant from the observers, and finally analyze OCV--SOC monotonicity, dynamic hysteresis, and flat-plateau observability under persistent excitation.
 
 \subsection{Second-Order Dual Polarization (2-RC) Model Formulation}
 The electrical response of a lithium-ion cell is modeled using a second-order Dual Polarization equivalent circuit, widely recognized as an effective compromise between physical fidelity and real-time tractability~\cite{Hu2012ecm,Xiong2014}. The circuit couples an open-circuit voltage source $V_{\text{ocv}}(\text{SOC})$ in series with an effective ohmic series resistance $R_0 = R_{\text{ohm}} + R_{\text{sei}}$ (combining metallic ohmic resistance $R_{\text{ohm}}$ and SEI film resistance $R_{\text{sei}}$) and two parallel resistor--capacitor ($R_i \parallel C_i$, $i \in \{1, 2\}$) branches representing fast interfacial charge-transfer kinetics and slower solid-state lithium diffusion, respectively:
@@ -210,9 +211,10 @@ Equation~\eqref{eqn:det_obs_lfp} exposes an essential dichotomy between rest and
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{State-of-Charge Estimation Methodologies}
+This section formulates the six representative benchmark estimators---EKF, AEKF, DEKF, SMO, BiLSTM-Attn, and PINN-SOC---within a unified discrete-time framework before introducing the proposed hybrid PIDKF. For PIDKF, we establish causal target residual generation, exogenous Jacobian sensitivity decoupling, Butler--Volmer passivity constraints, and closed-loop ultimate error boundedness under intermittent driving excitation.
 
 \subsection{Extended Kalman Filter (EKF)}
-This study benchmarks EKF, AEKF, DEKF, SMO, BiLSTM-Attn, and PINN-SOC as archetype representatives of classical, adaptive, dual-parameter, sliding-mode, and physics-informed neural estimators. Higher-order sigma-point variants such as UKF and CKF~\cite{Plett2006ukf,He2013ukf} propagate deterministic sigma points via scaled unscented transform (UT) coefficients ($\alpha_{\text{UT}}$, $\beta_{\text{UT}}$, $\kappa_{\text{UT}}$) over state dimension $n$ to avoid explicit Jacobian evaluation. Evaluated under identical process and measurement noise covariances ($\mathbf{Q}, R_v$), UKF mirrors EKF accuracy on fresh cells while incurring more than three times the embedded execution latency (Table~\ref{tab:8_embedded}), and still diverges at comparable magnitude under severe aging because parameter drift overwhelms quadrature refinements. Consequently, EKF serves as the representative non-adaptive baseline.
+Within the nonlinear Kalman filtering family, higher-order sigma-point variants such as UKF and CKF~\cite{Plett2006ukf,He2013ukf} propagate deterministic sigma points via scaled unscented transform (UT) coefficients ($\alpha_{\text{UT}}$, $\beta_{\text{UT}}$, $\kappa_{\text{UT}}$) over state dimension $n$ to avoid explicit Jacobian evaluation. Evaluated under identical process and measurement noise covariances ($\mathbf{Q}, R_v$), UKF mirrors EKF accuracy on fresh cells while incurring more than three times the embedded execution latency (Table~\ref{tab:8_embedded}), and still diverges at comparable magnitude under severe aging because parameter drift overwhelms quadrature refinements. Consequently, EKF serves as the representative non-adaptive baseline.
 
 At each step, EKF linearizes the terminal voltage observation model around the \emph{a priori} state estimate $\hat{\mathbf{x}}_k^-$ via the observation Jacobian $\mathbf{H}_k$ (where superscripts $-$ and $+$ denote \emph{a priori} and \emph{a posteriori} quantities, respectively)~\cite{Plett2004part3}:
 \begin{align}\label{eqn:ekf_jacobian}
@@ -335,6 +337,7 @@ Thus, even when observability vanishes temporarily at rest, any initialization o
 \end{figure}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Experimental Benchmarking Platform and Methodology\label{sec:exp_setup}}
+This section outlines the empirical cycling datasets and calibrated co-simulation environment used to evaluate generalization across unseen cells and chemistries. We detail the three-tier validation framework and bare-metal ARM Cortex-M timing setup, introduce the four standardized automotive drive schedules, and define the quantitative error, convergence, and aging-sensitivity metrics.
 
 \subsection{Benchmark Platform and Empirical Calibration Data}
 Our benchmark integrates open-access empirical cycling datasets from the Center for Advanced Life Cycle Engineering (CALCE, University of Maryland)~\cite{Pecht2011calce} and Oxford University~\cite{Birkl2017diagnostics} with a calibrated electro-thermal-aging co-simulation testbed. Two representative chemistries are evaluated with strict cell-level batch separation (Table~\ref{tab:ecm_params}): Samsung INR18650-20R (INR20R) NMC cells (\texttt{INR20R-1,2} in Batch~A; \texttt{INR20R-3,4} in Batch~B) and A123 ANR26650M1-B (ANR26650) LFP cells (\texttt{A123-1,2} in Batch~A; \texttt{A123-3,4} in Batch~B, anchored to initial usable capacity $Q_{\text{init}}$ under $1\text{C}$ discharge at $25^\circ\text{C}$)~\cite{He2011ecm,Pecht2011calce}. Standardized United States Advanced Battery Consortium (USABC) and U.S. Environmental Protection Agency (EPA) driving schedules (DST, FUDS, US06, and UDDS) are applied alongside dimensionless EIS charge-transfer degradation ratios scaled from Oxford aging trajectories~\cite{Birkl2017diagnostics}.
@@ -360,6 +363,7 @@ Complementing first-entry reach time, permanent settling time $t_{\text{settle}}
 \end{equation}
 
 \section{Results and Discussion Across 10 Operational Phases}
+This section evaluates all candidate estimators across ten progressive operational stress phases spanning nominal driving, capacity fade, thermal extremes, initialization shocks, multi-attribute Pareto trade-offs, LFP flat-plateau observability, sensor bias and EMI corruption, Nyquist impedance shifts, 8S series-pack inconsistency, and bare-metal ARM Cortex-M deployment alongside hybrid PIDKF ablation.
 
 \subsection{Phase 1: Dynamic Drive Cycle Tracking at Nominal Condition}
 Table~\ref{tab:1_udds} and Fig.~\ref{fig:udds} present benchmarked tracking performance across UDDS on a fresh cell ($100\%$ SOH) at $25^\circ\text{C}$.
@@ -734,6 +738,8 @@ Across nominal cycles ($\le 2.5\text{C}$ NMC, $\le 2\text{C}$ LFP), summing ohmi
 \emph{Uniform Ultimate Boundedness (UUB)}: Branch perturbations $|d_{U_i,k}| \le (1-a_i)\tilde{D}_{U_i}$ with $\tilde{D}_{U_i} \le 3.5\text{ mV}$ across $0^\circ\text{C}\text{--}45^\circ\text{C}$ ensure passive ISS bounds $|e_{U_i}| \le \bar{e}_{U_i} \le 3.5\text{ mV}$ ($l_2 = l_3 = 0$), while LFP hysteresis remains bounded by $|e_h| \le \bar{e}_h = 60\text{ mV}$ ($l_h = 0$). Applying the mean value theorem (MVT) yields $|e_{z,k}| \le (\mu + 2\bar{e}_U + \bar{e}_h + V_{\text{AFE}})/\alpha$ (with $\bar{e}_U = \max_i \bar{e}_{U_i}$), bounding NMC SOC error tightly ($|e_z| \le 7.2\%$ across all $T$ and SOH; $\le 6.4\%$ at $25^\circ\text{C}$) and ensuring finite UUB ($\|\mathbf{e}_x\| < \infty$ for state error vector $\mathbf{e}_x$; analytical asymptotic limit $|e_z| \le 31.94$ as $V_{\text{ocv}}' \to \alpha_{\text{LFP}}$) on LFP.
 
 \section{Calibrated Model Constants, Hyperparameters, and Riccati Invariance\label{app:parameters}}
+This appendix compiles the calibrated electro-thermal, aging, and OCV polynomial constants across both cell chemistries, together with the standardized estimator hyperparameters and discrete-time Riccati contraction bounds underlying our benchmark and stability proofs.
+
 \subsection{Electro-Thermal, Aging, and OCV Parameters}
 Calibrated 2-RC and hysteresis parameters across thermal and degradation regimes are consolidated in Table~\ref{tab:ecm_params}.
 
