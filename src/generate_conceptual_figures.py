@@ -1105,7 +1105,7 @@ def get_framework_tex():
 \node[align=center, font=\fontsize{6.9}{8.3}\selectfont] at (14.69, 3.07) {
     Cold ($0^\circ\mathrm{C}$) \& Hot ($45^\circ\mathrm{C}$)\\
     DEKF $0^\circ\mathrm{C}$: $2.254\%$ $\mid$ SMO: $0.929\%$\\
-    \textbf{Aged PIDKF ($0^\circ\mathrm{C}$): $0.842\%$ (NMC)}
+    \textbf{NASA PIDKF ($4^\circ\mathrm{C}$): $0.842\%$ (NMC)}
 };
 
 \draw[phasecard] (17.76, 2.32) rectangle (23.30, 4.26);
@@ -1150,7 +1150,7 @@ def get_framework_tex():
 \node[font=\fontsize{7.5}{8.6}\selectfont\bfseries] at (14.69, 1.96) {08 $\mid$ EIS Diagnostics};
 \node[align=center, font=\fontsize{6.8}{8.2}\selectfont] at (14.69, 0.99) {
     $100\;\mathrm{kHz}\text{--}1\;\mathrm{mHz}$ Randles--CPE\\
-    $R_0$ ($+50\%$), $R_{\mathrm{ct}}$ ($+150\%$), $\alpha=0.88$\\
+    $R_0$ ($+50\%$), $R_{\mathrm{ct}}$ ($+150\%$), $\alpha=0.94$\\
     \textbf{RMS Fit Error: $1.1\%\text{--}1.8\%$}
 };
 
