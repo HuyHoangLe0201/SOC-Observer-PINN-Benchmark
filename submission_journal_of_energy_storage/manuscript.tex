@@ -603,7 +603,7 @@ Distributed DEKF & Weakest Cell SOC & \textbf{0.337} & \textbf{0.963} & Bounded 
 \end{figure}
 
 \subsection{Phase 10: Embedded Hardware Execution on ARM Cortex-M and PIDKF Superiority}\label{sec:hw_profiling}
-Computational complexity was measured via hardware \texttt{DWT->CYCCNT} cycle counters on ARM Cortex-M4 (M4, STM32F407VG, 168~MHz) and projected via constant instructions-per-cycle (IPC) clock-scaling to Cortex-M7 (M7, 480~MHz) using CMSIS-DSP (Table~\ref{tab:8_embedded}, Fig.~\ref{fig:embedded}).
+Computational complexity was measured via hardware \texttt{DWT->CYCCNT} cycle counters on ARM Cortex-M4 (M4, STM32F407VG, $168\text{ MHz}$) and projected via constant instructions-per-cycle (IPC) clock-scaling to Cortex-M7 (M7, $480\text{ MHz}$) using CMSIS-DSP (Table~\ref{tab:8_embedded}, Fig.~\ref{fig:embedded}).
 
 \begin{table}[htbp]
 \caption{Embedded execution profiling on ARM Cortex-M architectures (ARM GCC 12.3 \texttt{-O3}; DWT cycles and latencies measured on 168\,MHz Cortex-M4 [M4]; 480\,MHz Cortex-M7 [M7] values represent constant-IPC clock-scaled estimates; RAM: random-access memory, Est.: estimated).\label{tab:8_embedded}}
@@ -667,7 +667,7 @@ NASA $43^\circ\text{C}$ (EKF / DEKF / \textbf{PIDKF}) & \multicolumn{2}{c}{1.210
 \end{tabular*}
 }%
 \vspace{2pt}
-{\raggedright\scriptsize $^\dagger$5 seeds. Cell-specific CALCE $85\%$ SOH RMSE: INR20R-3 (DEKF $0.462\%$, PIDKF $0.422\%$), INR20R-4 ($0.474\%$, $0.434\%$), A123-3 ($0.294\%$, $0.154\%$), A123-4 ($0.302\%$, $0.162\%$). NASA constant-current (CC) 4A: \texttt{B0041} ($80\%$ SOH) and \texttt{B0029} ($85\%$ SOH) with $\pm 0.15\%$ reference uncertainty.\par}
+{\raggedright\scriptsize $^\dagger$5 seeds. Cell-specific CALCE $85\%$ SOH RMSE: INR20R-3 (DEKF $0.462\%$, PIDKF $0.422\%$), INR20R-4 ($0.474\%$, $0.434\%$), A123-3 ($0.294\%$, $0.154\%$), A123-4 ($0.302\%$, $0.162\%$). NASA constant-current (CC) $4\text{ A}$: \texttt{B0041} ($80\%$ SOH) and \texttt{B0029} ($85\%$ SOH) with $\pm 0.15\%$ reference uncertainty.\par}
 \end{table}
 
 As shown in Table~\ref{tab:8_embedded} and Fig.~\ref{fig:embedded}, classical observers (SMO, EKF, AEKF, DEKF) execute within a few microseconds on Cortex-M4 with negligible RAM and Flash memory overhead. Conversely, BiLSTM-Attn incurs millisecond-scale latency that would monopolize central processing unit (CPU) bandwidth across a 16-cell module. By decoupling neural backpropagation from the Kalman gain, the proposed PIDKF executes in $14.20\;\upmu\text{s}$ per step, occupying the Pareto knee between estimation accuracy and embedded latency.
