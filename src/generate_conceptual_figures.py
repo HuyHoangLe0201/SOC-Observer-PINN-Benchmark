@@ -757,12 +757,12 @@ def get_framework_tex():
 % 1C: Hard Rest-Period Innovation Gate
 \draw[subcard, fill=cgate] (0.40, 9.48) rectangle (5.92, 13.06);
 \node[font=\fontsize{7.7}{8.9}\selectfont\bfseries] at (3.16, 12.74) {Hard Rest-Period Innovation Gate};
-\draw[line width=0.8pt] (0.82, 11.96) -- (1.40, 11.96);
-\draw[line width=1.0pt] (1.40, 11.96) -- (2.00, 12.22);
-\filldraw[fill=white, draw=black, line width=0.65pt] (1.40, 11.96) circle (1.4pt);
-\filldraw[fill=white, draw=black, line width=0.65pt] (2.04, 11.96) circle (1.4pt);
-\draw[line width=0.8pt] (2.04, 11.96) -- (2.48, 11.96);
-\node[anchor=west, align=left, font=\fontsize{6.8}{7.9}\selectfont\bfseries] at (2.56, 11.98)
+\draw[line width=0.8pt] (0.66, 11.96) -- (1.14, 11.96);
+\draw[line width=1.0pt] (1.14, 11.96) -- (1.64, 12.20);
+\filldraw[fill=white, draw=black, line width=0.65pt] (1.14, 11.96) circle (1.4pt);
+\filldraw[fill=white, draw=black, line width=0.65pt] (1.68, 11.96) circle (1.4pt);
+\draw[line width=0.8pt] (1.68, 11.96) -- (2.04, 11.96);
+\node[anchor=west, align=left, font=\fontsize{6.4}{7.5}\selectfont\bfseries] at (2.12, 11.98)
     {$|I_k| < 10\;\mathrm{mA}$: Freeze Gains};
 \node[align=center, font=\fontsize{6.7}{8.1}\selectfont] at (3.16, 10.46) {
     Set $\mathbf{K}_k = \mathbf{0},\;\; \mathbf{K}_{\theta,k} = \mathbf{0}$ during rest\\[1.5pt]
@@ -834,8 +834,6 @@ def get_framework_tex():
 \draw[darr] (5.92, 11.18) -- (7.04, 11.18);
 \draw[darr] (6.50, 11.18) |- (7.20, 17.50);
 \filldraw[fill=black] (6.50, 11.18) circle (1.4pt);
-\node[fill=cgate, draw=black, line width=0.45pt, rounded corners=1pt, inner sep=1.1pt, font=\fontsize{5.9}{6.7}\selectfont\bfseries]
-    at (6.50, 13.40) {Gate};
 
 
 % --- STAGE 3: Residual MLP, Butler-Volmer Passivity & Innovation Synthesis (x = 18.00 to 29.16) ---
@@ -976,6 +974,8 @@ def get_framework_tex():
 \draw[arr, line width=0.9pt] (6.50, 8.90) -- (6.50, 17.98) -- (7.20, 17.98);
 \node[fill=cgate, draw=black, line width=0.5pt, rounded corners=1.5pt, inner sep=1.6pt, font=\fontsize{7.0}{8.0}\selectfont\bfseries]
     at (17.54, 8.90) {Closed-Loop Innovation Feedback: $e_{k,\mathrm{PIDKF}}$};
+\node[fill=cgate, draw=black, line width=0.45pt, rounded corners=1pt, inner sep=1.1pt, font=\fontsize{5.9}{6.7}\selectfont\bfseries]
+    at (6.50, 13.40) {Gate};
 
 
 % =========================================================================
