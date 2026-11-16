@@ -310,21 +310,21 @@ def get_mechanism_tex(data):
 
 \draw[card, fill=thermbg] (0.34, 11.38) rectangle (4.62, 13.16);
 \node[align=center, font=\fontsize{5.9}{7.2}\selectfont] at (2.48, 12.27) {
-    \textbf{Thermal Balance (Eq.\ 5)}\\[1.5pt]
+    \textbf{Thermal Balance (Eq.\ 8)}\\[1.5pt]
     $C_{\mathrm{th}}\dfrac{dT}{dt} = I^2 R_0 + I(U_1+U_2)$\\[1.5pt]
     $- IT\dfrac{\partial V_{\mathrm{ocv}}}{\partial T} - \dfrac{T-T_{\mathrm{amb}}}{R_{\mathrm{th}}}$
 };
 
 \draw[card, fill=arrhbg] (5.04, 11.38) rectangle (9.36, 13.16);
 \node[align=center, font=\fontsize{5.9}{7.2}\selectfont] at (7.20, 12.27) {
-    \textbf{Arrhenius \& Aging (Eqs.\ 8--10)}\\[2pt]
+    \textbf{Arrhenius \& Aging (Eqs.\ 9--13)}\\[2pt]
     $R_i(T,\mathrm{SOH}) = R_{i,\mathrm{nom}}\,f_{T,i}(T)$\\[2pt]
     $\times\,[1 + \kappa_{R_i}(1-\mathrm{SOH})]$
 };
 
 \draw[card, fill=capbg] (9.78, 11.38) rectangle (14.06, 13.16);
 \node[align=center, font=\fontsize{5.9}{7.2}\selectfont] at (11.92, 12.27) {
-    \textbf{Usable Capacity (Eq.\ 10)}\\[2pt]
+    \textbf{Usable Capacity (Eq.\ 14)}\\[2pt]
     $Q_{\mathrm{act}} = \mathrm{SOH}\cdot Q_{\mathrm{init}}\,f_Q(T)$\\[2pt]
     $0.890\times\,(0^\circ\mathrm{C}),\;\; 1.030\times\,(45^\circ\mathrm{C})$
 };
@@ -521,7 +521,7 @@ def get_mechanism_tex(data):
     \addplot[color=nmcline, line width=1.65pt] coordinates {
         """ + data["nmc_ocv"] + r"""
     };
-    \addlegendentry{NMC811 $V_{\mathrm{ocv}}(z)$ (Eq.\ 11, Monotonic)}
+    \addlegendentry{NMC811 $V_{\mathrm{ocv}}(z)$ (Eq.\ 15, Monotonic)}
 
     \addplot[color=lfpline, line width=1.5pt, dashed] coordinates {
         """ + data["lfp_ocv"] + r"""
@@ -542,7 +542,7 @@ def get_mechanism_tex(data):
 \filldraw[fill=white, draw=black, line width=0.7pt, rounded corners=2.5pt, drop shadow={opacity=0.07, shadow xshift=0.8pt, shadow yshift=-0.8pt}]
     (7.52, 1.32) rectangle (13.86, 3.58);
 \node[font=\fontsize{6.8}{7.8}\selectfont\bfseries] at (10.69, 3.39)
-    {Eq.\ (15) Hysteresis Loop ($\beta = 45$)};
+    {Eq.\ (18) Hysteresis Loop ($\beta = 45$)};
 
 \begin{axis}[
     at={(8.46cm, 1.66cm)},
@@ -650,7 +650,7 @@ def get_mechanism_tex(data):
 
     \node[draw=black, line width=0.6pt, fill=white, rounded corners=2pt, align=left, font=\fontsize{7.1}{8.5}\selectfont, inner sep=2.6pt]
         at (axis cs:50, 0.0155) {
-            \textbf{Observability:} $|\det(\mathcal{O}_k)| \propto V_{\mathrm{ocv}}'(z_k)$ (Eqs.\ 12, 16)\\[1pt]
+            \textbf{Observability:} $|\det(\mathcal{O}_k)| \propto V_{\mathrm{ocv}}'(z_k)$ (Eqs.\ 16, 21)\\[1pt]
             $\bullet$ NMC811: $\kappa(\mathcal{O}_k)\approx 3.2\times 10^4 \Rightarrow$ Strong Innovation Gain\\
             $\bullet$ LFP: $\kappa(\mathcal{O}_k) > 1.99\times 10^5 \Rightarrow$ Needs $V_h + \delta\hat{V}_{\mathrm{comp}}$
         };
@@ -823,7 +823,7 @@ def get_framework_tex():
 
 \node[align=center, font=\fontsize{6.9}{8.3}\selectfont] at (12.00, 11.16) {
     $\hat{\boldsymbol{\theta}}_k = \left[\hat{R}_{0,k},\; 1/\hat{Q}_{\mathrm{act},k}\right]^T$,\quad $\hat{\boldsymbol{\theta}}_k^+ = \hat{\boldsymbol{\theta}}_k^- + \mathbf{K}_{\theta,k} e_{k,\mathrm{PIDKF}}$\\[3pt]
-    Fr\'echet Jacobian (Eq.\ 17):\; $\mathbf{C}_{\theta,k} = \left[-I_k,\; -\dfrac{\eta\Delta t I_{k-1}}{3600}V_{\mathrm{ocv}}'(\hat{z}_k^+)\right]$\\[3pt]
+    Fr\'echet Jacobian (Eq.\ 30):\; $\mathbf{C}_{\theta,k} = \left[-I_k,\; -\dfrac{\eta\Delta t I_{k-1}}{3600}V_{\mathrm{ocv}}'(\hat{z}_k^+)\right]$\\[3pt]
     Thermal Inversion:\; $\mathrm{SOH}_{\mathrm{ref},k} \equiv \dfrac{\hat{Q}_{\mathrm{act},k}(T_k)}{Q_{\mathrm{init}}\,f_Q(T_k)} = \dfrac{1}{Q_{\mathrm{init}}\,\hat{\theta}_{2,k}\,f_Q(T_k)}$
 };
 
@@ -966,7 +966,7 @@ def get_framework_tex():
     $R_{\mathrm{eff},k} = R_v + \sigma_{\mathrm{NN}}^2 + \sigma_{\mathrm{approx}}^2 = 1.04\times 10^{-3}\;\mathrm{V}^2$\\[1.4pt]
     {\fontsize{6.0}{7.0}\selectfont ($R_v = 10^{-3}\;\mathrm{V}^2$,\; MLP Error $\sigma_{\mathrm{NN}} = 5.8\;\mathrm{mV}$,\; Truncation $\sigma_{\mathrm{approx}} = 1.9\;\mathrm{mV}$)}\\[2.4pt]
     \textbf{Exogenous Decoupling:}\; $\mathbf{H}_{\mathrm{PIDKF},k}\approx\mathbf{H}_k,\;\mathbf{C}_{\theta,\mathrm{PIDKF},k}\approx\mathbf{C}_{\theta,k}$ \;\textbf{($-37.3\%$ MCU Cycles)}\\[2.4pt]
-    \textbf{Mean-Square UUB (Eqs.\ 24--25):}\; $\limsup_{k\to\infty}\mathbb{E}[\|\mathbf{e}_k^-\|^2] \le n\bar{p} + \left(\dfrac{c\bar{A}\bar{K}\bar{\varepsilon}}{1-\rho}\right)^2 < \infty$
+    \textbf{Mean-Square UUB (Eqs.\ 48--49):}\; $\limsup_{k\to\infty}\mathbb{E}[\|\mathbf{e}_k^-\|^2] \le n\bar{p} + \left(\dfrac{c\bar{A}\bar{K}\bar{\varepsilon}}{1-\rho}\right)^2 < \infty$
 };
 
 % Clean Unobstructed Bottom Feedback Return Rail (y = 8.90 -> aligned cleanly to x=6.50 return!)

@@ -131,7 +131,7 @@ where $\mathbf{x}_k = [\text{SOC}_k, U_{1,k}, U_{2,k}]^T$ is the discrete state 
 -\frac{\eta \Delta t}{3600\,Q_{\text{act}}}, & R_1\left(1 - e^{-\frac{\Delta t}{\tau_1}}\right), & R_2\left(1 - e^{-\frac{\Delta t}{\tau_2}}\right)
 \end{bmatrix}^T, \label{eqn:Bk_mat}
 \end{align}
-with nominal parameters calibrated in Table~\ref{tab:ecm_params}. The corresponding nonlinear voltage measurement model is:
+with nominal parameters calibrated in Table~\ref{tab:ecm_params} (Appendix~\ref{app:parameters}). The corresponding nonlinear voltage measurement model is:
 \begin{equation}\label{eqn:measurement_eq}
 y_k = V_k = V_{\text{ocv}}(\text{SOC}_k) - U_{1,k} - U_{2,k} - I_k R_0 + v_k,
 \end{equation}

@@ -1,6 +1,6 @@
 # COVER LETTER FOR SUBMISSION TO JOURNAL OF ENERGY STORAGE (ELSEVIER)
 
-**Date:** November 8, 2026
+**Date:** November 16, 2026
 
 **To:**  
 The Editor-in-Chief  
