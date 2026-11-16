@@ -57,9 +57,11 @@ Reliable state-of-charge (SOC) estimation is foundational to battery management 
 \entry{$C_{\text{th}}, R_{\text{th}}$}{lumped cell thermal capacitance ($\text{J}\cdot\text{K}^{-1}$) and thermal resistance to ambient ($\text{K}\cdot\text{W}^{-1}$)}
 \entry{$\mathbf{C}_{\theta,k}, \mathbf{H}_k$}{parameter sensitivity and voltage observation Jacobian matrices}
 \entry{$E_a, R$}{Arrhenius activation energy ($\text{J}\cdot\text{mol}^{-1}$) and universal gas constant ($8.314\;\text{J}\cdot\text{mol}^{-1}\cdot\text{K}^{-1}$)}
+\entry{$\mathbf{e}_k^-, \boldsymbol{\Phi}_F$}{\emph{a priori} state error vector and multi-cycle closed-loop transition product}
 \entry{$\mathbf{F}_k, \mathcal{G}_o, \mathcal{O}_k$}{closed-loop error matrix, linear time-varying Gramian, and observability matrix}
 \entry{$I_k, I(t)$}{cell load current at time step $k$, positive for discharge ($\text{A}$)}
 \entry{$\mathbf{K}_k, \mathbf{K}_{\theta,k}, \mathbf{L}$}{state and parameter Kalman filter gains and sliding mode feedback gain}
+\entry{$\mathcal{L}, \mathcal{NN}, \mathcal{R}$}{composite training loss objective, neural network operator, and physics residual}
 \entry{$M(z), V_h$}{maximum dynamic hysteresis function and hysteresis overpotential state ($\text{V}$)}
 \entry{$\mathbf{P}_k, \mathbf{Q}_k, R_v$}{state error covariance, process noise covariance, and measurement noise variance}
 \entry{$Q_{\text{act}}, Q_{\text{init}}$}{actual degraded usable capacity and initial pristine capacity ($\text{A}\cdot\text{h}$)}
@@ -79,6 +81,7 @@ Reliable state-of-charge (SOC) estimation is foundational to battery management 
 \entry{$\Delta t, \mu$}{discrete sampling interval ($1.0\;\text{s}$) and sliding mode boundary layer thickness ($\text{V}$)}
 \entry{$\eta, \kappa$}{Faradaic coulombic efficiency and matrix condition number}
 \entry{$\kappa_0, \kappa_1$}{Butler--Volmer neural overpotential envelope bound coefficients}
+\entry{$\rho, \underline{p}, \bar{p}$}{exponential contraction rate and uniform Riccati covariance bounds}
 \entry{$\tau_1, \tau_2$}{electrochemical polarization time constants ($\tau_i = R_i C_i$, $\text{s}$)}
 \entry{$\boldsymbol{\theta}_k$}{parameter state vector in DEKF ($[R_{0,k}, 1/Q_{\text{act},k}]^T$)}
 
