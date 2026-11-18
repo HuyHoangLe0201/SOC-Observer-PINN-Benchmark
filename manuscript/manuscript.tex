@@ -515,7 +515,7 @@ Figure~\ref{fig:lfp} and Table~\ref{tab:5_lfp} evaluate estimation performance o
 Incorporating dynamic hysteresis transforms this observability landscape. Whereas a three-state model loses practical observability across the plateau, coupling the hysteresis state under bidirectional current reversals provides an effective charge--discharge voltage signature across the loop that maintains a strictly positive-definite LTV observability Gramian, enabling DEKF to achieve sub-percent tracking as the strongest classical LFP estimator (conversely, purely unidirectional current saturates hysteresis and reverts toward open-loop integration). Equally important, because the capacity-sensitivity Jacobian in Eq.~\eqref{eqn:dekf_param_jacobian} scales linearly with $V_{\text{ocv}}'(\hat{z}_k^+)$, $Q_{\text{act}}$ adaptation automatically freezes across the flat plateau and concentrates parameter updates strictly within the steep upper and lower voltage knees near full charge and depletion, while rest intervals apply innovation gating ($\mathbf{K}_k = \mathbf{0}, \mathbf{K}_{\theta,k} = \mathbf{0}$) to preserve stability. Meanwhile, standalone neural networks suffer substantial zero-shot transfer errors across chemistries due to unmodeled hysteresis, though chemistry-specific retraining restores accuracy below $2\%$ RMSE.
 
 \begin{table}[htbp]
-\caption{Cross-Chemistry Benchmark Comparing NMC and $\text{LiFePO}_4$ [Tier~1 Experimental Data; ZS: zero-shot, Ret.: retrained, Max: MaxE].\label{tab:5_lfp}}
+\caption{Cross-chemistry benchmark comparing NMC and $\text{LiFePO}_4$ [Tier~1 Experimental Data; ZS: zero-shot, Ret.: retrained, Max: MaxE].\label{tab:5_lfp}}
 \centering{%
 \small\renewcommand{\arraystretch}{1.25}
 \setlength{\tabcolsep}{1.8pt}
@@ -687,7 +687,7 @@ Table~\ref{tab:9_pidkf} and Fig.~\ref{fig:pidkf} reveal a complementary chemistr
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=0.82\linewidth]{fig11_pidkf_hybrid_benchmark.pdf}
-\caption{Hybrid PIDKF tracking ($<0.5\%$ error) on degraded cells ($85\%$ SOH, UDDS, $25^\circ\text{C}$).\label{fig:pidkf}}
+\caption{Hybrid PIDKF tracking ($<0.5\%$ error) on a degraded $\text{LiFePO}_4$ cell ($85\%$ SOH, FUDS, $25^\circ\text{C}$).\label{fig:pidkf}}
 \end{figure}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
