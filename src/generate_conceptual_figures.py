@@ -1149,9 +1149,9 @@ def get_framework_tex():
 \filldraw[fill=hdrteal, draw=black, line width=0.6pt] (11.92, 1.74) rectangle (17.46, 2.18);
 \node[font=\fontsize{7.5}{8.6}\selectfont\bfseries] at (14.69, 1.96) {08 $\mid$ EIS Diagnostics};
 \node[align=center, font=\fontsize{6.8}{8.2}\selectfont] at (14.69, 0.99) {
-    $100\;\mathrm{kHz}\text{--}1\;\mathrm{mHz}$ Randles--CPE\\
-    $R_0$ ($+50\%$), $R_{\mathrm{ct}}$ ($+150\%$), $\alpha=0.94$\\
-    \textbf{RMS Fit Error: $1.1\%\text{--}1.8\%$}
+    $16\;\mathrm{mHz}\text{--}30\;\mathrm{kHz}$ Randles--CPE\\
+    $R_0$ ($+50\%$), $R_{\mathrm{ct}}\equiv R_1$ ($+150\%$)\\
+    \textbf{Model-Based ($\alpha=0.94$)}
 };
 
 \draw[phasecard] (17.76, 0.24) rectangle (23.30, 2.18);
