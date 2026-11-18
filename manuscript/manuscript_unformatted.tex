@@ -441,7 +441,7 @@ Figure~\ref{fig:thermal} and Table~\ref{tab:3_thermal} illustrate algorithmic tr
 
 At $0^\circ\text{C}$, sluggish $\text{Li}^+$ desolvation (slower shedding of solvent molecules before ions enter the electrode) expands charge-transfer resistance $R_1$ nearly threefold via Arrhenius kinetics (Eqs.~\eqref{eqn:arrh_r0}--\eqref{eqn:arrh_ri}), degrading fixed EKF tracking (Table~\ref{tab:3_thermal}, Fig.~\ref{fig:thermal}). Notably, standard DEKF degrades even further in cold weather: because it adapts $\hat{\boldsymbol{\theta}}_k = [\hat{R}_{0,k}, 1/\hat{Q}_{\text{act},k}]^T$ while holding $R_1$ at its room-temperature baseline, the unmodeled polarization drop across $R_1$ at $0^\circ\text{C}$ drives innovation residuals that the parameter filter misattributes to $\hat{R}_0$ and $\hat{Q}_{\text{act}}$, inducing severe parameter cross-coupling.
 
-This cold-weather vulnerability directly motivates the proposed PIDKF, whose neural compensator absorbs cold charge-transfer overpotentials to sharply reduce aged cold-climate error across both chemistries (Table~\ref{tab:9_pidkf}). Meanwhile, pure data-driven BiLSTM-Attn and PINN-SOC suffer severe out-of-distribution drift at both $0^\circ\text{C}$ and $45^\circ\text{C}$, whereas SMO maintains strong thermal invariance across all ambient temperatures via discontinuous manifold clamping.
+This cold-weather vulnerability directly motivates the proposed PIDKF, whose neural compensator absorbs cold charge-transfer overpotentials to reduce aged cold-climate error on NASA NMC cells ($4^\circ\text{C}$, Table~\ref{tab:9_pidkf}). Meanwhile, the neural baselines (BiLSTM-Attn and PINN-SOC) suffer severe out-of-distribution drift at both $0^\circ\text{C}$ and $45^\circ\text{C}$, whereas SMO maintains nearly uniform tracking error across all ambient temperatures via discontinuous manifold clamping.
 
 \begin{table}[htbp]
 \caption{Thermal robustness comparison across ambient temperatures [Tier~1 Experimental Cycler Data] (RMSE in \%).\label{tab:3_thermal}}
@@ -451,10 +451,10 @@ This cold-weather vulnerability directly motivates the proposed PIDKF, whose neu
 \toprule
 Algorithm & 0$^\circ$C & 25$^\circ$C & 45$^\circ$C \\
 \midrule
-EKF & 0.669 & \textbf{0.065} & \textbf{0.063} \\
+EKF & \textbf{0.669} & \textbf{0.065} & \textbf{0.063} \\
 AEKF & 3.178 & 0.759 & 0.238 \\
 DEKF & 2.254 & 0.191 & 0.445 \\
-SMO & \textbf{0.929} & 0.941 & 0.932 \\
+SMO & 0.929 & 0.941 & 0.932 \\
 BiLSTM-Attn & 6.457 & 2.813 & 9.462 \\
 PINN-SOC & 6.307 & 2.781 & 9.644 \\
 \bottomrule
