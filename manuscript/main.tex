@@ -26,7 +26,7 @@
 \providecommand{\upmu}{\mu}
 
 % Compact two-column nomenclature commands
-\newcommand{\entry}[2]{\noindent\parbox[t]{0.31\columnwidth}{\raggedright #1}\parbox[t]{0.67\columnwidth}{\raggedright #2}\par\vspace{2pt}}
+\newcommand{\entry}[2]{\noindent\parbox[t]{0.30\columnwidth}{\raggedright #1}\hfill\parbox[t]{0.66\columnwidth}{\raggedright #2}\par\vspace{2pt}}
 \newcommand{\EntryHeading}[1]{\par\vspace{5pt}\noindent\textbf{\small #1}\par\vspace{2pt}}
 \newenvironment{nomenclature}{\section*{Nomenclature}\begin{multicols}{2}\footnotesize}{\end{multicols}\vspace{0.4em}}
 
@@ -62,7 +62,7 @@ Electrified transportation and grid storage rely on lithium-ion battery manageme
 \entry{$D$, $d_k$}{BiLSTM hidden size and Sage--Husa weight sequence}
 \entry{$E_{a,i}$, $E_{a,Q}$}{Arrhenius resistance/capacity energies ($\text{J}\cdot\text{mol}^{-1}$)}
 \entry{$e_k$, $\mathbf{e}_k^-$, $e_{z,k}$}{voltage innovation ($\text{V}$), \emph{a priori} state error, SOC error}
-\entry{$\mathbf{F}_k$, $f_{T,i}(T)$, $f_Q(T)$}{error transition matrix and Arrhenius thermal/capacity factors}
+\entry{$\mathbf{F}_k$, $f_{T,i}(T)$,\\ $f_Q(T)$}{error transition matrix and Arrhenius thermal/capacity factors}
 \entry{$\mathcal{G}_o$, $\mathbf{g}_k$}{LTV observability Gramian and hysteresis excitation vector}
 \entry{$\mathbf{H}_k$, $\bar{H}$, $\mathbf{h}_t$}{voltage Jacobian, norm bound, and BiLSTM hidden state}
 \entry{$I(t)$, $I_k$, $I_{\max}$, $\mathbf{I}$}{current ($\text{A}$, $>0$ disch.), Butler--Volmer cap ($6\;\text{A}$), identity}
@@ -79,7 +79,7 @@ Electrified transportation and grid storage rely on lithium-ion battery manageme
 \entry{$R_0$, $R_1$, $R_2$}{series ($R_{\text{ohm}} + R_{\text{sei}}$) and polarization resistances ($\Omega$)}
 \entry{$R_{\text{ohm}}$, $R_{\text{sei}}$, $R_{\text{ct}}$}{ohmic, SEI film, and charge-transfer resistances ($\Omega$)}
 \entry{$R_{\text{th}}$, $R_{\text{cond}}$, $R$}{ambient/conductive thermal resistances ($\text{K}\cdot\text{W}^{-1}$); gas const.}
-\entry{$R_v$, $R_{\theta,v}$, $R_{\text{eff},k}$, $\mathcal{R}$}{measurement/effective variances ($\text{V}^2$) and physics residual}
+\entry{$R_v$, $R_{\theta,v}$,\\ $R_{\text{eff},k}$, $\mathcal{R}$}{measurement/effective variances ($\text{V}^2$) and physics residual}
 \entry{$S_k$, $T(t)$, $T_{\text{amb}}$, $T_{\text{ref}}$, $T_s$}{sliding manifold ($\text{V}$); core, ambient, ref ($298.15\;\text{K}$), surface temps}
 \entry{$t$, $t_{\text{reach}}^{(2\%)}$, $t_{\text{settle}}^{(5\%)}$}{time ($\text{s}$), $2\%$ first-entry reach time, $5\%$ settling time ($\text{s}$)}
 \entry{$T_{\text{rest},m}$, $T_{\max}$, $U_1$, $U_2$}{rest duration/bound ($\text{s}$) and RC overpotentials ($\text{V}$)}
@@ -96,7 +96,7 @@ Electrified transportation and grid storage rely on lithium-ion battery manageme
 \entry{$\gamma(\hat{z}_k)$, $\gamma_{C,i}$, $\gamma_I$}{SMO gain ($\text{V}$), capacitance aging rate, passivity weight}
 \entry{$\Delta t$, $\Delta z_k$, $\Delta\text{SOC}_0$}{sampling interval ($1.0\;\text{s}$), SOC step, initial SOC offset}
 \entry{$\varepsilon_k$, $\bar{\varepsilon}_{\text{tot}}$, $\eta(I)$, $\eta_{\text{lr}}$, $\eta_{\text{reach}}$}{perturbation/bound ($\text{V}$), coulombic eff., learning rate, SMO margin}
-\entry{$\boldsymbol{\theta}_k$, $\tilde{\boldsymbol{\theta}}_k$, $\boldsymbol{\theta}_{\text{PINN}}$, $\boldsymbol{\theta}_{\text{net}}$}{DEKF vector ($[R_{0,k}, 1/Q_{\text{act},k}]^T$), error, neural weights}
+\entry{$\boldsymbol{\theta}_k$, $\tilde{\boldsymbol{\theta}}_k$,\\ $\boldsymbol{\theta}_{\text{PINN}}$, $\boldsymbol{\theta}_{\text{net}}$}{DEKF vector ($[R_{0,k}, 1/Q_{\text{act},k}]^T$), error, neural weights}
 \entry{$\kappa(\cdot)$, $\kappa_0$, $\kappa_1$, $\kappa_{R_i}$, $\kappa_{T,\text{hot}}$}{condition number, Butler--Volmer/aging/thermal coeffs}
 \entry{$\lambda_{\text{SH}}$, $\lambda_{\min}(\cdot)$, $\lambda_{\text{phys}}$, $\lambda_{\text{reg}}$}{Sage--Husa forgetting factor, min eigenvalue, loss weights}
 \entry{$\mu$, $\mu_L(\cdot)$, $\rho$, $\rho_{\text{PE}}$}{SMO boundary layer ($\text{V}$), Lebesgue measure, contraction rates}
@@ -422,7 +422,7 @@ SMO & 1.222 & 0.975 & 4.527 & 10.258 & 3.402 \\
 BiLSTM-Attn & $4.250\pm0.653$ & 3.595 & 9.632 & $7.360\pm5.435$ & $6.158\pm1.227$ \\
 PINN-SOC & $3.625\pm0.851$ & 3.098 & 8.744 & $8.402\pm4.749$ & $6.853\pm2.281$ \\
 MLP (Unconstrained) & $3.201\pm0.518$ & 2.649 & 8.625 & $5.972\pm1.670$ & $4.489\pm0.982$ \\
-\textbf{PIDKF (Proposed)} & $0.258\pm0.111$ & 0.240 & 0.538 & \textbf{2.526$\pm$0.098} & \textbf{0.573$\pm$0.019} \\
+\textbf{PIDKF (Proposed)} & $0.258\pm0.111$ & 0.240 & 0.538 & $\mathbf{2.526\pm 0.098}$ & $\mathbf{0.573\pm 0.019}$ \\
 \bottomrule
 \end{tabular*}
 }%
@@ -451,7 +451,7 @@ SMO & 1.222\% & 2.046\% & 3.315\% & 4.575\% & 5.805\% & +375.0\% \\
 BiLSTM-Attn & 4.250\% & 4.185\% & 4.152\% & 4.150\% & $4.193\pm0.558\%$ & $-1.3\%$ \\
 PINN-SOC & 3.625\% & 3.800\% & 4.102\% & 4.508\% & $5.026\pm0.766\%$ & +38.6\% \\
 MLP (Unconstrained) & 3.201\% & 3.247\% & 3.418\% & 3.707\% & $4.118\pm0.257\%$ & +28.6\% \\
-\textbf{PIDKF (Proposed)} & 0.258\% & \textbf{0.372\%} & \textbf{0.515\%} & \textbf{0.772\%} & \textbf{0.928$\pm$0.027\%} & +259.7\% \\
+\textbf{PIDKF (Proposed)} & 0.258\% & \textbf{0.372\%} & \textbf{0.515\%} & \textbf{0.772\%} & $\mathbf{0.928\pm 0.027}\textbf{\%}$ & +259.7\% \\
 \bottomrule
 \end{tabular*}%
 \vspace{2pt}
@@ -666,7 +666,7 @@ BiLSTM-Attn & 13,698 & 1,680,000 & 2,850,000 & 8,160 & 58,992 & 16,964.29 & 4,09
 \caption{Tier~2 five-seed PIDKF ablation on unseen degraded UDDS ($85\%$ SOH, $25^\circ\text{C}$ and $0^\circ\text{C}$; Mean$\pm$SD over seeds $42\text{--}46$).\label{tab:9_pidkf}}
 \centering{%
 \small\renewcommand{\arraystretch}{1.15}
-\setlength{\tabcolsep}{2.2pt}
+\setlength{\tabcolsep}{3.5pt}
 \resizebox{\linewidth}{!}{%
 \begin{tabular}{lccccc}
 \toprule
@@ -678,9 +678,9 @@ Standard EKF & 2.207 & 4.763 & 1.495 & 3.794 & 15.886 \\
 Baseline DEKF (No Hyst.) & 1.321 & 3.530 & 0.748 & 1.483 & 7.147 \\
 DEKF + Hysteresis & 1.321 & 3.530 & \textbf{0.346} & \textbf{1.167} & 7.147 \\
 DEKF + Black-Box MLP & $0.924\pm0.069$ & 3.686 & $0.895\pm0.123$ & 2.001 & $5.585\pm0.258$ \\
-DEKF + Phys-Reg MLP (No Clamp) & $0.699\pm0.170$ & 3.383 & $0.688\pm0.068$ & 1.630 & \textbf{4.565$\pm$0.244} \\
+DEKF + Phys-Reg MLP (No Clamp) & $0.699\pm0.170$ & 3.383 & $0.688\pm0.068$ & 1.630 & $\mathbf{4.565\pm 0.244}$ \\
 Full PIDKF (Exact Jac.) & $1.894\pm0.495$ & \textbf{3.291} & $1.033\pm0.468$ & 2.117 & $7.808\pm0.508$ \\
-\textbf{Full PIDKF (Exog.\ Approx.)} & \textbf{0.554$\pm$0.018} & 3.304 & $0.593\pm0.048$ & 1.463 & $5.092\pm0.037$ \\
+\textbf{Full PIDKF (Exog.\ Approx.)} & $\mathbf{0.554\pm 0.018}$ & 3.304 & $0.593\pm0.048$ & 1.463 & $5.092\pm0.037$ \\
 \bottomrule
 \end{tabular}%
 }%
@@ -699,24 +699,24 @@ Full PIDKF (Exact Jac.) & $1.894\pm0.495$ & \textbf{3.291} & $1.033\pm0.468$ & 2
 \caption{Tier~1 direct laboratory cycler validation on held-out XJTU Batch-5 (NMC532 Random Walk) and NASA Ames PCoE ($24^\circ\text{C}$ aging, $43^\circ\text{C}$ high-rate, and $4^\circ\text{C}$ cold discharge) datasets (RMSE in \%).\label{tab:10_tier1}}
 \centering{%
 \small\renewcommand{\arraystretch}{1.15}
-\setlength{\tabcolsep}{2.2pt}
+\setlength{\tabcolsep}{4pt}
 \resizebox{\linewidth}{!}{%
 \begin{tabular}{lcccccccc}
 \toprule
 Test Cell & Cond. & SOH / $Q_{\text{act}}$ & EKF & AEKF & DEKF & SMO & BiLSTM / PINN$^\dagger$ & \textbf{PIDKF} \\
 \midrule
 \multicolumn{9}{l}{\emph{XJTU Batch-5 Held-Out Test Cells (Batch~B Dynamic Random Walk, Calibrated Strictly on Batch~A RW\_1/RW\_2)}} \\
-\texttt{RW\_3} Fresh & $25^\circ\text{C}$ RW & $100.0\%$ & 1.796 & 1.889 & 1.490 & 5.025 & $2.175\pm0.135$ / $3.992\pm0.787$ & \textbf{1.425$\pm$0.058} \\
+\texttt{RW\_3} Fresh & $25^\circ\text{C}$ RW & $100.0\%$ & 1.796 & 1.889 & 1.490 & 5.025 & $2.175\pm0.135$ / $3.992\pm0.787$ & $\mathbf{1.425\pm 0.058}$ \\
 \texttt{RW\_4} Fresh & $25^\circ\text{C}$ RW & $100.0\%$ & 3.542 & 3.923 & \textbf{2.210} & 6.015 & $2.449\pm0.219$ / $4.742\pm0.891$ & $2.566\pm0.252$ \\
-\texttt{RW\_3} Aged & $25^\circ\text{C}$ RW & $86.0\%$ & 2.241 & 2.259 & 2.397 & 5.851 & $5.994\pm0.246$ / $3.996\pm0.937$ & \textbf{2.034$\pm$0.132} \\
-\texttt{RW\_4} Aged & $25^\circ\text{C}$ RW & $86.8\%$ & 2.983 & 3.041 & 3.044 & 6.622 & $5.854\pm0.233$ / $4.732\pm0.899$ & \textbf{2.750$\pm$0.138} \\
+\texttt{RW\_3} Aged & $25^\circ\text{C}$ RW & $86.0\%$ & 2.241 & 2.259 & 2.397 & 5.851 & $5.994\pm0.246$ / $3.996\pm0.937$ & $\mathbf{2.034\pm 0.132}$ \\
+\texttt{RW\_4} Aged & $25^\circ\text{C}$ RW & $86.8\%$ & 2.983 & 3.041 & 3.044 & 6.622 & $5.854\pm0.233$ / $4.732\pm0.899$ & $\mathbf{2.750\pm 0.138}$ \\
 \midrule
 \multicolumn{9}{l}{\emph{NASA Ames PCoE Cells (Calibrated on Fresh \texttt{B0005} Cyc.\ 0 @ $R_0 = 44.67\;\mathrm{m}\Omega$ from EIS)}} \\
-\texttt{B0007} Fresh & $24^\circ\text{C}$ $2\text{ A}$ & $1.920\;\mathrm{Ah}$ & 0.799 & 0.799 & 0.787 & 0.890 & --$^\ddagger$ & \textbf{0.636$\pm$0.045} \\
-\texttt{B0007} Aged & $24^\circ\text{C}$ $2\text{ A}$ & $1.553\;\mathrm{Ah}$ ($81\%$) & 3.900 & 3.965 & 2.246 & 6.185 & --$^\ddagger$ & \textbf{1.715$\pm$0.098} \\
+\texttt{B0007} Fresh & $24^\circ\text{C}$ $2\text{ A}$ & $1.920\;\mathrm{Ah}$ & 0.799 & 0.799 & 0.787 & 0.890 & --$^\ddagger$ & $\mathbf{0.636\pm 0.045}$ \\
+\texttt{B0007} Aged & $24^\circ\text{C}$ $2\text{ A}$ & $1.553\;\mathrm{Ah}$ ($81\%$) & 3.900 & 3.965 & 2.246 & 6.185 & --$^\ddagger$ & $\mathbf{1.715\pm 0.098}$ \\
 \texttt{B0030} Hot & $43^\circ\text{C}$ $4\text{ A}$ & $1.757\;\mathrm{Ah}$ & 7.490 & 7.427 & \textbf{4.863} & 7.986 & --$^\ddagger$ & $4.940\pm0.131$ \\
-\texttt{B0055} Cold & $4^\circ\text{C}$ $2\text{ A}$ & $1.253\;\mathrm{Ah}$ & 26.109 & 26.405 & 15.752 & 36.109 & --$^\ddagger$ & \textbf{9.562$\pm$0.122} \\
-\texttt{B0056} Cold & $4^\circ\text{C}$ $2\text{ A}$ & $1.261\;\mathrm{Ah}$ & 30.218 & 30.696 & 19.545 & 39.633 & --$^\ddagger$ & \textbf{13.618$\pm$0.069} \\
+\texttt{B0055} Cold & $4^\circ\text{C}$ $2\text{ A}$ & $1.253\;\mathrm{Ah}$ & 26.109 & 26.405 & 15.752 & 36.109 & --$^\ddagger$ & $\mathbf{9.562\pm 0.122}$ \\
+\texttt{B0056} Cold & $4^\circ\text{C}$ $2\text{ A}$ & $1.261\;\mathrm{Ah}$ & 30.218 & 30.696 & 19.545 & 39.633 & --$^\ddagger$ & $\mathbf{13.618\pm 0.069}$ \\
 \bottomrule
 \end{tabular}%
 }%
@@ -769,7 +769,7 @@ with scheduled gain $\gamma(\hat{z}) \equiv \mathbf{H}_k\mathbf{L}(\hat{z}) = l_
 
 \emph{UUB Convergence}: Because polarization and hysteresis gains vanish ($l_2 = l_3 = l_h = 0$), branch errors obey passive ISS bounds $|e_{U_i,k}| \le \bar{e}_U \le 3.5\text{ mV}$ and LFP hysteresis error satisfies $|e_{h,k}| \le \bar{e}_h = 2 M_0 = 60.0\text{ mV}$ (with upper bounds $\bar{e}_U$ and $\bar{e}_h$). By the Mean Value Theorem (MVT) with $|V_{\text{meas}} - \hat{V}_t| \le |S|$ in $\mathcal{B}_\mu$, the unit-consistent SOC bound satisfies $|e_{z,k}| \le (\mu + 2\bar{e}_U + \bar{e}_h + V_{\text{AFE}})/\alpha_{\text{chem}}$ with minimum chemistry OCV slope floor $\alpha_{\text{chem}}$ taking values $\alpha_{\text{NMC}} = 0.4813\;\mathrm{V}$ and $\alpha_{\text{LFP}} = 0.0659\;\mathrm{V}$ per unit SOC. For NMC ($\bar{e}_h = 0$), $|e_z| \le 5.78\%$ across $\mathcal{B}_\mu$ and $\le 3.01\%$ inside $\Omega_{\text{ult}}$; for LFP, finite UUB holds along the plateau for full state error $\mathbf{e}_x$ ($\|\mathbf{e}_x\|_2 < \infty$; formal bound reaches $42.2\%$ in $\mathcal{B}_\mu$ or $22.0\%$ in $\Omega_{\text{ult}}$ when $e_h \to 0$, and saturates physically to $[0, 1]$ without state--hysteresis decoupling).
 
-\section{Calibrated Model Constants, Hyperparameters, and Riccati Invariance\label{app:parameters}}
+\section{Model Constants, Hyperparameters, and Riccati Invariance\label{app:parameters}}
 Calibrated 2-RC, thermal, and hysteresis constants appear in Table~\ref{tab:ecm_params}, with lumped thermal properties $C_{\text{th}} = 35.8\text{ J/K}$, $R_{\text{th}} = 12.5\text{ K/W}$ (18650 NMC) and $C_{\text{th}} = 65.2\text{ J/K}$, $R_{\text{th}} = 8.4\text{ K/W}$ (26650 LFP; $\text{Bi} \approx 0.096$, core-to-surface differential $\le 0.42^\circ\text{C}$ at $2\text{C}$). Temperature and aging scalings follow ($T_{\text{ref}} = 298.15\text{ K}$, $R = 8.314\text{ J}\cdot\text{mol}^{-1}\cdot\text{K}^{-1}$):
 \begin{align*}
 f_{T,i}(T) &= \exp\!\left[\frac{E_{a,i}}{R}\left(\frac{1}{T} - \frac{1}{T_{\text{ref}}}\right)\right], &
