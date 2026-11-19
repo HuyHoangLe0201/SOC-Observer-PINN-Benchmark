@@ -58,3 +58,10 @@ Thumbs.db
 .idea/
 *.swp
 *~
+
+# Manuscript and journal submission files (local only, not pushed to GitHub)
+manuscript/
+submission_journal_of_energy_storage/
+Journal_of_Energy_Storage_Submission_Package*.zip
+manuscript_unformatted.pdf
+Cover_Letter_Journal_of_Energy_Storage.docx

@@ -59,8 +59,6 @@ While conventional battery State-of-Charge (SOC) estimation studies predominantl
 ├── requirements.txt                             # Python package dependencies
 ├── environment.yml                              # Conda environment definition
 ├── run_all_benchmarks.py                        # Dynamic CSV-backed verification & summary runner
-├── Cover_Letter_Journal_of_Energy_Storage.docx  # Word Cover Letter
-├── generate_word_cover_letter.py                # Reproducible Word Cover Letter generator
 │
 ├── src/                                         # Modular Python benchmark & Tier 1 runners
 │   ├── battery_model.py                         # 2-RC ECM with Arrhenius, LFP hysteresis & degradation
@@ -92,22 +90,9 @@ While conventional battery State-of-Charge (SOC) estimation studies predominantl
 │   ├── dataset_loader.py                        # Generic parser & synthetic CALCE-format quickstart CSV
 │   └── calce_sample_udds_25c.csv                # Synthetic UDDS compatibility test file
 │
-├── results/                                     # Verified CSVs, pure-vector PDFs & 600-DPI PNGs
-│   ├── table1_dynamic_udds.csv ... table9_pidkf_ablation.csv
-│   ├── tier1_xjtu_random_walk.csv, tier1_nasa_thermal_aging.csv, eis_nasa_b0006_fit.csv
-│   └── fig1.pdf/.png ... fig13.pdf/.png
-│
-├── manuscript/                                  # Complete unformatted LaTeX manuscript (article.cls)
-│   ├── main.tex / manuscript.tex / manuscript_unformatted.tex
-│   ├── references.bib
-│   ├── manuscript.pdf / manuscript_unformatted.pdf
-│   └── fig1.pdf/.png ... fig13.pdf/.png
-│
-└── submission_journal_of_energy_storage/        # Clean flat submission folder (main.tex + figs + cover letter)
-    ├── main.tex / main.pdf / main.bbl / references.bib
-    ├── COVER_LETTER_JOURNAL_OF_ENERGY_STORAGE.md
-    ├── Cover_Letter_Journal_of_Energy_Storage.docx
-    ├── HIGHLIGHTS_JOURNAL_OF_ENERGY_STORAGE.md
+└── results/                                     # Verified CSVs, pure-vector PDFs & 600-DPI PNGs
+    ├── table1_dynamic_udds.csv ... table9_pidkf_ablation.csv
+    ├── tier1_xjtu_random_walk.csv, tier1_nasa_thermal_aging.csv, eis_nasa_b0006_fit.csv
     └── fig1.pdf/.png ... fig13.pdf/.png
 ```
 

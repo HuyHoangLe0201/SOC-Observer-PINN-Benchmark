@@ -22,8 +22,6 @@ def print_banner():
 
 def verify_reproducible_assets(ws):
     results_dir = os.path.join(ws, "results")
-    manuscript_dir = os.path.join(ws, "manuscript")
-    sub_dir = os.path.join(ws, "submission_journal_of_energy_storage")
 
     expected_figs = [
         ("fig1", (".pdf", ".png")),
@@ -57,17 +55,16 @@ def verify_reproducible_assets(ws):
         "tier1_nasa_thermal_aging.csv",
     ]
 
-    print("[1/3] Verifying Generated Benchmark Figures (13 PDF + 13 PNG across all folders)...")
+    print("[1/3] Verifying Generated Benchmark Figures (13 PDF + 13 PNG in results/)...")
     all_ok = True
     for base, exts in expected_figs:
         missing = []
-        for folder in (results_dir, manuscript_dir, sub_dir):
-            for ext in exts:
-                if not os.path.exists(os.path.join(folder, base + ext)):
-                    missing.append(f"{os.path.basename(folder)}/{base}{ext}")
+        for ext in exts:
+            if not os.path.exists(os.path.join(results_dir, base + ext)):
+                missing.append(f"results/{base}{ext}")
         png_kb = os.path.getsize(os.path.join(results_dir, base + ".png")) / 1024.0 if os.path.exists(os.path.join(results_dir, base + ".png")) else 0.0
         if not missing:
-            print(f"  [OK] {base:34s} ({png_kb:6.1f} KB PNG) - Synced (PDF+PNG)")
+            print(f"  [OK] {base:34s} ({png_kb:6.1f} KB PNG) - Verified (PDF+PNG)")
         else:
             print(f"  [MISSING] {base}: {', '.join(missing)}")
             all_ok = False
@@ -112,8 +109,6 @@ def main():
     summarize_from_csvs(ws)
     elapsed = time.time() - t0
     print(f"\nVerification finished in {elapsed:.2f} s | Status: {'PASS' if ok else 'INCOMPLETE'}")
-    print("Submitted PDF: submission_journal_of_energy_storage/main.pdf")
-    print("Cover Letter:  Cover_Letter_Journal_of_Energy_Storage.docx")
     if not ok:
         raise SystemExit(1)
 
