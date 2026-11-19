@@ -9,7 +9,7 @@
 
 void EKF_OCV_NMC(float soc, float *Vocv, float *dVocv)
 {
-    /* Strictly monotonic 5th-order polynomial calibrated for Samsung INR18650-20R (Eq. 11) */
+    /* Strictly monotonic 5th-order polynomial calibrated for INR20R-class NMC (Eq. 15) */
     if (soc < 0.0f) soc = 0.0f;
     if (soc > 1.0f) soc = 1.0f;
 
@@ -42,14 +42,14 @@ void EKF_Init(EKF_Handle_t *h, float soc_init, float Q_nom, float R0, float R1, 
     h->Q[4] = 1e-5f;
     h->Q[8] = 1e-5f;
 
-    h->R = 1e-3f; /* 1000 uV^2 */
+    h->R = 1e-3f; /* 10^-3 V^2 (1,000 mV^2) */
     h->Q_nom = Q_nom;
     h->R0 = R0;
     h->R1 = R1;
     h->C1 = C1;
     h->R2 = R2;
     h->C2 = C2;
-    h->eta = 0.995f;
+    h->eta = 0.995f; /* Charge coulombic efficiency (discharge eta = 1.0f) */
     h->dt = 1.0f;
 }
 
@@ -60,8 +60,11 @@ float EKF_Step(EKF_Handle_t *h, float I, float V_meas)
     float b1 = h->R1 * (1.0f - a1);
     float a2 = expf(-h->dt / (h->R2 * h->C2));
     float b2 = h->R2 * (1.0f - a2);
+    float eta = (I >= 0.0f) ? 1.0f : h->eta;
 
-    h->x[0] = h->x[0] - (h->eta * h->dt / (3600.0f * h->Q_nom)) * I;
+    h->x[0] = h->x[0] - (eta * h->dt / (3600.0f * h->Q_nom)) * I;
+    if (h->x[0] < 0.0f) h->x[0] = 0.0f;
+    if (h->x[0] > 1.0f) h->x[0] = 1.0f;
     h->x[1] = a1 * h->x[1] + b1 * I;
     h->x[2] = a2 * h->x[2] + b2 * I;
 
@@ -76,7 +79,7 @@ float EKF_Step(EKF_Handle_t *h, float I, float V_meas)
     h->P[7] = a1 * a2 * h->P[7];
     h->P[8] = a2 * a2 * h->P[8] + h->Q[8];
 
-    /* 2. Measurement Update */
+    /* 2. Measurement Update (with |I| < 10 mA rest-period gating) */
     float Vocv, dVocv;
     EKF_OCV_NMC(h->x[0], &Vocv, &dVocv);
     float V_pred = Vocv - h->x[1] - h->x[2] - I * h->R0;
@@ -85,17 +88,23 @@ float EKF_Step(EKF_Handle_t *h, float I, float V_meas)
     /* Observation Jacobian H = [dVocv, -1, -1] */
     float H[3] = { dVocv, -1.0f, -1.0f };
 
-    /* S = H P H^T + R */
-    float PH_T[3];
-    PH_T[0] = h->P[0]*H[0] + h->P[1]*H[1] + h->P[2]*H[2];
-    PH_T[1] = h->P[3]*H[0] + h->P[4]*H[1] + h->P[5]*H[2];
-    PH_T[2] = h->P[6]*H[0] + h->P[7]*H[1] + h->P[8]*H[2];
+    int is_rest = (fabsf(I) < 0.010f) ? 1 : 0;
+    float K[3] = { 0.0f, 0.0f, 0.0f };
+    if (!is_rest) {
+        /* S = H P H^T + R */
+        float PH_T[3];
+        PH_T[0] = h->P[0]*H[0] + h->P[1]*H[1] + h->P[2]*H[2];
+        PH_T[1] = h->P[3]*H[0] + h->P[4]*H[1] + h->P[5]*H[2];
+        PH_T[2] = h->P[6]*H[0] + h->P[7]*H[1] + h->P[8]*H[2];
 
-    float S = H[0]*PH_T[0] + H[1]*PH_T[1] + H[2]*PH_T[2] + h->R;
-    float invS = 1.0f / S;
+        float S = H[0]*PH_T[0] + H[1]*PH_T[1] + H[2]*PH_T[2] + h->R;
+        float invS = 1.0f / S;
 
-    /* Kalman Gain K = P H^T / S */
-    float K[3] = { PH_T[0] * invS, PH_T[1] * invS, PH_T[2] * invS };
+        /* Kalman Gain K = P H^T / S */
+        K[0] = PH_T[0] * invS;
+        K[1] = PH_T[1] * invS;
+        K[2] = PH_T[2] * invS;
+    }
 
     /* State correction */
     h->x[0] += K[0] * innovation;

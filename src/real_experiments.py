@@ -33,7 +33,10 @@ from models_data_driven import BiLSTMAttentionSOC
 from models_physics_informed import PINNSOCModel
 from pidkf_hybrid import ResidualCompensatorMLP, build_feature_vector
 
-XJTU_BATCH5_DIR = r"D:\bách khoa Đà Nẵng\nghiencuukhoahoc\baotri\data\NASABattery\Battery Dataset\Batch-5"
+XJTU_BATCH5_DIR = os.environ.get(
+    "XJTU_BATCH5_DIR",
+    r"D:\bách khoa Đà Nẵng\nghiencuukhoahoc\baotri\data\NASABattery\Battery Dataset\Batch-5",
+)
 
 
 def extract_xjtu_cycle(cell_idx, cyc_idx):
