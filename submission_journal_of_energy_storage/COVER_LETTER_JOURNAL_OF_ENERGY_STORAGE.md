@@ -1,4 +1,4 @@
-# Cover Letter — Journal of Energy Storage (Elsevier)
+# Cover Letter - Journal of Energy Storage (Elsevier)
 
 Dear Editor-in-Chief,
 

@@ -69,7 +69,7 @@ While conventional battery State-of-Charge (SOC) estimation studies predominantl
 │   ├── models_data_driven.py                    # BiLSTM with temporal self-attention
 │   ├── models_physics_informed.py               # Shift-invariant PINN-SOC & matched Unconstrained MLP
 │   ├── pidkf_hybrid.py                          # Proposed hybrid PIDKF & Butler-Volmer compensator
-│   ├── export_c_weights.py                      # Exports Seed-42 C weights, checks float32 parity, Table 8
+│   ├── export_c_weights.py                      # Exports Seed-42 C weights, checks float32 parity, Table 7
 │   ├── pack_model.py                            # 8S series pack with manufacturing & thermal gradients
 │   ├── eis_analyzer.py                          # Randles-CPE+L fitting on real NASA B0006 EIS spectra
 │   ├── benchmark_engine.py                      # Automated zero-leakage multi-phase evaluation engine
@@ -128,7 +128,7 @@ python src/run_experiment.py
 # 4. Re-run Phases 6, 7 & 10 advanced benchmarks & PIDKF ablation:
 python src/run_advanced_benchmarks.py
 
-# 5. Export Seed-42 weights to embedded_c/pidkf_weights.h, check parity & Table 8:
+# 5. Export Seed-42 weights to embedded_c/pidkf_weights.h, check parity & Table 7:
 python src/export_c_weights.py
 python src/generate_fig10_pareto.py
 
@@ -182,7 +182,7 @@ arm-none-eabi-gcc -std=c99 -c -O3 -mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=
 arm-none-eabi-gcc -std=c99 -c -O3 -mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=hard pidkf.c -o pidkf.o
 ```
 
-*(Note: Hardware `DWT->CYCCNT` timer capture on physical STM32 silicon is left for future HIL validation; Table 8 cycle counts and latencies reflect analytical instruction-level ARMv7E-M operation accounting.)*
+*(Note: Hardware `DWT->CYCCNT` timer capture on physical STM32 silicon is left for future HIL validation; Table 7 cycle counts and latencies reflect analytical instruction-level ARMv7E-M operation accounting.)*
 
 ---
 
