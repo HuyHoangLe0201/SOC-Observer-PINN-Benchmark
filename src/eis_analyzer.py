@@ -157,9 +157,9 @@ def generate_eis_figures_and_tables():
     ax2.grid(True)
     style_legend(ax2.legend(loc="upper left", fontsize=7.6))
 
-    out_fig8 = os.path.join(results_dir, "fig8_eis_nyquist_aging.png")
-    save_pub_figure(fig, out_fig8)
-    print(f"Saved Fig 8 to {out_fig8}")
+    out_fig10 = os.path.join(results_dir, "fig10.png")
+    save_pub_figure(fig, out_fig10)
+    print(f"Saved Fig 10 to {out_fig10}")
 
 
 if __name__ == "__main__":

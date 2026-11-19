@@ -253,9 +253,9 @@ def run_pack_inconsistency_benchmark():
     ax2.set_ylim(-2.8, max(5.5, peak_lumped + 3.2))
     style_legend(ax2.legend(loc="lower left", ncol=2, fontsize=7.4, columnspacing=0.9))
 
-    out_fig9 = os.path.join(results_dir, "fig9_pack_cell_inconsistency.png")
-    save_pub_figure(fig, out_fig9)
-    print(f"Saved Fig 9 to {out_fig9}")
+    out_fig11 = os.path.join(results_dir, "fig11.png")
+    save_pub_figure(fig, out_fig11)
+    print(f"Saved Fig 11 to {out_fig11}")
     return df, core_temp_delta
 
 

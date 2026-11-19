@@ -1249,5 +1249,5 @@ def compile_vector_and_png(tex_str, basename, folders, dpi=600):
 if __name__ == "__main__":
     data = build_pgfplots_data()
     target_folders = ["results", "manuscript", "submission_journal_of_energy_storage"]
-    compile_vector_and_png(get_mechanism_tex(data), "fig0_electrochemical_mechanism", target_folders, dpi=600)
-    compile_vector_and_png(get_framework_tex(), "fig0_pidkf_framework", target_folders, dpi=600)
+    compile_vector_and_png(get_mechanism_tex(data), "fig1", target_folders, dpi=600)
+    compile_vector_and_png(get_framework_tex(), "fig2", target_folders, dpi=600)

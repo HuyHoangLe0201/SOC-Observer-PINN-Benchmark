@@ -43,10 +43,10 @@ While conventional battery State-of-Charge (SOC) estimation studies predominantl
 ## 🖼️ Architectural & Physical Mechanism Overview
 
 ### 1. Coupled Electro-Thermal-Aging Physical Mechanism & Observability Landscape
-![Coupled Electro-Thermal-Aging Physical Mechanism](results/fig0_electrochemical_mechanism.png)
+![Coupled Electro-Thermal-Aging Physical Mechanism](results/fig1.png)
 
 ### 2. Proposed Hybrid PIDKF Architecture & 10-Phase Benchmarking Framework
-![Proposed Hybrid PIDKF Architecture](results/fig0_pidkf_framework.png)
+![Proposed Hybrid PIDKF Architecture](results/fig2.png)
 
 ---
 
@@ -76,11 +76,11 @@ While conventional battery State-of-Charge (SOC) estimation studies predominantl
 │   ├── nasa_data.py                             # NASA Ames PCoE loader & EIS spectrum parser
 │   ├── real_experiments.py                      # Tier 1 XJTU Batch-5 & NASA PCoE experiment runner
 │   ├── pub_style.py                             # Publication plotting styles & dual PDF/PNG exporter
-│   ├── run_experiment.py                        # Phases 1-5 orchestrator (Tables 1-5, Figs 1-5)
-│   ├── run_advanced_benchmarks.py               # Phases 6, 7 & 10 orchestrator (Tables 6,7,9 & Figs 6,7,11)
-│   ├── generate_conceptual_figures.py           # Pure-vector TikZ/PGFPlots conceptual figures (Fig 0a/b)
-│   ├── generate_fig10_pareto.py                 # CSV-driven Pareto & memory footprint figure (Fig 10)
-│   └── visualizer.py                            # Benchmark plotting suite (Figs 1-5)
+│   ├── run_experiment.py                        # Phases 1-5 orchestrator (Tables 1-5, Figs 3-7)
+│   ├── run_advanced_benchmarks.py               # Phases 6, 7 & 10 orchestrator (Tables 6,7,9 & Figs 8,9,13)
+│   ├── generate_conceptual_figures.py           # Pure-vector TikZ/PGFPlots conceptual figures (Figs 1-2)
+│   ├── generate_fig10_pareto.py                 # CSV-driven Pareto & memory footprint figure (Fig 12)
+│   └── visualizer.py                            # Benchmark plotting suite (Figs 3-7)
 │
 ├── embedded_c/                                  # Static zero-heap ANSI-C99 reference kernels
 │   ├── README.md                                # Analytical ARMv7E-M resource audit basis
@@ -95,20 +95,20 @@ While conventional battery State-of-Charge (SOC) estimation studies predominantl
 ├── results/                                     # Verified CSVs, pure-vector PDFs & 600-DPI PNGs
 │   ├── table1_dynamic_udds.csv ... table9_pidkf_ablation.csv
 │   ├── tier1_xjtu_random_walk.csv, tier1_nasa_thermal_aging.csv, eis_nasa_b0006_fit.csv
-│   └── fig0_*.pdf/.png ... fig11_pidkf_hybrid_benchmark.pdf/.png
+│   └── fig1.pdf/.png ... fig13.pdf/.png
 │
 ├── manuscript/                                  # Complete unformatted LaTeX manuscript (article.cls)
-│   ├── manuscript.tex / manuscript_unformatted.tex
+│   ├── main.tex / manuscript.tex / manuscript_unformatted.tex
 │   ├── references.bib
 │   ├── manuscript.pdf / manuscript_unformatted.pdf
-│   └── fig0_*.pdf/.png ... fig11_*.pdf/.png
+│   └── fig1.pdf/.png ... fig13.pdf/.png
 │
-└── submission_journal_of_energy_storage/        # Clean 32-file submission package
+└── submission_journal_of_energy_storage/        # Clean flat submission folder (main.tex + figs + cover letter)
+    ├── main.tex / main.pdf / main.bbl / references.bib
     ├── COVER_LETTER_JOURNAL_OF_ENERGY_STORAGE.md
     ├── Cover_Letter_Journal_of_Energy_Storage.docx
     ├── HIGHLIGHTS_JOURNAL_OF_ENERGY_STORAGE.md
-    ├── manuscript.pdf / manuscript.tex / references.bib
-    └── fig0_*.pdf/.png ... fig11_*.pdf/.png
+    └── fig1.pdf/.png ... fig13.pdf/.png
 ```
 
 ---

@@ -107,7 +107,7 @@ def main():
     print("\n--- Table 1: Performance Summary on Unseen UDDS Cycle at 25 C (NMC) ---")
     print(df_exp1.to_string(index=False))
 
-    visualizer.plot_tracking_and_errors(udds_data, exp1_res, save_path=os.path.join(results_dir, "fig1_udds_tracking_errors.png"))
+    visualizer.plot_tracking_and_errors(udds_data, exp1_res, save_path=os.path.join(results_dir, "fig3.png"))
 
     # -------------------------------------------------------------
     # PHASE 2: Degradation & Aging Robustness (SOH: 1.0 -> 0.8)
@@ -145,7 +145,7 @@ def main():
     print("\n--- Table 2: Degradation Robustness across Cell Aging (RMSE %) ---")
     print(df_exp2.to_string(index=False))
 
-    visualizer.plot_aging_degradation_trend(soh_levels, rmse_aging, save_path=os.path.join(results_dir, "fig2_aging_degradation.png"))
+    visualizer.plot_aging_degradation_trend(soh_levels, rmse_aging, save_path=os.path.join(results_dir, "fig4.png"))
 
     # -------------------------------------------------------------
     # PHASE 3: Thermal Stress Robustness (0 C, 25 C, 45 C)
@@ -179,7 +179,7 @@ def main():
     print("\n--- Table 3: Thermal Stress Robustness across Temperatures (RMSE %) ---")
     print(df_exp3.to_string(index=False))
 
-    visualizer.plot_thermal_regimes_bar(temp_levels, rmse_thermal, save_path=os.path.join(results_dir, "fig3_thermal_robustness.png"))
+    visualizer.plot_thermal_regimes_bar(temp_levels, rmse_thermal, save_path=os.path.join(results_dir, "fig5.png"))
 
     # -------------------------------------------------------------
     # PHASE 4: Initial SOC Uncertainty Convergence (Delta SOC = -40%)
@@ -204,7 +204,7 @@ def main():
     print("\n--- Table 4: Convergence Recovery from -40% Initial Offset ---")
     print(df_exp4.to_string(index=False))
 
-    visualizer.plot_convergence_trajectories(data_conv, res_conv, save_path=os.path.join(results_dir, "fig4_initial_error_convergence.png"))
+    visualizer.plot_convergence_trajectories(data_conv, res_conv, save_path=os.path.join(results_dir, "fig6.png"))
 
     # -------------------------------------------------------------
     # PHASE 5: Deterministically Computed Multi-Attribute Radar Scores
@@ -225,7 +225,7 @@ def main():
     ])
     df_exp5.to_csv(os.path.join(results_dir, "table5_radar_scores.csv"), index=False)
     print(df_exp5.to_string(index=False))
-    visualizer.plot_radar_summary(radar_scores, save_path=os.path.join(results_dir, "fig5_radar_tradeoff.png"))
+    visualizer.plot_radar_summary(radar_scores, save_path=os.path.join(results_dir, "fig7.png"))
 
     print("\n" + "=" * 84)
     print("PHASES 1-5 COMPLETED CLEANLY!")

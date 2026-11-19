@@ -229,7 +229,7 @@ Equation~\eqref{eqn:det_obs_lfp} exposes a structural dichotomy between rest and
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.98\textwidth]{fig0_electrochemical_mechanism.pdf}
+\includegraphics[width=0.98\textwidth]{fig1.pdf}
 \caption{Coupled electro-thermal-aging physical mechanism and observability landscape: (a)~microscopic electrode degradation (anode SEI film growth, lithium plating risk, and cathode single-phase NMC vs.\ biphasic $\text{LiFePO}_4 \leftrightarrow \text{FePO}_4$ transition) coupled with the Arrhenius electro-thermal energy balance; (b)~augmented 2nd-order RC equivalent circuit incorporating dynamic hysteresis $V_{h,k}$ and neural overpotential residual $\delta\hat{V}_{t,\text{comp},k}$ alongside the structural parameter allocation principle; (c)~calibrated open-circuit voltage curves $V_{\text{ocv}}(\text{SOC})$ and strictly monotonic LFP hysteresis envelope; and (d)~analytical observability slope $V_{\text{ocv}}'(z) = dV_{\text{ocv}}/dz$ illustrating the $11.3$-fold plateau collapse and condition number amplification.\label{fig:0_mechanism}}
 \end{figure}
 
@@ -361,7 +361,7 @@ preserving local exponential contraction of initialization offsets under intermi
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.98\textwidth]{fig0_pidkf_framework.pdf}
+\includegraphics[width=0.98\textwidth]{fig2.pdf}
 \caption{Proposed hybrid PIDKF architecture and 10-phase benchmarking framework: (a)~closed-loop interaction between the Dual EKF backbone, fast online $\hat{R}_{0,k}^-$ conditioning, the $257$-parameter $[6\to 16\to 8\to 1]$ neural compensator, dissipative Butler--Volmer passivity projection ($I_k \cdot \delta\hat{V}_{t,\text{comp},k} \le 0$), and exogenous Jacobian decoupling; and (b)~dual-tier experimental/co-simulation validation split, 8-estimator analytical ARMv7E-M latency profiling, static ANSI-C99 resource audit, and 10 evaluation phases.\label{fig:0_framework}}
 \end{figure}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -423,7 +423,7 @@ PIDKF (Proposed) & $0.258\pm0.111$ & 0.240 & 0.538 \\
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.88\linewidth]{fig1_udds_tracking_errors.pdf}
+\includegraphics[width=0.88\linewidth]{fig3.pdf}
 \caption{Dynamic SOC tracking and residual error comparison across benchmarked observers, neural baselines, and PIDKF under an unseen $60\text{-min}$ concatenated UDDS schedule ($3600\text{ s}$) at $25^\circ\text{C}$ and $100\%$ SOH.\label{fig:udds}}
 \end{figure}
 
@@ -461,7 +461,7 @@ MLP (Unconstrained) & 3.201\% & 3.247\% & 3.418\% & 3.707\% & $4.118\pm0.257\%$ 
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.88\linewidth]{fig2_aging_degradation.pdf}
+\includegraphics[width=0.88\linewidth]{fig4.pdf}
 \caption{Evolution of SOC estimation RMSE as battery SOH degrades from $100\%$ down to $80\%$ on unseen UDDS, illustrating the $55.9$-fold degradation of standard EKF versus DEKF ($2.073\%$) and sub-percent PIDKF ($0.928\pm0.027\%$).\label{fig:aging}}
 \end{figure}
 
@@ -494,7 +494,7 @@ MLP (Unconstrained) & $5.972\pm1.670$ & 3.201 & $4.489\pm0.982$ \\
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.88\linewidth]{fig3_thermal_robustness.pdf}
+\includegraphics[width=0.88\linewidth]{fig5.pdf}
 \caption{Algorithmic thermal sensitivity under cold ($0^\circ\text{C}$), nominal ($25^\circ\text{C}$), and elevated ($45^\circ\text{C}$) ambient temperatures.\label{fig:thermal}}
 \end{figure}
 
@@ -529,7 +529,7 @@ PIDKF (Proposed) & 1089.2 & 336.0 & 3.653 & 10.51 & 2.05 \\
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.88\linewidth]{fig4_initial_error_convergence.pdf}
+\includegraphics[width=0.88\linewidth]{fig6.pdf}
 \caption{Transient convergence trajectories and $2\%$ tolerance recovery following a $-40\%$ initial SOC estimation shock on unseen UDDS ($25^\circ\text{C}$, $100\%$ SOH).\label{fig:conv}}
 \end{figure}
 
@@ -538,7 +538,7 @@ Figure~\ref{fig:radar} synthesizes algorithmic trade-offs across five normalized
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.72\linewidth]{fig5_radar_tradeoff.pdf}
+\includegraphics[width=0.72\linewidth]{fig7.pdf}
 \caption{Multi-attribute radar comparison across 5 engineering dimensions illustrating algorithmic trade-offs.\label{fig:radar}}
 \end{figure}
 
@@ -572,7 +572,7 @@ PIDKF (Proposed) & $0.258\pm0.111$ & $0.134\pm0.040$ & 0.334 & 0.143 \\
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.88\linewidth]{fig6_lfp_plateau_tracking.pdf}
+\includegraphics[width=0.88\linewidth]{fig8.pdf}
 \caption{Cross-chemistry comparison and estimation error along the flat $\text{LiFePO}_4$ voltage plateau ($25^\circ\text{C}$, unseen UDDS, 4-state hysteresis active vs.\ uncompensated control).\label{fig:lfp}}
 \end{figure}
 
@@ -602,7 +602,7 @@ SMO & 4.354 & 14.116 & 2.709 \\
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.88\linewidth]{fig7_sensor_bias_drift_stress.pdf}
+\includegraphics[width=0.88\linewidth]{fig9.pdf}
 \caption{Observer robustness under current sensor bias drift ($+0.25\text{ A}$) and $25\text{ mV}$ EMI ripple across a 2-hour UDDS run.\label{fig:sensor}}
 \end{figure}
 
@@ -621,7 +621,7 @@ These experimental spectra confirm a key physical asymmetry encoded in our Tier~
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.88\linewidth]{fig8_eis_nyquist_aging.pdf}
+\includegraphics[width=0.88\linewidth]{fig10.pdf}
 \caption{Tier~1 real NASA PCoE \texttt{B0006} Nyquist impedance spectra ($0.1\;\mathrm{Hz}\text{--}5\;\mathrm{kHz}$, 39 frequencies) and fitted Randles--CPE+L curves across Fresh, Mid-Life, and End-of-Test aging stages.\label{fig:eis}}
 \end{figure}
 
@@ -653,7 +653,7 @@ Distributed DEKF & Weakest Cell \#4 & 2.157 & 4.369 & Transient $R_1/R_2$ Lag \\
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.88\linewidth]{fig9_pack_cell_inconsistency.pdf}
+\includegraphics[width=0.88\linewidth]{fig11.pdf}
 \caption{Series-connected 8S battery pack tracking comparing lumped pack deficiency against distributed DEKF and distributed PIDKF on weakest thermally stressed cell~\#4.\label{fig:pack}}
 \end{figure}
 
@@ -688,7 +688,7 @@ BiLSTM-Attn & 13,698 & 1,680,000 & 2,850,000 & 8,160 & 58,992 & 16,964.29 & 4,09
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.92\linewidth]{fig10_embedded_resource_tradeoff.pdf}
+\includegraphics[width=0.92\linewidth]{fig12.pdf}
 \caption{Embedded resource trade-off: (a)~Pareto accuracy--compute frontier on degraded $80\%$ SOH UDDS versus analytical $168\;\mathrm{MHz}$ Cortex-M4F latency, and (b)~static ANSI-C99 RAM and Flash memory footprint.\label{fig:embedded}}
 \end{figure}
 
@@ -723,7 +723,7 @@ Full PIDKF (Exact Jac.) & $1.894\pm0.495$ & \textbf{3.291} & $1.033\pm0.468$ & 2
 
 \begin{figure}[htbp]
 \centering
-\includegraphics[width=0.92\linewidth]{fig11_pidkf_hybrid_benchmark.pdf}
+\includegraphics[width=0.92\linewidth]{fig13.pdf}
 \caption{Five-seed PIDKF ablation on unseen degraded UDDS ($85\%$ SOH): (a)~sloped NMC vs.\ flat-plateau LFP at $25^\circ\text{C}$, and (b)~combined $0^\circ\text{C}$ cold plus $85\%$ aging stress.\label{fig:pidkf}}
 \end{figure}
 

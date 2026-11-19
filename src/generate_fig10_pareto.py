@@ -120,9 +120,9 @@ def main():
     ax2.grid(True, axis="x", which="both", alpha=0.45)
     style_legend(ax2.legend(loc="upper right", fontsize=6.9))
 
-    out_png = os.path.join(results_dir, "fig10_embedded_resource_tradeoff.png")
+    out_png = os.path.join(results_dir, "fig12.png")
     save_pub_figure(fig, out_png)
-    print(f"[Fig 10] Saved data-driven Pareto plot to {out_png}")
+    print(f"[Fig 12] Saved data-driven Pareto plot to {out_png}")
 
 
 if __name__ == "__main__":

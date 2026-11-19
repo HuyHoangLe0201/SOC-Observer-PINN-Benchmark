@@ -21,7 +21,7 @@ from pub_style import PALETTE, MARKERS, apply_pub_style, save_pub_figure, style_
 apply_pub_style()
 
 
-def plot_tracking_and_errors(data, results, save_path="../results/fig1_udds_tracking_errors.png"):
+def plot_tracking_and_errors(data, results, save_path="../results/fig3.png"):
     """Fig 1: True vs Estimated SOC and Error Residuals with high-precision tracking inset."""
     time_min = data["time"] / 60.0
     soc_true = data["soc_true"] * 100.0
@@ -113,7 +113,7 @@ def plot_tracking_and_errors(data, results, save_path="../results/fig1_udds_trac
     print(f"[Visualizer] Saved Fig 1 (PNG 600 DPI + PDF) to {save_path}")
 
 
-def plot_aging_degradation_trend(soh_levels, rmse_by_model, save_path="../results/fig2_aging_degradation.png"):
+def plot_aging_degradation_trend(soh_levels, rmse_by_model, save_path="../results/fig4.png"):
     """Fig 2: RMSE evolution from SOH = 100% to 80% with dynamic non-overlapping right-margin callouts."""
     fig, ax = plt.subplots(figsize=(7.4, 4.6))
 
@@ -192,7 +192,7 @@ def plot_aging_degradation_trend(soh_levels, rmse_by_model, save_path="../result
     print(f"[Visualizer] Saved Fig 2 (PNG 600 DPI + PDF) to {save_path}")
 
 
-def plot_thermal_regimes_bar(temp_labels, rmse_data, save_path="../results/fig3_thermal_robustness.png"):
+def plot_thermal_regimes_bar(temp_labels, rmse_data, save_path="../results/fig5.png"):
     """Fig 3: Clean grouped bar chart across 0, 25, 45 C with exact numeric labels above every bar."""
     models = [m for m in rmse_data.keys() if m != "MLP (Unconstrained)"]
     n_models = len(models)
@@ -247,7 +247,7 @@ def plot_thermal_regimes_bar(temp_labels, rmse_data, save_path="../results/fig3_
     print(f"[Visualizer] Saved Fig 3 (PNG 600 DPI + PDF) to {save_path}")
 
 
-def plot_convergence_trajectories(data, results_converge, save_path="../results/fig4_initial_error_convergence.png"):
+def plot_convergence_trajectories(data, results_converge, save_path="../results/fig6.png"):
     """Fig 4: Initial uncertainty recovery (-40% offset) with dynamic data-driven zoom insets."""
     horizon = min(1300, len(data["time"]))
     time_sec = data["time"][:horizon]
@@ -348,7 +348,7 @@ def plot_convergence_trajectories(data, results_converge, save_path="../results/
     print(f"[Visualizer] Saved Fig 4 (PNG 600 DPI + PDF) to {save_path}")
 
 
-def plot_radar_summary(metrics_dict, save_path="../results/fig5_radar_tradeoff.png"):
+def plot_radar_summary(metrics_dict, save_path="../results/fig7.png"):
     """Fig 5: Clean non-muddy radar trade-off profile with haloed radial ticks and alternating rings."""
     categories = [
         "Nominal\nAccuracy",

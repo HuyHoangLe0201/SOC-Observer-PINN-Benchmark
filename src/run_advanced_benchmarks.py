@@ -124,8 +124,8 @@ def run_phase6_cross_chemistry(engine, pidkf_nmc, pidkf_lfp, results_dir):
     ax2.grid(True, axis="y")
     style_legend(ax2.legend(loc="upper left", ncol=2, fontsize=7.6))
 
-    save_pub_figure(fig, os.path.join(results_dir, "fig6_lfp_plateau_tracking.png"))
-    print("[Phase 6] Saved fig6_lfp_plateau_tracking.png")
+    save_pub_figure(fig, os.path.join(results_dir, "fig8.png"))
+    print("[Phase 6] Saved fig8.png")
     return df_p6
 
 
@@ -225,8 +225,8 @@ def run_phase7_sensor_bias(engine, pidkf_nmc, results_dir):
     ax2.set_xlim(0.0, 120.5)
     style_legend(ax2.legend(loc="lower left", ncol=3, fontsize=6.8))
 
-    save_pub_figure(fig, os.path.join(results_dir, "fig7_sensor_bias_drift_stress.png"))
-    print("[Phase 7] Saved fig7_sensor_bias_drift_stress.png")
+    save_pub_figure(fig, os.path.join(results_dir, "fig9.png"))
+    print("[Phase 7] Saved fig9.png")
     return df_p7
 
 
@@ -371,8 +371,8 @@ def run_phase10_ablation_and_jacobian(engine, seeds, results_dir):
     ax2.grid(True, axis="y")
     style_legend(ax2.legend(loc="upper right", fontsize=7.2))
 
-    save_pub_figure(fig, os.path.join(results_dir, "fig11_pidkf_hybrid_benchmark.png"))
-    print("[Phase 10] Saved fig11_pidkf_hybrid_benchmark.png")
+    save_pub_figure(fig, os.path.join(results_dir, "fig13.png"))
+    print("[Phase 10] Saved fig13.png")
     return df_p10
 
 
@@ -473,7 +473,7 @@ def main():
     ax2.set_title("(b) Direct Cross-Chemistry Error Comparison on Identical UDDS Schedule", loc="left", fontweight="bold")
     ax2.grid(True, axis="y")
     style_legend(ax2.legend(loc="upper left", ncol=2, fontsize=7.6))
-    save_pub_figure(fig, os.path.join(results_dir, "fig6_lfp_plateau_tracking.png"))
+    save_pub_figure(fig, os.path.join(results_dir, "fig8.png"))
 
     run_phase7_sensor_bias(engine, pidkf_nmc, results_dir)
     run_phase10_ablation_and_jacobian(engine, seeds, results_dir)

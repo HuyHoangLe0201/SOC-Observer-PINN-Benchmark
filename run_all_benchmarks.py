@@ -26,19 +26,19 @@ def verify_reproducible_assets(ws):
     sub_dir = os.path.join(ws, "submission_journal_of_energy_storage")
 
     expected_figs = [
-        ("fig0_electrochemical_mechanism", (".pdf", ".png")),
-        ("fig0_pidkf_framework", (".pdf", ".png")),
-        ("fig1_udds_tracking_errors", (".pdf", ".png")),
-        ("fig2_aging_degradation", (".pdf", ".png")),
-        ("fig3_thermal_robustness", (".pdf", ".png")),
-        ("fig4_initial_error_convergence", (".pdf", ".png")),
-        ("fig5_radar_tradeoff", (".pdf", ".png")),
-        ("fig6_lfp_plateau_tracking", (".pdf", ".png")),
-        ("fig7_sensor_bias_drift_stress", (".pdf", ".png")),
-        ("fig8_eis_nyquist_aging", (".pdf", ".png")),
-        ("fig9_pack_cell_inconsistency", (".pdf", ".png")),
-        ("fig10_embedded_resource_tradeoff", (".pdf", ".png")),
-        ("fig11_pidkf_hybrid_benchmark", (".pdf", ".png")),
+        ("fig1", (".pdf", ".png")),
+        ("fig2", (".pdf", ".png")),
+        ("fig3", (".pdf", ".png")),
+        ("fig4", (".pdf", ".png")),
+        ("fig5", (".pdf", ".png")),
+        ("fig6", (".pdf", ".png")),
+        ("fig7", (".pdf", ".png")),
+        ("fig8", (".pdf", ".png")),
+        ("fig9", (".pdf", ".png")),
+        ("fig10", (".pdf", ".png")),
+        ("fig11", (".pdf", ".png")),
+        ("fig12", (".pdf", ".png")),
+        ("fig13", (".pdf", ".png")),
     ]
 
     expected_csvs = [
@@ -112,7 +112,7 @@ def main():
     summarize_from_csvs(ws)
     elapsed = time.time() - t0
     print(f"\nVerification finished in {elapsed:.2f} s | Status: {'PASS' if ok else 'INCOMPLETE'}")
-    print("Submitted PDF: submission_journal_of_energy_storage/manuscript.pdf")
+    print("Submitted PDF: submission_journal_of_energy_storage/main.pdf")
     print("Cover Letter:  Cover_Letter_Journal_of_Energy_Storage.docx")
     if not ok:
         raise SystemExit(1)
