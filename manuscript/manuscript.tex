@@ -52,6 +52,7 @@ Reliable state-of-charge (SOC) estimation is foundational to battery management 
 
 \begin{nomenclature}
 \entry{$\mathbf{A}_k, \mathbf{B}_k, \mathbf{g}_k$}{discrete state transition matrix, input vector, and hysteresis excitation vector}
+\entry{$\bar{A}, \bar{H}, \bar{K}, \bar{V}^*$}{uniform bounds on transition, observation, and gain matrix norms and on unmodeled overpotential}
 \entry{$a_i, a_{h,k}$}{discrete polarization decay poles ($e^{-\Delta t/\tau_i}$) and hysteresis factor ($e^{-\beta|\Delta z_k|}$)}
 \entry{$C_1, C_2, Q_{\text{cpe}}$}{polarization capacitances ($\text{F}$) and constant-phase element (CPE) parameter ($\text{F}\cdot\text{s}^{\alpha-1}$)}
 \entry{$C_{\text{th}}, R_{\text{th}}$}{lumped cell thermal capacitance ($\text{J}\cdot\text{K}^{-1}$) and thermal resistance to ambient ($\text{K}\cdot\text{W}^{-1}$)}
@@ -61,9 +62,11 @@ Reliable state-of-charge (SOC) estimation is foundational to battery management 
 \entry{$\mathbf{F}_k, \mathcal{G}_o, \mathcal{O}_k$}{closed-loop error matrix, linear time-varying Gramian, and observability matrix}
 \entry{$I_k, I(t)$}{cell load current at time step $k$, positive for discharge ($\text{A}$)}
 \entry{$\mathbf{K}_k, \mathbf{K}_{\theta,k}, \mathbf{L}$}{state and parameter Kalman filter gains and sliding mode feedback gain}
+\entry{$L$}{high-frequency test-lead and cell tab inductance in EIS Randles model ($\mu\text{H}$)}
 \entry{$\mathcal{L}, \mathcal{NN}, \mathcal{R}$}{composite training loss objective, neural network operator, and physics residual}
 \entry{$M(z), V_h$}{maximum dynamic hysteresis function and hysteresis overpotential state ($\text{V}$)}
 \entry{$\mathbf{P}_k, \mathbf{Q}_k, R_v$}{state error covariance, process noise covariance, and measurement noise variance}
+\entry{$\underline{p}, \bar{p}$}{uniform lower and upper Riccati covariance bounds}
 \entry{$Q_{\text{act}}, Q_{\text{init}}$}{actual degraded usable capacity and initial pristine capacity ($\text{A}\cdot\text{h}$)}
 \entry{$R_0, R_1, R_2$}{effective series resistance ($R_{\text{ohm}} + R_{\text{sei}}$) and polarization resistances ($\Omega$)}
 \entry{$R_{\text{ohm}}, R_{\text{ct}}, R_{\text{sei}}$}{metallic ohmic, charge-transfer, and solid-electrolyte interphase (SEI) resistances ($\Omega$)}
@@ -81,9 +84,7 @@ Reliable state-of-charge (SOC) estimation is foundational to battery management 
 \entry{$\Delta t, \mu$}{discrete sampling interval ($1.0\;\text{s}$) and sliding mode boundary layer thickness ($\text{V}$)}
 \entry{$\eta, \kappa$}{Faradaic coulombic efficiency and matrix condition number}
 \entry{$\kappa_0, \kappa_1, I_{\max}$}{Butler--Volmer overpotential floor ($15\;\mathrm{mV}$), ohmic slope ($22\;\mathrm{m}\Omega$), and current cap ($6.0\;\mathrm{A}$)}
-\entry{$L$}{high-frequency test-lead and cell tab inductance in EIS Randles model ($\mu\text{H}$)}
-\entry{$\rho, \underline{p}, \bar{p}$}{exponential contraction rate and uniform Riccati covariance bounds}
-\entry{$\bar{A}, \bar{H}, \bar{K}, \bar{V}^*$}{uniform bounds on transition, observation, and gain matrix norms and on unmodeled overpotential}
+\entry{$\rho$}{exponential state-error contraction rate}
 \entry{$\tau_1, \tau_2$}{electrochemical polarization time constants ($\tau_i = R_i C_i$, $\text{s}$)}
 \entry{$\boldsymbol{\theta}_k$}{parameter state vector in DEKF ($[R_{0,k}, 1/Q_{\text{act},k}]^T$)}
 
@@ -519,7 +520,7 @@ PIDKF (Proposed) & 1089.2 & 336.0 & 3.653 & 10.51 & 2.05 \\
 \end{figure}
 
 \subsection{Phase 5: Multi-Attribute Radar Trade-Off and Pareto Analysis}
-Figure~\ref{fig:radar} synthesizes algorithmic trade-offs across five normalized dimensions scored on a $1\text{--}10$ scale: Nominal Accuracy, Aging Robustness, Thermal Robustness, Convergence Speed, and Embedded Efficiency. Classical EKF leads nominal accuracy ($9.75/10$), fast settling ($9.27/10$), and embedded simplicity ($9.08/10$) yet drops sharply under aging ($4.01/10$) and thermal stress ($3.10/10$). DEKF raises aging and thermal scores substantially ($[9.67, 6.68, 6.97, 7.98, 8.31]$), while the proposed \textbf{PIDKF} delivers the most balanced multi-attribute envelope across all five criteria ($[8.57, 8.52, 8.06, 7.76, 7.88]$), confirming that coupling dual parameter adaptation with a lightweight constrained compensator bridges real-world robustness gaps without sacrificing microcontroller efficiency.
+Figure~\ref{fig:radar} synthesizes algorithmic trade-offs across five normalized dimensions scored on a $1\text{--}10$ scale: Nominal Accuracy, Aging Robustness, Thermal Robustness, Convergence Speed, and Computational (Embedded) Efficiency. Classical EKF leads nominal accuracy ($9.75/10$), fast settling ($9.27/10$), and embedded simplicity ($9.08/10$) yet drops sharply under aging ($4.01/10$) and thermal stress ($3.10/10$). DEKF raises aging and thermal scores substantially ([$9.67$, $6.68$, $6.97$, $7.98$, $8.31$]), while the proposed \textbf{PIDKF} delivers the most balanced multi-attribute envelope across all five criteria ([$8.57$, $8.52$, $8.06$, $7.76$, $7.88$]), confirming that coupling dual parameter adaptation with a lightweight constrained compensator bridges real-world robustness gaps without sacrificing microcontroller efficiency.
 
 \begin{figure}[htbp]
 \centering

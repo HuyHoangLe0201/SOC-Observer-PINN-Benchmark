@@ -203,11 +203,10 @@ def plot_thermal_regimes_bar(temp_labels, rmse_data, save_path="../results/fig3_
 
     fig, ax = plt.subplots(figsize=(7.6, 4.7))
 
-    max_v = 2.5
+    max_v = max([2.5] + [float(rmse_data[m][t]) for m in models for t in temp_labels])
     for idx, model_name in enumerate(models):
         offset = (idx - n_models / 2.0 + 0.5) * width
         vals = [rmse_data[model_name][t] for t in temp_labels]
-        max_v = max(max_v, max(vals))
         bars = ax.bar(
             x + offset,
             vals,
@@ -222,7 +221,7 @@ def plot_thermal_regimes_bar(temp_labels, rmse_data, save_path="../results/fig3_
         for bar, v in zip(bars, vals):
             ax.text(
                 bar.get_x() + bar.get_width() / 2.0,
-                v + max(0.12, max_v * 0.015),
+                v + max(0.14, max_v * 0.015),
                 f"{v:.2f}%",
                 ha="center",
                 va="bottom",
@@ -230,7 +229,8 @@ def plot_thermal_regimes_bar(temp_labels, rmse_data, save_path="../results/fig3_
                 fontsize=6.8,
                 fontweight="bold",
                 color="#111827",
-                zorder=5,
+                bbox=dict(boxstyle="square,pad=0.05", facecolor="white", edgecolor="none", alpha=0.88),
+                zorder=6,
             )
 
     ax.axhline(2.0, color="#DC2626", linestyle="--", linewidth=1.05, alpha=0.78, label="2.0% BMS Bound", zorder=2)
@@ -322,7 +322,7 @@ def plot_convergence_trajectories(data, results_converge, save_path="../results/
     tr_hero = results_converge[hero].get("t_reach_2", np.nan)
     ts_hero = results_converge[hero].get("t_settle_5", np.nan)
     if not np.isnan(tr_hero) and tr_hero < horizon:
-        ax2.axvline(tr_hero, color=PALETTE[hero], linestyle=":", linewidth=1.2, zorder=6)
+        ax2.vlines(tr_hero, 0.0, 22.0, color=PALETTE[hero], linestyle=":", linewidth=1.2, zorder=6)
         txt_ts = f"{int(round(ts_hero))} s" if not np.isnan(ts_hero) else "N/A"
         ax2.annotate(
             f"{hero} Recovery\nReach 2%: {int(round(tr_hero))} s | Settle 5%: {txt_ts}",
