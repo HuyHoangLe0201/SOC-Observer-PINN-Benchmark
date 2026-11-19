@@ -1,17 +1,13 @@
 """
-Real-World Experimental Battery Dataset Loader
+Battery Dataset Compatibility & Sample Trajectory Loader
 Journal of Energy Storage (Elsevier)
 
-Supported Open-Access Laboratory Datasets:
-1. CALCE Battery Research Group (University of Maryland)
-   - Cell Chemistries: INR18650-20R (NMC) & A123 26650 (LiFePO4)
-   - Test Protocols: Dynamic Stress Test (DST), Federal Urban Driving Schedule (FUDS), US06, BBDST
-   - Temperature Chambers: 0°C, 25°C, 45°C
-2. Oxford Battery Degradation Dataset (University of Oxford)
-   - Cell: Kokam 740mAh Lithium-ion pouch cells
-   - Long-term degradation profiling over 1000+ drive cycles with repeated characterization pulses
-3. NASA Battery Aging Dataset (NASA Prognostics Center of Excellence - PCoE)
-   - Commercial 18650 cells undergoing accelerated cycle aging and impedance spectroscopy (EIS)
+Note on Dataset Provenance:
+- Primary Tier 1 public cycler experiments in this benchmark run directly on on-disk
+  XJTU Batch-5 (NMC532 Random Walk) and NASA Ames PCoE (B0005/6/7/30/55/56) files.
+- This module provides generic Arbin CSV/Excel column parsing utilities and generates a
+  synthetic CALCE-format compatibility CSV (`calce_sample_udds_25c.csv`) from the calibrated
+  BatteryCellNMC Tier 2 plant for standalone quickstart script testing (NOT claimed as Tier 1 data).
 """
 
 import os

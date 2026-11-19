@@ -31,26 +31,25 @@ def plot_tracking_and_errors(data, results, save_path="../results/fig1_udds_trac
     )
 
     # Order plotting back-to-front so wide-swinging DL traces never obscure tight Kalman filters
-    draw_order = [n for n in ["BiLSTM-Attn", "PINN-SOC", "SMO", "AEKF", "DEKF", "EKF"] if n in results]
-    draw_order += [n for n in results if n not in draw_order]
+    draw_order = [n for n in ["BiLSTM-Attn", "PINN-SOC", "SMO", "AEKF", "UKF", "EKF", "DEKF", "PIDKF"] if n in results]
 
     # Panel (a): SOC Trajectories
     handles_a, labels_a = [], []
-    h_ref, = ax1.plot(time_min, soc_true, label="Reference (True)", color=PALETTE["True"], linewidth=2.1, zorder=7)
+    h_ref, = ax1.plot(time_min, soc_true, label="Reference (True)", color=PALETTE["True"], linewidth=2.1, zorder=8)
     handles_a.append(h_ref)
     labels_a.append("Reference (True)")
 
     for name in draw_order:
         res = results[name]
-        is_dl = name in ("BiLSTM-Attn", "PINN-SOC")
+        is_dl = name in ("BiLSTM-Attn", "PINN-SOC", "MLP (Unconstrained)")
         h, = ax1.plot(
             time_min,
             res["soc_est"] * 100.0,
             label=name,
             color=PALETTE.get(name, "#64748B"),
-            linewidth=1.15 if is_dl else 1.55,
-            alpha=0.72 if is_dl else 0.92,
-            zorder=2 if is_dl else 5,
+            linewidth=1.15 if is_dl else (1.75 if name == "PIDKF" else 1.45),
+            alpha=0.70 if is_dl else 0.92,
+            zorder=2 if is_dl else (7 if name == "PIDKF" else 5),
         )
         handles_a.append(h)
         labels_a.append(name)
@@ -59,37 +58,40 @@ def plot_tracking_and_errors(data, results, save_path="../results/fig1_udds_trac
     ax1.set_title(r"(a) SOC Tracking under Dynamic UDDS Cycle ($25^\circ\mathrm{C}$, SOH $= 100\%$)", loc="left", fontweight="bold")
     ax1.grid(True)
     ax1.set_xlim(0.0, 60.5)
-    ax1.set_ylim(71.5, 101.8)
-    style_legend(ax1.legend(handles_a, labels_a, loc="lower left", ncol=4, fontsize=7.3, columnspacing=0.95, handlelength=1.65))
+    ax1.set_ylim(float(np.min(soc_true)) - 4.0, 102.0)
+    style_legend(ax1.legend(handles_a, labels_a, loc="lower left", ncol=4, fontsize=7.0, columnspacing=0.85, handlelength=1.55))
 
     # Panel (b): Error Residuals
-    band = ax2.axhspan(-2.0, 2.0, color="#16A34A", alpha=0.075, label=r"$\pm 2\%$ Corridor", zorder=0)
+    ax2.axhspan(-2.0, 2.0, color="#16A34A", alpha=0.075, label=r"$\pm 2\%$ Corridor", zorder=0)
     ax2.axhline(0.0, color="#111827", linestyle="--", linewidth=0.75, zorder=1)
     ax2.axhline(2.0, color="#15803D", linestyle=":", linewidth=0.95, zorder=1)
     ax2.axhline(-2.0, color="#15803D", linestyle=":", linewidth=0.95, zorder=1)
 
+    max_err_val = 2.0
+    min_err_val = -2.0
     for name in draw_order:
         res = results[name]
         err = (res["soc_est"] - data["soc_true"]) * 100.0
-        is_dl = name in ("BiLSTM-Attn", "PINN-SOC")
+        max_err_val = max(max_err_val, float(np.max(err)))
+        min_err_val = min(min_err_val, float(np.min(err)))
+        is_dl = name in ("BiLSTM-Attn", "PINN-SOC", "MLP (Unconstrained)")
         ax2.plot(
             time_min,
             err,
             label=f"{name} ({res['rmse_pct']:.2f}%)",
             color=PALETTE.get(name, "#64748B"),
-            linewidth=1.10 if is_dl else 1.50,
+            linewidth=1.10 if is_dl else (1.70 if name == "PIDKF" else 1.40),
             alpha=0.68 if is_dl else 0.92,
-            zorder=2 if is_dl else 5,
+            zorder=2 if is_dl else (7 if name == "PIDKF" else 5),
         )
 
-    # Embedded zoom inset in quiet upper-left window + top-right legend completely above +7.3% peaks
-    axins = add_zoom_inset(ax2, [0.055, 0.56, 0.32, 0.37], xlim=(14.0, 22.0), ylim=(-1.75, 2.25), loc1=3, loc2=4)
-    axins.axhspan(-1.75, 2.0, color="#16A34A", alpha=0.06, zorder=0)
+    axins = add_zoom_inset(ax2, [0.055, 0.56, 0.32, 0.37], xlim=(14.0, 22.0), ylim=(-1.6, 1.8), loc1=3, loc2=4)
+    axins.axhspan(-1.6, 1.8, color="#16A34A", alpha=0.06, zorder=0)
     axins.axhline(0.0, color="#111827", linestyle="--", linewidth=0.6)
-    for name in ["SMO", "AEKF", "DEKF", "EKF"]:
+    for name in ["SMO", "AEKF", "UKF", "DEKF", "EKF", "PIDKF"]:
         if name in results:
             err = (results[name]["soc_est"] - data["soc_true"]) * 100.0
-            axins.plot(time_min, err, color=PALETTE[name], linewidth=1.15 if name != "SMO" else 0.75, alpha=0.55 if name == "SMO" else 0.90)
+            axins.plot(time_min, err, color=PALETTE[name], linewidth=1.3 if name == "PIDKF" else (0.75 if name == "SMO" else 1.05), alpha=0.55 if name == "SMO" else 0.92)
     axins.set_xticks([15, 18, 21])
     axins.set_yticks([-1, 0, 1])
     axins.text(
@@ -104,22 +106,24 @@ def plot_tracking_and_errors(data, results, save_path="../results/fig1_udds_trac
     ax2.set_title(r"(b) Estimation Error Residuals ($e_k = \hat{s}_k - s_k$) & RMSE Summary", loc="left", fontweight="bold")
     ax2.grid(True)
     ax2.set_xlim(0.0, 60.5)
-    ax2.set_ylim(-7.8, 15.2)
-    style_legend(ax2.legend(loc="upper right", ncol=3, fontsize=6.75, columnspacing=0.75, handlelength=1.35))
+    ax2.set_ylim(min(min_err_val - 1.2, -3.5), max(max_err_val * 1.38 + 2.5, 8.0))
+    style_legend(ax2.legend(loc="upper right", ncol=3, fontsize=6.6, columnspacing=0.70, handlelength=1.30))
 
     save_pub_figure(fig, save_path)
     print(f"[Visualizer] Saved Fig 1 (PNG 600 DPI + PDF) to {save_path}")
 
 
 def plot_aging_degradation_trend(soh_levels, rmse_by_model, save_path="../results/fig2_aging_degradation.png"):
-    """Fig 2: RMSE evolution from SOH = 100% to 80% with non-overlapping right-margin callouts."""
-    fig, ax = plt.subplots(figsize=(7.2, 4.4))
+    """Fig 2: RMSE evolution from SOH = 100% to 80% with dynamic non-overlapping right-margin callouts."""
+    fig, ax = plt.subplots(figsize=(7.4, 4.6))
 
     ax.axhspan(0.0, 1.0, color="#16A34A", alpha=0.075, label="Target Zone (<1.0% RMSE)", zorder=0)
     ax.axhline(1.0, color="#15803D", linestyle=":", linewidth=0.9, zorder=1)
 
     soh_pct = soh_levels * 100.0
-    for name, rmse_vals in rmse_by_model.items():
+    plot_models = [m for m in rmse_by_model if m != "MLP (Unconstrained)"]
+    for name in plot_models:
+        rmse_vals = rmse_by_model[name]
         col = PALETTE.get(name, "#64748B")
         ax.plot(
             soh_pct,
@@ -127,73 +131,62 @@ def plot_aging_degradation_trend(soh_levels, rmse_by_model, save_path="../result
             label=name,
             color=col,
             marker=MARKERS.get(name, "o"),
-            markersize=6.2,
+            markersize=6.2 if name != "PIDKF" else 7.2,
             markeredgecolor="white",
             markeredgewidth=0.75,
-            linewidth=2.0,
-            zorder=4,
+            linewidth=2.2 if name == "PIDKF" else 1.85,
+            zorder=6 if name == "PIDKF" else 4,
         )
 
-    # De-conflicted right-margin final RMSE badges past x = 80%
-    end_offsets = {
-        "SMO": (5.43, 5.75),
-        "AEKF": (5.41, 5.20),
-        "BiLSTM-Attn": (5.13, 4.66),
-        "PINN-SOC": (4.91, 4.10),
-        "EKF": (2.97, 2.97),
-        "DEKF": (0.59, 0.59),
-    }
-    for name, (y_true, y_lbl) in end_offsets.items():
-        if name in rmse_by_model:
-            col = PALETTE[name]
-            tag = f"{name}: {y_true:.2f}%"
-            if abs(y_true - y_lbl) > 0.05:
-                ax.plot([80.0, 79.15], [y_true, y_lbl], color=col, linewidth=0.75, linestyle="-", alpha=0.8)
-            ax.text(
-                79.0,
-                y_lbl,
-                tag,
-                va="center",
-                ha="left",
-                fontsize=7.6,
-                fontweight="bold",
-                color=col,
-                bbox=dict(boxstyle="round,pad=0.14", facecolor="white", edgecolor="none", alpha=0.85),
-            )
+    # Sort endpoints vertically at SOH = 80% and space badges cleanly to eliminate any collision
+    endpoints = sorted([(name, float(rmse_by_model[name][-1])) for name in plot_models], key=lambda x: x[1])
+    max_y = max(max(rmse_by_model[m]) for m in plot_models)
+    min_gap = max(0.32, (max_y + 0.5) / (len(endpoints) + 2.5))
+    y_placed = []
+    for name, y_val in endpoints:
+        y_lbl = y_val
+        if y_placed and y_lbl - y_placed[-1] < min_gap:
+            y_lbl = y_placed[-1] + min_gap
+        y_placed.append(y_lbl)
+        col = PALETTE.get(name, "#64748B")
+        if abs(y_val - y_lbl) > 0.04:
+            ax.plot([80.0, 79.15], [y_val, y_lbl], color=col, linewidth=0.75, linestyle="-", alpha=0.8)
+        ax.text(
+            79.0, y_lbl, f"{name}: {y_val:.2f}%",
+            va="center", ha="left", fontsize=7.2, fontweight="bold", color=col,
+            bbox=dict(boxstyle="round,pad=0.12", facecolor="white", edgecolor="none", alpha=0.88),
+        )
 
-    ax.annotate(
-        r"EKF $+4473.8\%$ Surge" + "\n(Frozen Aging Prior)",
-        xy=(80.0, 2.973),
-        xytext=(79.1, 1.85),
-        arrowprops=dict(arrowstyle="->", color=PALETTE["EKF"], lw=1.1),
-        fontsize=7.6,
-        color=PALETTE["EKF"],
-        fontweight="bold",
-        ha="left",
-        va="center",
-        bbox=dict(boxstyle="round,pad=0.20", facecolor="white", edgecolor=PALETTE["EKF"], alpha=0.96, lw=0.75),
-    )
-    ax.annotate(
-        r"DEKF Tracks $\hat{R}_0, \hat{Q}_{\mathrm{act}}$" + "\n(Stays <0.6% RMSE)",
-        xy=(80.2, 0.62),
-        xytext=(82.4, 1.48),
-        arrowprops=dict(arrowstyle="->", color=PALETTE["DEKF"], lw=1.1),
-        fontsize=7.6,
-        color=PALETTE["DEKF"],
-        fontweight="bold",
-        ha="center",
-        va="center",
-        bbox=dict(boxstyle="round,pad=0.20", facecolor="white", edgecolor=PALETTE["DEKF"], alpha=0.96, lw=0.75),
-    )
+    if "EKF" in rmse_by_model:
+        ekf0, ekf80 = float(rmse_by_model["EKF"][0]), float(rmse_by_model["EKF"][-1])
+        mult = ekf80 / max(ekf0, 1e-6)
+        ax.annotate(
+            f"EKF {mult:.1f}x Surge\n(Frozen Aging Prior)",
+            xy=(80.0, ekf80), xytext=(86.5, 2.75),
+            arrowprops=dict(arrowstyle="->", color=PALETTE["EKF"], lw=1.0),
+            fontsize=7.2, color=PALETTE["EKF"], fontweight="bold", ha="center", va="center",
+            bbox=dict(boxstyle="round,pad=0.18", facecolor="white", edgecolor=PALETTE["EKF"], alpha=0.95, lw=0.7),
+            zorder=12,
+        )
+    if "PIDKF" in rmse_by_model:
+        p85 = float(rmse_by_model["PIDKF"][3])
+        ax.annotate(
+            "PIDKF + DEKF Track\n" + r"$\hat{R}_0, \hat{Q}_{\mathrm{act}}$ & Overpotential",
+            xy=(85.0, p85), xytext=(89.5, 0.28),
+            arrowprops=dict(arrowstyle="->", color=PALETTE["PIDKF"], lw=1.0),
+            fontsize=7.2, color=PALETTE["PIDKF"], fontweight="bold", ha="center", va="center",
+            bbox=dict(boxstyle="round,pad=0.18", facecolor="white", edgecolor=PALETTE["PIDKF"], alpha=0.95, lw=0.7),
+            zorder=12,
+        )
 
-    ax.set_xlim(101.2, 74.2)  # Inverted SOH axis with clean right callout column
+    ax.set_xlim(101.2, 72.5)
     ax.set_xticks([100, 95, 90, 85, 80])
     ax.set_xlabel(r"State of Health --- SOH (%) [Fresh $\rightarrow$ End-of-Life]")
     ax.set_ylabel("SOC Estimation RMSE (%)")
     ax.set_title("Degradation Robustness: SOC Error across Cell Aging Stages", fontweight="bold")
     ax.grid(True)
-    ax.set_ylim(-0.20, 6.45)
-    style_legend(ax.legend(loc="upper left", ncol=2, framealpha=0.96, fontsize=8.0))
+    ax.set_ylim(-0.30, max(max_y, y_placed[-1]) + 1.45)
+    style_legend(ax.legend(loc="upper left", ncol=3, framealpha=0.96, fontsize=7.0, columnspacing=0.9))
 
     save_pub_figure(fig, save_path)
     print(f"[Visualizer] Saved Fig 2 (PNG 600 DPI + PDF) to {save_path}")
@@ -201,18 +194,20 @@ def plot_aging_degradation_trend(soh_levels, rmse_by_model, save_path="../result
 
 def plot_thermal_regimes_bar(temp_labels, rmse_data, save_path="../results/fig3_thermal_robustness.png"):
     """Fig 3: Clean grouped bar chart across 0, 25, 45 C with exact numeric labels above every bar."""
-    models = list(rmse_data.keys())
+    models = [m for m in rmse_data.keys() if m != "MLP (Unconstrained)"]
     n_models = len(models)
     n_temps = len(temp_labels)
 
     x = np.arange(n_temps)
-    width = 0.132
+    width = min(0.132, 0.78 / max(n_models, 1))
 
-    fig, ax = plt.subplots(figsize=(7.4, 4.5))
+    fig, ax = plt.subplots(figsize=(7.6, 4.7))
 
+    max_v = 2.5
     for idx, model_name in enumerate(models):
         offset = (idx - n_models / 2.0 + 0.5) * width
         vals = [rmse_data[model_name][t] for t in temp_labels]
+        max_v = max(max_v, max(vals))
         bars = ax.bar(
             x + offset,
             vals,
@@ -227,12 +222,12 @@ def plot_thermal_regimes_bar(temp_labels, rmse_data, save_path="../results/fig3_
         for bar, v in zip(bars, vals):
             ax.text(
                 bar.get_x() + bar.get_width() / 2.0,
-                v + 0.16,
+                v + max(0.12, max_v * 0.015),
                 f"{v:.2f}%",
                 ha="center",
                 va="bottom",
                 rotation=90,
-                fontsize=7.2,
+                fontsize=6.8,
                 fontweight="bold",
                 color="#111827",
                 zorder=5,
@@ -245,29 +240,27 @@ def plot_thermal_regimes_bar(temp_labels, rmse_data, save_path="../results/fig3_
     ax.set_ylabel("SOC Estimation RMSE (%)")
     ax.set_title("Thermal Sensitivity Benchmark across Temperature Regimes", fontweight="bold")
     ax.grid(True, axis="y", zorder=0)
-    ax.set_ylim(0.0, 12.6)
-    style_legend(ax.legend(loc="upper center", ncol=4, fontsize=7.8, columnspacing=1.1, handlelength=1.6))
+    ax.set_ylim(0.0, max_v * 1.28 + 1.2)
+    style_legend(ax.legend(loc="upper center", ncol=4, fontsize=7.4, columnspacing=1.0, handlelength=1.45))
 
     save_pub_figure(fig, save_path)
     print(f"[Visualizer] Saved Fig 3 (PNG 600 DPI + PDF) to {save_path}")
 
 
 def plot_convergence_trajectories(data, results_converge, save_path="../results/fig4_initial_error_convergence.png"):
-    """Fig 4: Initial uncertainty recovery (-40% offset) with 0-45s & DEKF 725s zoomed insets."""
-    horizon = min(800, len(data["time"]))
+    """Fig 4: Initial uncertainty recovery (-40% offset) with dynamic data-driven zoom insets."""
+    horizon = min(1300, len(data["time"]))
     time_sec = data["time"][:horizon]
     soc_true = data["soc_true"][:horizon] * 100.0
 
     fig, (ax1, ax2) = plt.subplots(
-        2, 1, figsize=(7.4, 5.5), sharex=True, gridspec_kw={"hspace": 0.24}
+        2, 1, figsize=(7.4, 5.6), sharex=True, gridspec_kw={"hspace": 0.24}
     )
 
-    draw_order = [n for n in ["BiLSTM-Attn", "PINN-SOC", "DEKF", "SMO", "AEKF", "EKF"] if n in results_converge]
-    draw_order += [n for n in results_converge if n not in draw_order]
+    draw_order = [n for n in ["BiLSTM-Attn", "PINN-SOC", "SMO", "AEKF", "UKF", "EKF", "DEKF", "PIDKF"] if n in results_converge]
 
-    # Panel (a)
-    ax1.axvspan(0, 10, color="#16A34A", alpha=0.08, label="Fast Window (<10 s)")
-    ax1.plot(time_sec, soc_true, label="True SOC", color=PALETTE["True"], linewidth=2.1, zorder=7)
+    ax1.axvspan(0, 20, color="#16A34A", alpha=0.08, label="Fast Window (<20 s)")
+    ax1.plot(time_sec, soc_true, label="True SOC", color=PALETTE["True"], linewidth=2.1, zorder=8)
     for name in draw_order:
         res = results_converge[name]
         ax1.plot(
@@ -275,35 +268,39 @@ def plot_convergence_trajectories(data, results_converge, save_path="../results/
             res["soc_est"][:horizon] * 100.0,
             label=name,
             color=PALETTE.get(name, "#64748B"),
-            linewidth=1.35 if name in ("BiLSTM-Attn", "PINN-SOC") else 1.55,
+            linewidth=1.25 if name in ("BiLSTM-Attn", "PINN-SOC") else (1.75 if name == "PIDKF" else 1.45),
             alpha=0.88,
-            zorder=5 if name not in ("BiLSTM-Attn", "PINN-SOC") else 3,
+            zorder=7 if name == "PIDKF" else (3 if name in ("BiLSTM-Attn", "PINN-SOC") else 5),
         )
 
-    # Zoom inset revealing 0-45 s transient contraction cleanly in empty bottom band
-    ax1_ins = add_zoom_inset(ax1, [0.12, 0.10, 0.44, 0.56], xlim=(0.0, 45.0), ylim=(52.0, 99.0), loc1=2, loc2=3)
-    ax1_ins.axvspan(0, 10, color="#16A34A", alpha=0.08)
-    ax1_ins.plot(time_sec, soc_true, color=PALETTE["True"], linewidth=1.8, zorder=7)
+    ax1_ins = add_zoom_inset(ax1, [0.12, 0.10, 0.44, 0.54], xlim=(0.0, 50.0), ylim=(52.0, 100.0), loc1=2, loc2=3)
+    ax1_ins.axvspan(0, 20, color="#16A34A", alpha=0.08)
+    ax1_ins.plot(time_sec, soc_true, color=PALETTE["True"], linewidth=1.8, zorder=8)
     for name in draw_order:
-        ax1_ins.plot(time_sec, results_converge[name]["soc_est"][:horizon] * 100.0, color=PALETTE.get(name, "#64748B"), linewidth=1.3)
+        ax1_ins.plot(time_sec, results_converge[name]["soc_est"][:horizon] * 100.0, color=PALETTE.get(name, "#64748B"), linewidth=1.25)
+
+    fast_tags = []
+    for m_chk in ["AEKF", "UKF", "EKF", "SMO", "PIDKF", "DEKF"]:
+        if m_chk in results_converge:
+            tr = results_converge[m_chk].get("t_reach_2", np.nan)
+            if not np.isnan(tr) and tr <= 60:
+                fast_tags.append(f"{m_chk}: {int(round(tr))} s")
+    box_str = "Transient Recovery (0–50 s)\n" + (" | ".join(fast_tags[:3]) if fast_tags else "Closed-Loop Contraction")
+    if len(fast_tags) > 3:
+        box_str += "\n" + " | ".join(fast_tags[3:])
     ax1_ins.text(
-        0.96, 0.14,
-        "Transient Recovery (0–45 s)\nAEKF: 6 s | EKF: 7 s | SMO: 9 s\nBiLSTM Hold: 30 s",
-        transform=ax1_ins.transAxes,
-        ha="right",
-        va="bottom",
-        fontsize=6.2,
-        fontweight="bold",
-        color="#1E293B",
-        bbox=dict(boxstyle="round,pad=0.15", facecolor="white", edgecolor="#CBD5E1", alpha=0.95, lw=0.5),
+        0.96, 0.12, box_str,
+        transform=ax1_ins.transAxes, ha="right", va="bottom",
+        fontsize=6.0, fontweight="bold", color="#1E293B",
+        bbox=dict(boxstyle="round,pad=0.14", facecolor="white", edgecolor="#CBD5E1", alpha=0.95, lw=0.5),
     )
 
     ax1.set_ylabel("State of Charge (%)")
     ax1.set_title(r"(a) Trajectory Recovery from Severe Initial Offset ($\Delta\mathrm{SOC}_0 = -40\%$)", loc="left", fontweight="bold")
     ax1.grid(True)
     ax1.set_xlim(0.0, horizon)
-    ax1.set_ylim(48.0, 102.0)
-    style_legend(ax1.legend(loc="lower right", ncol=2, fontsize=7.3, columnspacing=0.9))
+    ax1.set_ylim(48.0, 102.5)
+    style_legend(ax1.legend(loc="lower right", ncol=2, fontsize=6.9, columnspacing=0.8))
 
     # Panel (b)
     ax2.axhspan(0.0, 2.0, color="#16A34A", alpha=0.085, label=r"$\pm 2\%$ Target Band", zorder=0)
@@ -315,48 +312,37 @@ def plot_convergence_trajectories(data, results_converge, save_path="../results/
             err,
             label=name,
             color=PALETTE.get(name, "#64748B"),
-            linewidth=1.35 if name in ("BiLSTM-Attn", "PINN-SOC") else 1.55,
+            linewidth=1.25 if name in ("BiLSTM-Attn", "PINN-SOC") else (1.75 if name == "PIDKF" else 1.45),
             alpha=0.88,
-            zorder=5 if name == "DEKF" else 3,
+            zorder=7 if name in ("PIDKF", "DEKF") else 4,
         )
 
-    ax2.axvline(725.0, color=PALETTE["DEKF"], linestyle=":", linewidth=1.2, zorder=6)
-    ax2.annotate(
-        "DEKF Contraction\nEntry: 725 s | Settle: 732 s",
-        xy=(725.0, 2.0),
-        xytext=(575.0, 14.2),
-        arrowprops=dict(arrowstyle="->", color=PALETTE["DEKF"], lw=1.05),
-        fontsize=7.5,
-        color="#15803D",
-        fontweight="bold",
-        ha="center",
-        bbox=dict(boxstyle="round,pad=0.22", facecolor="white", edgecolor=PALETTE["DEKF"], alpha=0.95, lw=0.7),
-    )
-
-    # Secondary inset focused on DEKF crossing 2% band cleanly clear of upper-right legend
-    ax2_ins = add_zoom_inset(ax2, [0.105, 0.29, 0.34, 0.46], xlim=(670.0, 770.0), ylim=(0.0, 5.4), loc1=3, loc2=4)
-    ax2_ins.axhspan(0.0, 2.0, color="#16A34A", alpha=0.08)
-    ax2_ins.axhline(2.0, color="#DC2626", linestyle="--", linewidth=0.85)
-    ax2_ins.axvline(725.0, color=PALETTE["DEKF"], linestyle=":", linewidth=1.0)
-    for name in ["DEKF", "PINN-SOC", "BiLSTM-Attn", "EKF"]:
-        if name in results_converge:
-            err = np.abs((results_converge[name]["soc_est"][:horizon] - data["soc_true"][:horizon]) * 100.0)
-            ax2_ins.plot(time_sec, err, color=PALETTE[name], linewidth=1.3 if name == "DEKF" else 0.95, alpha=0.9)
-    ax2_ins.set_xticks([690, 725, 760])
-    ax2_ins.set_yticks([1, 2, 3, 4])
-    ax2_ins.text(
-        0.69, 0.88, "DEKF Entry Zoom (670–770 s)",
-        transform=ax2_ins.transAxes, ha="center", va="center",
-        fontsize=5.9, fontweight="bold", color="#1E293B",
-        bbox=dict(boxstyle="round,pad=0.12", facecolor="white", edgecolor="#CBD5E1", alpha=0.96, lw=0.5),
-    )
+    # Dynamically annotate PIDKF / DEKF reach & settle times
+    hero = "PIDKF" if "PIDKF" in results_converge else "DEKF"
+    tr_hero = results_converge[hero].get("t_reach_2", np.nan)
+    ts_hero = results_converge[hero].get("t_settle_5", np.nan)
+    if not np.isnan(tr_hero) and tr_hero < horizon:
+        ax2.axvline(tr_hero, color=PALETTE[hero], linestyle=":", linewidth=1.2, zorder=6)
+        txt_ts = f"{int(round(ts_hero))} s" if not np.isnan(ts_hero) else "N/A"
+        ax2.annotate(
+            f"{hero} Recovery\nReach 2%: {int(round(tr_hero))} s | Settle 5%: {txt_ts}",
+            xy=(tr_hero, 2.0),
+            xytext=(920.0, 22.0),
+            arrowprops=dict(arrowstyle="->", color=PALETTE[hero], lw=1.05),
+            fontsize=7.3,
+            color=PALETTE[hero],
+            fontweight="bold",
+            ha="center",
+            bbox=dict(boxstyle="round,pad=0.20", facecolor="white", edgecolor=PALETTE[hero], alpha=0.95, lw=0.7),
+            zorder=12,
+        )
 
     ax2.set_xlabel("Time (seconds)")
     ax2.set_ylabel("Absolute Error (%)")
-    ax2.set_title(r"(b) Convergence Dynamics into $\pm 2\%$ Error Boundary (0–800 s Window)", loc="left", fontweight="bold")
+    ax2.set_title(f"(b) Convergence Dynamics into $\\pm 2\\%$ Error Boundary (0–{horizon} s Window)", loc="left", fontweight="bold")
     ax2.grid(True)
     ax2.set_ylim(-0.5, 49.5)
-    style_legend(ax2.legend(loc="upper right", ncol=3, fontsize=7.2, columnspacing=0.85))
+    style_legend(ax2.legend(loc="upper right", ncol=3, fontsize=6.9, columnspacing=0.80))
 
     save_pub_figure(fig, save_path)
     print(f"[Visualizer] Saved Fig 4 (PNG 600 DPI + PDF) to {save_path}")

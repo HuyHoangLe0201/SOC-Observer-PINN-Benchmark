@@ -1,13 +1,15 @@
 """
-Battery Electro-Thermal & Degradation Model (NMC and LiFePO4 / LFP)
+Electro-Thermal-Aging 2nd-Order Dual Polarization (2-RC) Battery Cell Models
 Journal of Energy Storage (Elsevier)
-Benchmark Framework for State-of-Charge (SOC) Estimation
 
-Features:
-1. NMC Chemistry Cell (BatteryCellNMC) with strictly monotonic OCV
-2. LiFePO4 / LFP Chemistry Cell (BatteryCellLFP) with Flat OCV Plateau and Dynamic One-State Hysteresis
-3. Arrhenius Temperature Kinetics (-10°C to 45°C)
-4. SOH Degradation Cross-Coupling (Capacity fade & SEI resistance increase)
+Single Source of Truth synchronized strictly with Table 10 (Appendix C.1) and Eqs. (1)-(22):
+1. BatteryCellNMC: 2.00 Ah NMC-class cell (3-state [SOC, U1, U2], strictly monotonic 5th-order OCV).
+2. BatteryCellLFP: 2.30 Ah LFP-class cell (4-state [SOC, U1, U2, V_h], flat plateau + ZOH dynamic hysteresis).
+
+Both models incorporate:
+- Piecewise cold/warm Arrhenius scaling of ohmic, polarization, and usable capacity parameters.
+- Semi-empirical SOH degradation multipliers matching Table 10.
+- Lumped electro-thermal energy balance ODE (C_th * dT/dt = Q_gen - (T - T_amb) / R_th).
 """
 
 import numpy as np
@@ -15,246 +17,305 @@ import numpy as np
 
 class BatteryCellNMC:
     """
-    NMC (Nickel Manganese Cobalt) Lithium-ion Cell (e.g. CALCE INR18650-20R / Panasonic 18650PF).
-    Nominal Capacity: 2.0 Ah, Nominal Voltage: 3.7 V (Cut-off: 3.0V - 4.2V).
-    High OCV slope dOCV/dSOC across entire range (high observability).
+    Nickel Manganese Cobalt (NMC) 2-RC Equivalent Circuit Model calibrated to Table 10.
+    Nominal Capacity: 2.00 Ah, OCV range: [3.212 V, 4.197 V].
     """
 
     def __init__(
         self,
-        nominal_capacity_ah=2.0,
+        nominal_capacity_ah=2.00,
         soh=1.0,
         temperature_c=25.0,
         dt=1.0,
+        thermal_coupled=False,
     ):
         self.chemistry = "NMC"
-        self.q_nominal = float(nominal_capacity_ah)  # Ah
-        self.soh = float(soh)  # 1.0 (Fresh) to 0.8 (EOL)
+        self.q_nominal = float(nominal_capacity_ah)
+        self.soh = float(soh)
         self.temperature_c = float(temperature_c)
+        self.t_amb_c = float(temperature_c)
         self.dt = float(dt)
+        self.thermal_coupled = bool(thermal_coupled)
 
-        # Baseline ECM parameters at 25°C, SOH = 1.0
-        self.r0_base = 0.035   # Ohms
-        self.r1_base = 0.020   # Ohms
-        self.c1_base = 1200.0  # Farads
-        self.r2_base = 0.025   # Ohms
-        self.c2_base = 4500.0  # Farads
+        # Baseline fresh-cell ECM parameters at T_ref = 25 degC (Table 10)
+        self.r0_base = 0.035    # Ohm (35.0 mOhm)
+        self.r1_base = 0.015    # Ohm (15.0 mOhm), tau_1 = 24.0 s
+        self.c1_base = 1600.0   # F
+        self.r2_base = 0.025    # Ohm (25.0 mOhm), tau_2 = 112.5 s
+        self.c2_base = 4500.0   # F
 
-        # Arrhenius constants
-        self.ea_r0 = 25000.0
-        self.ea_r_polar = 28000.0
+        # Piecewise Arrhenius constants (Appendix C.1)
         self.gas_constant = 8.314
         self.t_ref_k = 298.15
+        self.ea_r0_cold = 20500.0
+        self.ea_r0_hot = 14100.0
+        self.ea_r1_cold = 28400.0
+        self.ea_r1_hot = 16900.0
+        self.ea_r2 = 28400.0
+        self.ea_q = 3200.0
+        self.kappa_t_hot = 0.0015
 
-        # Degradation sensitivities
-        self.alpha_r0_deg = 2.5
-        self.alpha_r_polar_deg = 1.8
+        # Semi-empirical SOH degradation multipliers (Table 10 / Appendix C.1)
+        self.kappa_r0 = 2.50
+        self.kappa_r1 = 7.50
+        self.kappa_r2 = 4.00
+        self.gamma_c1 = 1.25
+        self.gamma_c2 = 0.78
 
-        # States: [SOC, Up1, Up2]
+        # Lumped thermal parameters (Appendix C.1)
+        self.c_th = 35.8  # J/K
+        self.r_th = 12.5  # K/W
+
+        # Asymmetric Faradaic coulombic efficiency
+        self.eta_charge = 0.995
+        self.eta_discharge = 1.000
+
+        # Strictly monotonic 5th-order polynomial OCV coefficients (z^5 -> z^0)
+        self.ocv_coeffs = np.array([9.20379162, -28.84109993, 33.37645360, -17.41856030, 4.67403064, 3.21181343])
+
+        # Internal state variables: [SOC, U1, U2]
         self.soc = 1.0
         self.up1 = 0.0
         self.up2 = 0.0
 
-        # Calibrated strictly monotonic 5th-order polynomial for NMC
-        # OCV = c0 + c1*s + c2*s^2 + c3*s^3 + c4*s^4 + c5*s^5
-        self.ocv_coeffs = np.array([
-            3.21181343,
-            4.67403064,
-            -17.41856030,
-            33.37645360,
-            -28.84109993,
-            9.20379162
-        ])
-
         self._update_parameters()
 
+    def _f_t(self, temp_c, ea_cold, ea_hot):
+        t_k = temp_c + 273.15
+        ea = ea_cold if t_k < self.t_ref_k else ea_hot
+        return float(np.exp((ea / self.gas_constant) * (1.0 / t_k - 1.0 / self.t_ref_k)))
+
+    def _f_q(self, temp_c):
+        t_k = temp_c + 273.15
+        if t_k < self.t_ref_k:
+            return float(np.exp(-(self.ea_q / self.gas_constant) * (1.0 / t_k - 1.0 / self.t_ref_k)))
+        return float(1.0 + self.kappa_t_hot * (t_k - self.t_ref_k))
+
     def _update_parameters(self):
-        t_kelvin = self.temperature_c + 273.15
-        arrhenius_r0 = np.exp((self.ea_r0 / self.gas_constant) * (1.0 / t_kelvin - 1.0 / self.t_ref_k))
-        arrhenius_polar = np.exp((self.ea_r_polar / self.gas_constant) * (1.0 / t_kelvin - 1.0 / self.t_ref_k))
+        deg = max(0.0, 1.0 - self.soh)
+        ft0 = self._f_t(self.temperature_c, self.ea_r0_cold, self.ea_r0_hot)
+        ft1 = self._f_t(self.temperature_c, self.ea_r1_cold, self.ea_r1_hot)
+        ft2 = self._f_t(self.temperature_c, self.ea_r2, self.ea_r2)
 
-        aging_loss = max(0.0, 1.0 - self.soh)
-        deg_r0 = 1.0 + self.alpha_r0_deg * aging_loss
-        deg_polar = 1.0 + self.alpha_r_polar_deg * aging_loss
+        self.r0 = self.r0_base * ft0 * (1.0 + self.kappa_r0 * deg)
+        self.r1 = self.r1_base * ft1 * (1.0 + self.kappa_r1 * deg)
+        self.r2 = self.r2_base * ft2 * (1.0 + self.kappa_r2 * deg)
+        self.c1 = max(100.0, self.c1_base * (1.0 - self.gamma_c1 * deg))
+        self.c2 = max(100.0, self.c2_base * (1.0 - self.gamma_c2 * deg))
 
-        self.r0 = self.r0_base * arrhenius_r0 * deg_r0
-        self.r1 = self.r1_base * arrhenius_polar * deg_polar
-        self.r2 = self.r2_base * arrhenius_polar * deg_polar
-        self.c1 = self.c1_base / (deg_polar ** 0.5)
-        self.c2 = self.c2_base / (deg_polar ** 0.5)
-
-        t_cap_factor = 1.0 - 0.006 * max(0.0, 25.0 - self.temperature_c)
-        self.q_actual = self.q_nominal * self.soh * t_cap_factor
-
+        self.q_actual = self.q_nominal * self.soh * self._f_q(self.temperature_c)
         self.tau1 = self.r1 * self.c1
         self.tau2 = self.r2 * self.c2
 
-    def set_environment(self, temperature_c, soh=None):
-        self.temperature_c = float(temperature_c)
-        if soh is not None:
-            self.soh = float(soh)
-        self._update_parameters()
-
-    def reset_state(self, initial_soc=1.0):
-        self.soc = float(initial_soc)
+    def reset_state(self, initial_soc=1.0, temperature_c=None):
+        self.soc = float(np.clip(initial_soc, 0.0, 1.0))
         self.up1 = 0.0
         self.up2 = 0.0
+        if temperature_c is not None:
+            self.temperature_c = float(temperature_c)
+            self.t_amb_c = float(temperature_c)
+        self._update_parameters()
 
-    def get_ocv(self, soc_val):
-        soc_clamped = np.clip(soc_val, 0.0, 1.0)
-        ocv = np.polyval(self.ocv_coeffs[::-1], soc_clamped)
-        temp_shift = (self.temperature_c - 25.0) * (-0.00012)
-        return ocv + temp_shift
+    def get_ocv(self, soc):
+        s = np.clip(soc, 0.0, 1.0)
+        return float(np.polyval(self.ocv_coeffs, s))
 
-    def get_docv_dsoc(self, soc_val):
-        soc_clamped = np.clip(soc_val, 0.0, 1.0)
-        poly_der = np.polyder(self.ocv_coeffs[::-1])
-        return np.polyval(poly_der, soc_clamped)
+    def get_docv_dsoc(self, soc):
+        s = np.clip(soc, 0.0, 1.0)
+        deriv_coeffs = np.polyder(self.ocv_coeffs)
+        return float(max(0.05, np.polyval(deriv_coeffs, s)))
+
+    def get_entropic_coeff(self, soc):
+        # Negative over most of discharge, inverting sign above z > 0.75 (Appendix C.1)
+        if soc > 0.75:
+            return +0.08e-3
+        return -0.065e-3
+
+    def get_eta(self, current_a):
+        return self.eta_discharge if current_a >= 0.0 else self.eta_charge
 
     def step(self, current_a):
-        coulomb_eff = 0.995 if current_a < 0 else 1.0
-        d_soc = -(coulomb_eff * current_a * self.dt) / (3600.0 * self.q_actual)
-        self.soc = np.clip(self.soc + d_soc, 0.0, 1.0)
+        """
+        Advance 2-RC discrete dynamics and optional lumped thermal ODE by dt.
+        Positive current_a = discharge; negative = charge.
+        Returns: (v_terminal, soc)
+        """
+        eta = self.get_eta(current_a)
+        d_soc = (-eta * current_a * self.dt) / (3600.0 * self.q_actual)
+        self.soc = float(np.clip(self.soc + d_soc, 0.0, 1.0))
 
         exp1 = np.exp(-self.dt / self.tau1)
         exp2 = np.exp(-self.dt / self.tau2)
         self.up1 = self.up1 * exp1 + current_a * self.r1 * (1.0 - exp1)
         self.up2 = self.up2 * exp2 + current_a * self.r2 * (1.0 - exp2)
 
+        if self.thermal_coupled:
+            t_k = self.temperature_c + 273.15
+            q_irrev = (current_a ** 2) * self.r0 + (self.up1 ** 2) / self.r1 + (self.up2 ** 2) / self.r2
+            q_rev = -current_a * t_k * self.get_entropic_coeff(self.soc)
+            q_gen = q_irrev + q_rev
+            dT = (q_gen - (self.temperature_c - self.t_amb_c) / self.r_th) * (self.dt / self.c_th)
+            self.temperature_c += float(dT)
+            self._update_parameters()
+
         ocv = self.get_ocv(self.soc)
         v_terminal = ocv - current_a * self.r0 - self.up1 - self.up2
-        return v_terminal, self.soc
+        return float(v_terminal), float(self.soc)
 
 
 class BatteryCellLFP:
     """
-    LiFePO4 (LFP) Cell (e.g. CALCE A123 26650 or CATL LFP Blade Cell).
-    Nominal Capacity: 2.5 Ah, Nominal Voltage: 3.2 V - 3.3 V.
-    Key characteristics for battery state estimation:
-    1. Very flat OCV plateau between 20% and 80% SOC (dOCV/dSOC < 0.1 V/SOC).
-    2. Dynamic path-dependent thermodynamic hysteresis (dV_h ~ 30-50 mV).
+    LiFePO4 (LFP) 4-State Equivalent Circuit Model calibrated to Table 10.
+    Nominal/Calibrated Capacity: 2.30 Ah, OCV range: [2.000 V, 3.600 V].
+    Includes strictly monotonic analytical LFP OCV and ZOH dynamic hysteresis Eq. (18).
     """
 
     def __init__(
         self,
-        nominal_capacity_ah=2.5,
+        nominal_capacity_ah=2.30,
         soh=1.0,
         temperature_c=25.0,
         dt=1.0,
+        thermal_coupled=False,
     ):
         self.chemistry = "LFP"
         self.q_nominal = float(nominal_capacity_ah)
         self.soh = float(soh)
         self.temperature_c = float(temperature_c)
+        self.t_amb_c = float(temperature_c)
         self.dt = float(dt)
+        self.thermal_coupled = bool(thermal_coupled)
 
-        # Baseline ECM parameters for LFP 26650
-        self.r0_base = 0.022   # Ohms
-        self.r1_base = 0.015   # Ohms
-        self.c1_base = 2500.0  # Farads (larger double-layer capacitance)
-        self.r2_base = 0.018   # Ohms
-        self.c2_base = 8000.0  # Farads
+        # Baseline fresh-cell ECM parameters at T_ref = 25 degC (Table 10)
+        self.r0_base = 0.022    # Ohm (22.0 mOhm)
+        self.r1_base = 0.012    # Ohm (12.0 mOhm), tau_1 = 37.5 s
+        self.c1_base = 3125.0   # F
+        self.r2_base = 0.018    # Ohm (18.0 mOhm), tau_2 = 144.0 s
+        self.c2_base = 8000.0   # F
 
-        # Arrhenius & aging parameters
-        self.ea_r0 = 24000.0
-        self.ea_r_polar = 26000.0
+        # Piecewise Arrhenius constants matching Appendix C.1
         self.gas_constant = 8.314
         self.t_ref_k = 298.15
-        self.alpha_r0_deg = 2.0
-        self.alpha_r_polar_deg = 1.5
+        self.ea_r0_cold = 20500.0
+        self.ea_r0_hot = 14100.0
+        self.ea_r1_cold = 28400.0
+        self.ea_r1_hot = 16900.0
+        self.ea_r2 = 28400.0
+        self.ea_q = 3200.0
+        self.kappa_t_hot = 0.0015
 
-        # Dynamic Hysteresis Model parameters (One-state differential equation)
-        # d(Vh)/dt = -gamma * |I| * Vh + gamma * M(SOC) * I
-        self.gamma_hyst = 0.75   # Hysteresis transition rate parameter (1/Ah)
-        self.max_hyst_v = 0.035  # Maximum hysteresis voltage (35 mV)
-        self.v_hyst = 0.0        # State: Hysteresis voltage (V)
+        # Semi-empirical SOH degradation multipliers (Table 10 / Appendix C.1)
+        self.kappa_r0 = 2.50
+        self.kappa_r1 = 7.50
+        self.kappa_r2 = 5.00
+        self.gamma_c1 = 1.00
+        self.gamma_c2 = 0.875
 
-        # Internal states: [SOC, Up1, Up2, V_hyst]
+        # Lumped thermal parameters (Appendix C.1)
+        self.c_th = 65.2  # J/K
+        self.r_th = 8.4   # K/W
+
+        # Dynamic hysteresis parameters (Eqs. 17-18, Table 10)
+        self.beta_hyst = 45.0   # Dimensionless SOC transition factor beta
+        self.m0_hyst = 0.030    # Hysteresis envelope magnitude M_0 = 30.0 mV
+        self.v_hyst = 0.0
+
+        # Asymmetric Faradaic coulombic efficiency
+        self.eta_charge = 0.995
+        self.eta_discharge = 1.000
+
+        # Internal states: [SOC, U1, U2, V_h]
         self.soc = 1.0
         self.up1 = 0.0
         self.up2 = 0.0
 
         self._update_parameters()
 
+    def _f_t(self, temp_c, ea_cold, ea_hot):
+        t_k = temp_c + 273.15
+        ea = ea_cold if t_k < self.t_ref_k else ea_hot
+        return float(np.exp((ea / self.gas_constant) * (1.0 / t_k - 1.0 / self.t_ref_k)))
+
+    def _f_q(self, temp_c):
+        t_k = temp_c + 273.15
+        if t_k < self.t_ref_k:
+            return float(np.exp(-(self.ea_q / self.gas_constant) * (1.0 / t_k - 1.0 / self.t_ref_k)))
+        return float(1.0 + self.kappa_t_hot * (t_k - self.t_ref_k))
+
     def _update_parameters(self):
-        t_kelvin = self.temperature_c + 273.15
-        arrhenius_r0 = np.exp((self.ea_r0 / self.gas_constant) * (1.0 / t_kelvin - 1.0 / self.t_ref_k))
-        arrhenius_polar = np.exp((self.ea_r_polar / self.gas_constant) * (1.0 / t_kelvin - 1.0 / self.t_ref_k))
+        deg = max(0.0, 1.0 - self.soh)
+        ft0 = self._f_t(self.temperature_c, self.ea_r0_cold, self.ea_r0_hot)
+        ft1 = self._f_t(self.temperature_c, self.ea_r1_cold, self.ea_r1_hot)
+        ft2 = self._f_t(self.temperature_c, self.ea_r2, self.ea_r2)
 
-        aging_loss = max(0.0, 1.0 - self.soh)
-        deg_r0 = 1.0 + self.alpha_r0_deg * aging_loss
-        deg_polar = 1.0 + self.alpha_r_polar_deg * aging_loss
+        self.r0 = self.r0_base * ft0 * (1.0 + self.kappa_r0 * deg)
+        self.r1 = self.r1_base * ft1 * (1.0 + self.kappa_r1 * deg)
+        self.r2 = self.r2_base * ft2 * (1.0 + self.kappa_r2 * deg)
+        self.c1 = max(100.0, self.c1_base * (1.0 - self.gamma_c1 * deg))
+        self.c2 = max(100.0, self.c2_base * (1.0 - self.gamma_c2 * deg))
 
-        self.r0 = self.r0_base * arrhenius_r0 * deg_r0
-        self.r1 = self.r1_base * arrhenius_polar * deg_polar
-        self.r2 = self.r2_base * arrhenius_polar * deg_polar
-        self.c1 = self.c1_base / (deg_polar ** 0.5)
-        self.c2 = self.c2_base / (deg_polar ** 0.5)
-
-        t_cap_factor = 1.0 - 0.008 * max(0.0, 25.0 - self.temperature_c)
-        self.q_actual = self.q_nominal * self.soh * t_cap_factor
-
+        self.q_actual = self.q_nominal * self.soh * self._f_q(self.temperature_c)
         self.tau1 = self.r1 * self.c1
         self.tau2 = self.r2 * self.c2
 
-    def reset_state(self, initial_soc=1.0):
-        self.soc = float(initial_soc)
+    def reset_state(self, initial_soc=1.0, temperature_c=None):
+        self.soc = float(np.clip(initial_soc, 0.0, 1.0))
         self.up1 = 0.0
         self.up2 = 0.0
         self.v_hyst = 0.0
+        if temperature_c is not None:
+            self.temperature_c = float(temperature_c)
+            self.t_amb_c = float(temperature_c)
+        self._update_parameters()
 
-    def get_ocv(self, soc_val):
+    def get_ocv(self, soc):
         """
-        LFP Open-Circuit Voltage:
-        Features sharp slope at edges (SOC < 15% and SOC > 85%)
-        and very flat central plateau (~3.28V to 3.32V) in the 20% - 80% range.
-        Modeled via hyperbolic tangent formulation commonly adopted in the electrochemical literature.
+        Strictly monotonic closed-form LFP OCV curve on [0, 1]:
+        V_ocv(z) = 1.950 + 1.320 * sigmoid(26*(z - 0.06)) + 0.065*z + 0.250 * sigmoid(24*(z - 0.89))
+        producing a flat 3.28-3.34 V two-phase plateau and 2.18-3.57 V dynamic span.
         """
-        s = np.clip(soc_val, 0.0, 1.0)
-        # Baseline central plateau at 3.30V
-        # Transitions at low end (s < 0.15) and high end (s > 0.85)
-        v_low = -0.65 / (1.0 + np.exp((s - 0.08) / 0.025))
-        v_high = 0.35 / (1.0 + np.exp(-(s - 0.92) / 0.025))
-        v_linear = 0.08 * s  # Minimal slope in the plateau (only 80 mV over entire 0-1)
-        ocv = 3.28 + v_low + v_high + v_linear
+        s = np.clip(soc, 0.0, 1.0)
+        sig_low = 1.0 / (1.0 + np.exp(-26.0 * (s - 0.06)))
+        sig_high = 1.0 / (1.0 + np.exp(-24.0 * (s - 0.89)))
+        return float(1.950 + 1.320 * sig_low + 0.065 * s + 0.250 * sig_high)
 
-        temp_shift = (self.temperature_c - 25.0) * (-0.00010)
-        return ocv + temp_shift
+    def get_docv_dsoc(self, soc):
+        s = np.clip(soc, 0.0, 1.0)
+        sig_low = 1.0 / (1.0 + np.exp(-26.0 * (s - 0.06)))
+        sig_high = 1.0 / (1.0 + np.exp(-24.0 * (s - 0.89)))
+        return float(1.320 * 26.0 * sig_low * (1.0 - sig_low) + 0.065 + 0.250 * 24.0 * sig_high * (1.0 - sig_high))
 
-    def get_docv_dsoc(self, soc_val):
-        """Numerical / analytical derivative of LFP OCV curve."""
-        eps = 1e-4
-        ocv_plus = self.get_ocv(soc_val + eps)
-        ocv_minus = self.get_ocv(soc_val - eps)
-        return (ocv_plus - ocv_minus) / (2.0 * eps)
+    def get_eta(self, current_a):
+        return self.eta_discharge if current_a >= 0.0 else self.eta_charge
 
     def step(self, current_a):
-        """
-        Advance LFP cell state including dynamic hysteresis.
-        """
-        coulomb_eff = 0.995 if current_a < 0 else 1.0
-        d_soc = -(coulomb_eff * current_a * self.dt) / (3600.0 * self.q_actual)
-        self.soc = np.clip(self.soc + d_soc, 0.0, 1.0)
+        eta = self.get_eta(current_a)
+        abs_dz = abs(eta * current_a * self.dt) / (3600.0 * self.q_actual)
+        d_soc = (-eta * current_a * self.dt) / (3600.0 * self.q_actual)
+        self.soc = float(np.clip(self.soc + d_soc, 0.0, 1.0))
 
-        # Polarization voltages update
         exp1 = np.exp(-self.dt / self.tau1)
         exp2 = np.exp(-self.dt / self.tau2)
         self.up1 = self.up1 * exp1 + current_a * self.r1 * (1.0 - exp1)
         self.up2 = self.up2 * exp2 + current_a * self.r2 * (1.0 - exp2)
 
-        # Hysteresis update (One-state differential equation)
-        # dVh/dt = -gamma * |I| * Vh + gamma * M(SOC) * I
-        # Discrete exact update:
-        ah_step = (np.abs(current_a) * self.dt) / 3600.0
-        exp_h = np.exp(-self.gamma_hyst * ah_step)
-        h_target = np.sign(current_a) * self.max_hyst_v if abs(current_a) > 0.01 else 0.0
-        self.v_hyst = self.v_hyst * exp_h + h_target * (1.0 - exp_h)
+        # Exact ZOH discrete hysteresis update Eq. (18)
+        if abs(current_a) > 1e-6:
+            a_h = np.exp(-self.beta_hyst * abs_dz)
+            sgn_i = 1.0 if current_a > 0.0 else -1.0
+            self.v_hyst = float(a_h * self.v_hyst + (1.0 - a_h) * self.m0_hyst * sgn_i)
 
-        # Terminal voltage: Vt = OCV(SOC) - I*R0 - Up1 - Up2 - V_hyst
+        if self.thermal_coupled:
+            t_k = self.temperature_c + 273.15
+            q_irrev = (current_a ** 2) * self.r0 + (self.up1 ** 2) / self.r1 + (self.up2 ** 2) / self.r2
+            q_rev = -current_a * t_k * (-0.065e-3)
+            dT = ((q_irrev + q_rev) - (self.temperature_c - self.t_amb_c) / self.r_th) * (self.dt / self.c_th)
+            self.temperature_c += float(dT)
+            self._update_parameters()
+
         ocv = self.get_ocv(self.soc)
-        v_terminal = ocv - current_a * self.r0 - self.up1 - self.up2 - self.v_hyst
-        return v_terminal, self.soc
+        v_terminal = ocv - self.v_hyst - current_a * self.r0 - self.up1 - self.up2
+        return float(v_terminal), float(self.soc)
 
 
-# Backward compatibility alias
 BatteryCell = BatteryCellNMC

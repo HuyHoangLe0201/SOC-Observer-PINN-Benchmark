@@ -1,498 +1,487 @@
 """
-Advanced Scientific Extensions & Benchmark Suite
+Advanced Benchmarks Runner: Phases 6, 7 & 10 (Tier 2 Calibrated Co-Simulation)
 Journal of Energy Storage (Elsevier)
 
-Extensions:
-1. Multi-Chemistry Benchmark: NMC vs. LiFePO4 (LFP Flat Plateau & Dynamic Hysteresis)
-2. In-Vehicle Sensor Fault & Bias Drift Stress Testing (Current Hall Offset + Voltage EMI Noise)
-3. Embedded MCU Profiling (ARM Cortex-M4 @ 168 MHz vs. ARM Cortex-M7 @ 480 MHz)
+Executes strictly fair, zero-leakage multi-seed benchmarks:
+- Phase 6: Cross-Chemistry NMC vs. LFP Comparison on IDENTICAL unseen UDDS & FUDS
+           schedules (nominal 100% SOH @ 25 C & aged 85% SOH @ 25 C) with
+           4-state dynamic hysteresis active on LFP.
+- Phase 7: Sensor Bias Drift (+0.25 A Hall offset) & 25 mV Inverter EMI Stress
+           across Coulomb Counting, EKF, AEKF, DEKF, SMO, and PIDKF
+           (reporting RMSE, MaxE, and final-60s window-averaged drift).
+- Phase 10: Comprehensive 5-Seed Ablation (Batch A DST -> unseen Batch B UDDS/FUDS)
+            on Aged NMC & Aged LFP (85% SOH), plus exact vs. exogenous Jacobian
+            discrepancy verification and Fig. 11 generation.
 """
 
 import os
-import time
+import sys
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
-
-from battery_model import BatteryCellNMC, BatteryCellLFP
-from drive_cycles import DriveCycles
-from models_model_based import ExtendedKalmanFilter, AdaptiveEKF, DualExtendedKalmanFilter, SlidingModeObserver
-from models_data_driven import BiLSTMAttentionSOC
-from models_physics_informed import PINNSOCModel, PhysicsInformedLoss
-from pub_style import PALETTE, apply_pub_style, save_pub_figure, style_legend, add_zoom_inset
 import torch
 
+from battery_model import BatteryCellNMC, BatteryCellLFP
+from benchmark_engine import BenchmarkEngine, compute_metrics
+from models_model_based import (
+    ExtendedKalmanFilter,
+    AdaptiveEKF,
+    UnscentedKalmanFilter,
+    DualExtendedKalmanFilter,
+    SlidingModeObserver,
+)
+from pidkf_hybrid import PhysicsInformedDualKalmanFilter, train_residual_compensator
+from pub_style import PALETTE, MARKERS, apply_pub_style, save_pub_figure, style_legend
+
 apply_pub_style()
-COLORS = PALETTE
 
 
-def run_advanced_experiments():
-    results_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "results"))
-    os.makedirs(results_dir, exist_ok=True)
-    dt = 1.0
+def run_phase6_cross_chemistry(engine, pidkf_nmc, pidkf_lfp, results_dir):
+    print("\n[Phase 6] Cross-Chemistry NMC vs. LFP Benchmark on Unseen UDDS & FUDS (5-Seed)...")
+    # Generate identical unseen UDDS drive cycles at 25 C (100% and 85% SOH)
+    nmc_100 = engine.generate_simulation_data("udds", duration=3600, soh=1.00, temp_c=25.0, chemistry="NMC", initial_soc=0.95)
+    lfp_100 = engine.generate_simulation_data("udds", duration=3600, soh=1.00, temp_c=25.0, chemistry="LFP", initial_soc=0.95)
+    lfp_fuds = engine.generate_simulation_data("fuds", duration=3600, soh=1.00, temp_c=25.0, chemistry="LFP", initial_soc=0.95)
 
-    print("=" * 80)
-    print("ADVANCED SCIENTIFIC EXTENSIONS & BENCHMARK SUITE")
-    print("1. Chemistry Generalization: NMC vs. LiFePO4 (LFP) with Hysteresis")
-    print("2. In-Vehicle Sensor Fault & Bias Drift Stress Testing")
-    print("3. Embedded Hardware Profiling for ARM Cortex-M BMS Microcontrollers")
-    print("=" * 80)
+    # Evaluate fresh benchmarks cleanly
+    res_nmc = engine.run_benchmark_on_dataset(nmc_100, include_ukf=True, pidkf_models=pidkf_nmc)
+    res_lfp = engine.run_benchmark_on_dataset(lfp_100, include_ukf=True, pidkf_models=pidkf_lfp)
 
-    # -------------------------------------------------------------------------
-    # PART 1: Multi-Chemistry Benchmark (NMC vs. LFP Flat Plateau)
-    # -------------------------------------------------------------------------
-    print("\n[Extension 1] Running LFP Flat Plateau & Hysteresis Benchmark...")
-    lfp_cell = BatteryCellLFP(nominal_capacity_ah=2.5, soh=1.0, temperature_c=25.0, dt=dt)
-    lfp_cell.reset_state(initial_soc=0.85)  # Start right in the flat plateau zone (85% -> 25%)
+    # Also evaluate LFP EKF & DEKF WITHOUT hysteresis compensation as diagnostic control
+    ekf_nohyst = ExtendedKalmanFilter(BatteryCellLFP(2.30, soh=1.0, temperature_c=25.0), use_hysteresis=False)
+    ekf_nohyst.reset(0.95)
+    t_ekf_nh = np.array([ekf_nohyst.step(lfp_100["current_sensed"][k], lfp_100["v_noisy"][k])[0] for k in range(len(lfp_100["time"]))])
+    m_ekf_nh = compute_metrics(t_ekf_nh, lfp_100["soc_true"])
 
-    # Generate DST cycle for LFP
-    current_lfp = DriveCycles.generate_dst(duration_sec=3600, dt=dt, current_scale=2.5)
-    n_steps = len(current_lfp)
-    v_lfp_true = np.zeros(n_steps)
-    soc_lfp_true = np.zeros(n_steps)
+    res_lfp_fuds = engine.run_benchmark_on_dataset(lfp_fuds, include_ukf=True, pidkf_models=pidkf_lfp)
 
-    for i in range(n_steps):
-        vt, s = lfp_cell.step(current_lfp[i])
-        v_lfp_true[i] = vt
-        soc_lfp_true[i] = s
-
-    np.random.seed(55)
-    v_lfp_noisy = v_lfp_true + np.random.normal(0, 0.005, n_steps)
-    i_lfp_sensed = current_lfp + np.random.normal(0, 0.01, n_steps)
-
-    # Initialize observers tailored for LFP baseline
-    test_lfp = BatteryCellLFP(nominal_capacity_ah=2.5, soh=1.0, temperature_c=25.0, dt=dt)
-    ekf_lfp = ExtendedKalmanFilter(test_lfp)
-    ekf_lfp.reset(initial_soc=soc_lfp_true[0])
-
-    aekf_lfp = AdaptiveEKF(test_lfp)
-    aekf_lfp.reset(initial_soc=soc_lfp_true[0])
-
-    dekf_lfp = DualExtendedKalmanFilter(test_lfp)
-    dekf_lfp.reset(initial_soc=soc_lfp_true[0])
-
-    smo_lfp = SlidingModeObserver(test_lfp)
-    smo_lfp.reset(initial_soc=soc_lfp_true[0])
-
-    s_est_ekf = np.zeros(n_steps)
-    s_est_aekf = np.zeros(n_steps)
-    s_est_dekf = np.zeros(n_steps)
-    s_est_smo = np.zeros(n_steps)
-
-    for k in range(n_steps):
-        s_est_ekf[k], _, _ = ekf_lfp.step(i_lfp_sensed[k], v_lfp_noisy[k])
-        s_est_aekf[k], _, _ = aekf_lfp.step(i_lfp_sensed[k], v_lfp_noisy[k])
-        s_est_dekf[k], _, _, _ = dekf_lfp.step(i_lfp_sensed[k], v_lfp_noisy[k])
-        s_est_smo[k], _ = smo_lfp.step(i_lfp_sensed[k], v_lfp_noisy[k])
-
-    lfp_models = {
-        "EKF": s_est_ekf,
-        "AEKF": s_est_aekf,
-        "DEKF": s_est_dekf,
-        "SMO": s_est_smo
-    }
-
-    # Load previously computed NMC results for comparison
-    df_nmc = pd.read_csv(os.path.join(results_dir, "table1_dynamic_udds.csv"))
-    nmc_rmse_map = dict(zip(df_nmc["Algorithm"], df_nmc["RMSE (%)"]))
-
-    table5_rows = []
-    for name, s_est in lfp_models.items():
-        err_lfp = (s_est - soc_lfp_true) * 100.0
-        rmse_lfp = np.sqrt(np.mean(err_lfp**2))
-        mae_lfp = np.mean(np.abs(err_lfp))
-        max_lfp = np.max(np.abs(err_lfp))
-        rmse_nmc = nmc_rmse_map.get(name, 0.0)
-        table5_rows.append({
-            "Algorithm": name,
-            "NMC RMSE (%)": rmse_nmc,
-            "LFP RMSE (%)": round(rmse_lfp, 3),
-            "LFP MAE (%)": round(mae_lfp, 3),
-            "LFP Max Error (%)": round(max_lfp, 3),
-            "Observability Impact": f"+{(rmse_lfp - rmse_nmc)/rmse_nmc * 100:.1f}%" if rmse_nmc > 0 else "N/A"
+    models_p6 = ["EKF", "AEKF", "UKF", "DEKF", "SMO", "BiLSTM-Attn", "PINN-SOC", "PIDKF"]
+    rows = []
+    for m in models_p6:
+        rows.append({
+            "Algorithm": m,
+            "NMC UDDS RMSE (%)": round(res_nmc[m]["rmse_pct"], 3),
+            "NMC UDDS SD": round(res_nmc[m].get("rmse_sd", 0.0), 3),
+            "LFP UDDS RMSE (%)": round(res_lfp[m]["rmse_pct"], 3),
+            "LFP UDDS SD": round(res_lfp[m].get("rmse_sd", 0.0), 3),
+            "LFP UDDS MaxE (%)": round(res_lfp[m]["max_err_pct"], 3),
+            "LFP FUDS RMSE (%)": round(res_lfp_fuds[m]["rmse_pct"], 3),
         })
+    rows.append({
+        "Algorithm": "EKF (No Hyst. Control)",
+        "NMC UDDS RMSE (%)": np.nan,
+        "NMC UDDS SD": 0.0,
+        "LFP UDDS RMSE (%)": round(m_ekf_nh["rmse_pct"], 3),
+        "LFP UDDS SD": 0.0,
+        "LFP UDDS MaxE (%)": round(m_ekf_nh["max_err_pct"], 3),
+        "LFP FUDS RMSE (%)": np.nan,
+    })
 
-    df_table5 = pd.DataFrame(table5_rows)
-    df_table5.to_csv(os.path.join(results_dir, "table5_chemistry_nmc_vs_lfp.csv"), index=False)
-    print("\n--- Table 5: Chemistry Generalization Benchmark (NMC vs. LiFePO4 / LFP) ---")
-    print(df_table5.to_string(index=False))
+    df_p6 = pd.DataFrame(rows)
+    df_p6.to_csv(os.path.join(results_dir, "table6_cross_chemistry.csv"), index=False)
+    print(df_p6.to_string(index=False))
 
-    # Plot Fig 6: LFP Flat Plateau Tracking & Error (with unclipped SMO & high-resolution plateau inset)
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(7.4, 5.5), sharex=True, gridspec_kw={"hspace": 0.24})
-    time_min = np.arange(n_steps) / 60.0
-    ax1.plot(time_min, soc_lfp_true * 100.0, label="Reference LFP SOC", color=PALETTE["True"], linewidth=2.1, zorder=6)
-    for name in ["SMO", "AEKF", "EKF", "DEKF"]:
-        s_est = lfp_models[name]
+    # Plot Fig 6: Cross-Chemistry LFP Plateau Tracking vs NMC on Unseen UDDS
+    time_min = lfp_100["time"] / 60.0
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(7.6, 5.6), gridspec_kw={"height_ratios": [1.05, 1.05], "hspace": 0.28})
+
+    # Top panel: LFP UDDS Error trajectories (PIDKF, DEKF, EKF 4-state, EKF No-Hyst, BiLSTM, PINN)
+    ax1.axhspan(-2.0, 2.0, color="#16A34A", alpha=0.075, label=r"$\pm 2\%$ Corridor", zorder=0)
+    ax1.axhline(0.0, color="#111827", linestyle="--", linewidth=0.75, zorder=1)
+    ax1.plot(time_min, (t_ekf_nh - lfp_100["soc_true"]) * 100.0, label=f"EKF (No Hyst: {m_ekf_nh['rmse_pct']:.2f}%)", color="#9CA3AF", linestyle="-.", linewidth=1.25, zorder=2)
+    for m in ["BiLSTM-Attn", "PINN-SOC", "SMO", "AEKF", "EKF", "DEKF", "PIDKF"]:
+        err = (res_lfp[m]["soc_est"] - lfp_100["soc_true"]) * 100.0
         ax1.plot(
-            time_min,
-            s_est * 100.0,
-            label=name,
-            color=PALETTE[name],
-            linewidth=1.05 if name == "SMO" else 1.55,
-            alpha=0.55 if name == "SMO" else 0.92,
-            zorder=2 if name == "SMO" else 4,
+            time_min, err,
+            label=f"{m} ({res_lfp[m]['rmse_pct']:.2f}%)",
+            color=PALETTE.get(m, "#64748B"),
+            linewidth=1.8 if m == "PIDKF" else (1.1 if m in ("BiLSTM-Attn", "PINN-SOC") else 1.4),
+            alpha=0.72 if m in ("BiLSTM-Attn", "PINN-SOC") else 0.94,
+            zorder=7 if m == "PIDKF" else 4,
         )
-
-    ax1.set_ylabel("SOC (%)")
-    ax1.set_title(r"(a) LiFePO$_4$ Tracking Across Flat Plateau (20%–80% SOC) with Hysteresis", loc="left", fontweight="bold")
+    ax1.set_ylabel("SOC Error (%)")
+    ax1.set_xlabel("Time (minutes)")
+    ax1.set_title(r"(a) Flat-Plateau LFP Tracking Error on Unseen UDDS ($25^\circ\mathrm{C}$, SOH $= 100\%$, 4-State Hysteresis)", loc="left", fontweight="bold")
     ax1.grid(True)
     ax1.set_xlim(0.0, 60.5)
-    ax1.set_ylim(34.0, 106.5)
-    style_legend(ax1.legend(loc="lower left", ncol=3, fontsize=7.6, columnspacing=1.0))
+    style_legend(ax1.legend(loc="upper right", ncol=3, fontsize=6.6, columnspacing=0.7, handlelength=1.4))
 
-    # Zoom inset showing plateau separation among DEKF / EKF / AEKF cleanly in top-right open sky
-    ax1_ins = add_zoom_inset(ax1, [0.53, 0.61, 0.44, 0.34], xlim=(42.0, 60.0), ylim=(54.5, 68.0), loc1=2, loc2=4)
-    ax1_ins.plot(time_min, soc_lfp_true * 100.0, color=PALETTE["True"], linewidth=1.8, zorder=6)
-    for name in ["AEKF", "EKF", "DEKF"]:
-        ax1_ins.plot(time_min, lfp_models[name] * 100.0, color=PALETTE[name], linewidth=1.4, alpha=0.92)
-    ax1_ins.set_xticks([45, 50, 55, 60])
-    ax1_ins.set_yticks([57, 61, 65])
-    ax1_ins.text(
-        0.55, 0.87, "Plateau End (42–60 min)",
-        transform=ax1_ins.transAxes, ha="center", va="center",
-        fontsize=6.3, fontweight="bold", color="#1E293B",
-        bbox=dict(boxstyle="round,pad=0.14", facecolor="white", edgecolor="#CBD5E1", alpha=0.95, lw=0.5),
+    # Bottom panel: Paired Bar Chart NMC vs LFP UDDS RMSE across estimators
+    xm = np.arange(len(models_p6))
+    w = 0.36
+    nmc_vals = [res_nmc[m]["rmse_pct"] for m in models_p6]
+    lfp_vals = [res_lfp[m]["rmse_pct"] for m in models_p6]
+    b1 = ax2.bar(xm - w / 2, nmc_vals, w, label="NMC (Sloping OCV)", color="#2563EB", alpha=0.88, edgecolor="#1F2937", lw=0.6)
+    b2 = ax2.bar(xm + w / 2, lfp_vals, w, label="LFP (Flat Plateau + Hysteresis)", color="#0F766E", alpha=0.88, edgecolor="#1F2937", lw=0.6)
+    max_b = max(max(nmc_vals), max(lfp_vals))
+    for bar, val in list(zip(b1, nmc_vals)) + list(zip(b2, lfp_vals)):
+        ax2.text(bar.get_x() + bar.get_width() / 2.0, val + max_b * 0.02, f"{val:.2f}%", ha="center", va="bottom", rotation=90, fontsize=6.8, fontweight="bold")
+    ax2.set_xticks(xm)
+    ax2.set_xticklabels(models_p6, rotation=15, ha="right", fontweight="bold", fontsize=8.0)
+    ax2.set_ylabel("UDDS RMSE (%)")
+    ax2.set_ylim(0.0, max_b * 1.32 + 0.4)
+    ax2.set_title("(b) Direct Cross-Chemistry Error Comparison on Identical UDDS Schedule", loc="left", fontweight="bold")
+    ax2.grid(True, axis="y")
+    style_legend(ax2.legend(loc="upper left", ncol=2, fontsize=7.6))
+
+    save_pub_figure(fig, os.path.join(results_dir, "fig6_lfp_plateau_tracking.png"))
+    print("[Phase 6] Saved fig6_lfp_plateau_tracking.png")
+    return df_p6
+
+
+def run_phase7_sensor_bias(engine, pidkf_nmc, results_dir):
+    print("\n[Phase 7] Sensor Bias Drift (+0.25 A Hall Bias) + 25 mV EMI Stress (2-Hour UDDS)...")
+    data_bias = engine.generate_simulation_data(
+        cycle_name="udds", duration=7200, soh=1.0, temp_c=25.0, chemistry="NMC",
+        initial_soc=0.95, i_bias=0.25, v_noise_std=0.025, i_noise_std=0.020, seed=77
     )
+    currents = data_bias["current_sensed"]
+    voltages = data_bias["v_noisy"]
+    temps = data_bias["temp_c"]
+    soc_true = data_bias["soc_true"]
+    n = len(currents)
 
-    ax2.axhspan(-2.0, 2.0, color="#16A34A", alpha=0.075, label=r"$\pm 2\%$ Target Band", zorder=0)
-    for name in ["SMO", "AEKF", "EKF", "DEKF"]:
-        err = (lfp_models[name] - soc_lfp_true) * 100.0
-        ax2.plot(
-            time_min,
-            err,
-            label=name,
-            color=PALETTE[name],
-            linewidth=1.00 if name == "SMO" else 1.55,
-            alpha=0.50 if name == "SMO" else 0.92,
-            zorder=2 if name == "SMO" else 5,
-        )
-    ax2.axhline(0.0, color="#111827", linestyle="--", linewidth=0.75)
-    ax2.axhline(2.0, color="#15803D", linestyle=":", linewidth=0.95)
-    ax2.axhline(-2.0, color="#15803D", linestyle=":", linewidth=0.95)
-    ax2.text(1.2, 2.5, r"$\pm 2\%$ Target Corridor", fontsize=7.5, color="#15803D", fontweight="bold",
-             bbox=dict(boxstyle="round,pad=0.16", facecolor="white", edgecolor="none", alpha=0.90))
+    # 1. Open-loop Coulomb Counting (drifts steadily via dt * +0.25 A bias)
+    cc_est = np.zeros(n)
+    cc_est[0] = 0.95
+    for k in range(1, n):
+        eta = 1.0 if currents[k] >= 0.0 else 0.995
+        cc_est[k] = np.clip(cc_est[k - 1] - (eta * currents[k] / (3600.0 * 2.00)), 0.0, 1.0)
 
-    # Zoom inset cleanly isolating DEKF (0.87%) vs EKF (1.14%) vs AEKF (2.89%) inside bottom-left open space
-    ax2_ins = add_zoom_inset(ax2, [0.055, 0.08, 0.42, 0.44], xlim=(32.0, 60.0), ylim=(-4.7, 1.35), loc1=1, loc2=4)
-    ax2_ins.axhspan(-2.0, 2.0, color="#16A34A", alpha=0.07)
-    ax2_ins.axhline(0.0, color="#111827", linestyle="--", linewidth=0.6)
-    ax2_ins.axhline(-2.0, color="#15803D", linestyle=":", linewidth=0.8)
-    for name in ["AEKF", "EKF", "DEKF"]:
-        err = (lfp_models[name] - soc_lfp_true) * 100.0
-        ax2_ins.plot(time_min, err, color=PALETTE[name], linewidth=1.35)
-    ax2_ins.set_xticks([35, 42, 50, 58])
-    ax2_ins.set_yticks([-4, -2, 0])
-    ax2_ins.text(
-        0.5, 0.87, "DEKF 0.87% | EKF 1.14%",
-        transform=ax2_ins.transAxes, ha="center", va="center",
-        fontsize=6.3, fontweight="bold", color="#1E293B",
-        bbox=dict(boxstyle="round,pad=0.14", facecolor="white", edgecolor="#CBD5E1", alpha=0.95, lw=0.5),
-    )
+    def mk_cell():
+        return BatteryCellNMC(nominal_capacity_ah=2.00, soh=1.0, temperature_c=25.0, dt=1.0)
 
-    ax2.set_xlabel("Time (minutes)")
-    ax2.set_ylabel("Error (%)")
-    ax2.set_title(r"(b) Residual Error under Low Observability ($\partial\mathrm{OCV}/\partial\mathrm{SOC} \approx 0$)", loc="left", fontweight="bold")
-    ax2.grid(True)
-    ax2.set_ylim(-22.5, 6.2)
-    style_legend(ax2.legend(loc="upper right", ncol=3, fontsize=7.5, columnspacing=0.9))
-
-    out_fig6 = os.path.join(results_dir, "fig6_lfp_plateau_tracking.png")
-    save_pub_figure(fig, out_fig6)
-    print(f"[Visualizer] Saved Fig 6 (PNG 600 DPI + PDF) to {out_fig6}")
-
-    # -------------------------------------------------------------------------
-    # PART 2: In-Vehicle Sensor Fault & Bias Drift Stress Testing
-    # -------------------------------------------------------------------------
-    print("\n[Extension 2] Running In-Vehicle Sensor Fault & Current Bias Stress Test...")
-    nmc_cell = BatteryCellNMC(nominal_capacity_ah=2.0, soh=1.0, temperature_c=25.0, dt=dt)
-    nmc_cell.reset_state(initial_soc=0.95)
-    current_clean = DriveCycles.generate_udds(duration_sec=3600, dt=dt)
-    v_clean = np.zeros(n_steps)
-    soc_clean = np.zeros(n_steps)
-    for i in range(n_steps):
-        v, s = nmc_cell.step(current_clean[i])
-        v_clean[i] = v
-        soc_clean[i] = s
-
-    # Corruptions: Current sensor DC bias drift (+0.25 A) + Severe EMI noise (std = 25 mV)
-    current_drift_bias = 0.25  # +0.25 A constant Hall sensor zero-offset
-    v_emi_noise_std = 0.025    # 25 mV EMI inverter switching noise
-
-    np.random.seed(88)
-    current_corrupted = current_clean + current_drift_bias + np.random.normal(0, 0.02, n_steps)
-    v_corrupted = v_clean + np.random.normal(0, v_emi_noise_std, n_steps)
-
-    # Pure Coulomb counting baseline under current bias
-    soc_coulomb = np.zeros(n_steps)
-    soc_coulomb[0] = soc_clean[0]
-    for k in range(1, n_steps):
-        soc_coulomb[k] = soc_coulomb[k-1] - (current_corrupted[k-1] * dt) / (3600.0 * 2.0)
-
-    # Test Observers under corrupted sensors
-    test_nmc = BatteryCellNMC(nominal_capacity_ah=2.0, soh=1.0, temperature_c=25.0, dt=dt)
-    ekf_s = ExtendedKalmanFilter(test_nmc)
-    ekf_s.reset(soc_clean[0])
-    aekf_s = AdaptiveEKF(test_nmc)
-    aekf_s.reset(soc_clean[0])
-    dekf_s = DualExtendedKalmanFilter(test_nmc)
-    dekf_s.reset(soc_clean[0])
-    smo_s = SlidingModeObserver(test_nmc)
-    smo_s.reset(soc_clean[0])
-
-    s_drift_ekf = np.zeros(n_steps)
-    s_drift_aekf = np.zeros(n_steps)
-    s_drift_dekf = np.zeros(n_steps)
-    s_drift_smo = np.zeros(n_steps)
-
-    for k in range(n_steps):
-        s_drift_ekf[k], _, _ = ekf_s.step(current_corrupted[k], v_corrupted[k])
-        s_drift_aekf[k], _, _ = aekf_s.step(current_corrupted[k], v_corrupted[k])
-        s_drift_dekf[k], _, _, _ = dekf_s.step(current_corrupted[k], v_corrupted[k])
-        s_drift_smo[k], _ = smo_s.step(current_corrupted[k], v_corrupted[k])
-
-    stress_models = {
-        "Coulomb Counting": soc_coulomb,
-        "EKF": s_drift_ekf,
-        "AEKF": s_drift_aekf,
-        "DEKF": s_drift_dekf,
-        "SMO": s_drift_smo
+    obs_map = {
+        "Coulomb Counting": cc_est,
     }
+    for name, obs in [
+        ("EKF", ExtendedKalmanFilter(mk_cell())),
+        ("AEKF", AdaptiveEKF(mk_cell())),
+        ("DEKF", DualExtendedKalmanFilter(mk_cell())),
+        ("SMO", SlidingModeObserver(mk_cell())),
+    ]:
+        obs.reset(0.95)
+        obs_map[name] = np.array([obs.step(currents[k], voltages[k])[0] for k in range(n)])
 
-    table6_rows = []
-    for name, s_est in stress_models.items():
-        err = (s_est - soc_clean) * 100.0
-        table6_rows.append({
+    # Multi-seed PIDKF under bias + EMI
+    pid_trajs = []
+    pid_rows = []
+    for pnn in pidkf_nmc:
+        p = PhysicsInformedDualKalmanFilter(mk_cell(), nn_model=pnn)
+        p.reset(0.95)
+        tr = np.array([p.step(currents[k], voltages[k], temp_c=float(temps[k]))[0] for k in range(n)])
+        pid_trajs.append(tr)
+        m = compute_metrics(tr, soc_true)
+        m["end60_pct"] = float(np.mean(np.abs((tr[-60:] - soc_true[-60:]) * 100.0)))
+        pid_rows.append(m)
+    obs_map["PIDKF"] = pid_trajs[0]
+
+    rows = []
+    for name in ["Coulomb Counting", "EKF", "AEKF", "DEKF", "SMO"]:
+        tr = obs_map[name]
+        m = compute_metrics(tr, soc_true)
+        end60 = float(np.mean(np.abs((tr[-60:] - soc_true[-60:]) * 100.0)))
+        rows.append({
             "Algorithm": name,
-            "RMSE with Bias (%)": round(np.sqrt(np.mean(err**2)), 3),
-            "Max Error (%)": round(np.max(np.abs(err)), 3),
-            "End-of-Cycle Drift (%)": round(abs(err[-1]), 3),
-            "Fault Immunity": "Poor (Runaway Drift)" if name == "Coulomb Counting" else ("Moderate" if name == "AEKF" else "High")
+            "RMSE (%)": round(m["rmse_pct"], 3),
+            "RMSE SD": 0.0,
+            "MaxE (%)": round(m["max_err_pct"], 3),
+            "Final-60s Drift (%)": round(end60, 3),
+        })
+    rows.append({
+        "Algorithm": "PIDKF",
+        "RMSE (%)": round(float(np.mean([r["rmse_pct"] for r in pid_rows])), 3),
+        "RMSE SD": round(float(np.std([r["rmse_pct"] for r in pid_rows])), 3),
+        "MaxE (%)": round(float(np.mean([r["max_err_pct"] for r in pid_rows])), 3),
+        "Final-60s Drift (%)": round(float(np.mean([r["end60_pct"] for r in pid_rows])), 3),
+    })
+
+    df_p7 = pd.DataFrame(rows)
+    df_p7.to_csv(os.path.join(results_dir, "table7_sensor_corruption.csv"), index=False)
+    print(df_p7.to_string(index=False))
+
+    # Plot Fig 7: Error trajectories under Hall +0.25A bias & 25mV EMI
+    t_min = data_bias["time"] / 60.0
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(7.4, 5.4), gridspec_kw={"height_ratios": [1.0, 1.15], "hspace": 0.28})
+    ax1.plot(t_min, soc_true * 100.0, label="True SOC", color="#111827", lw=2.0, zorder=7)
+    for name in ["Coulomb Counting", "SMO", "AEKF", "EKF", "DEKF", "PIDKF"]:
+        ax1.plot(t_min, obs_map[name] * 100.0, label=name, color=PALETTE.get(name, "#64748B"), lw=1.7 if name == "PIDKF" else 1.25, zorder=6 if name == "PIDKF" else 3)
+    ax1.set_ylabel("State of Charge (%)")
+    ax1.set_title(r"(a) Closed-Loop Rejection vs. Open-Loop Runaway ($+0.25\;\mathrm{A}$ Bias + $25\;\mathrm{mV}$ EMI, 2 h)", loc="left", fontweight="bold")
+    ax1.grid(True)
+    ax1.set_xlim(0.0, 120.5)
+    style_legend(ax1.legend(loc="lower left", ncol=4, fontsize=6.9))
+
+    ax2.axhspan(-2.0, 2.0, color="#16A34A", alpha=0.075, zorder=0)
+    ax2.axhline(0.0, color="#111827", linestyle="--", lw=0.75)
+    for name in ["Coulomb Counting", "SMO", "AEKF", "EKF", "DEKF", "PIDKF"]:
+        err = (obs_map[name] - soc_true) * 100.0
+        lbl = f"{name} ({df_p7.set_index('Algorithm').loc[name, 'RMSE (%)']:.2f}%)"
+        ax2.plot(t_min, err, label=lbl, color=PALETTE.get(name, "#64748B"), lw=1.7 if name == "PIDKF" else 1.25, zorder=6 if name == "PIDKF" else 3)
+    ax2.set_xlabel("Time (minutes)")
+    ax2.set_ylabel("SOC Error (%)")
+    ax2.set_title("(b) Bias Drift Containment across Closed-Loop Estimators (Bounded vs. Divergent Integration)", loc="left", fontweight="bold")
+    ax2.grid(True)
+    ax2.set_xlim(0.0, 120.5)
+    style_legend(ax2.legend(loc="lower left", ncol=3, fontsize=6.8))
+
+    save_pub_figure(fig, os.path.join(results_dir, "fig7_sensor_bias_drift_stress.png"))
+    print("[Phase 7] Saved fig7_sensor_bias_drift_stress.png")
+    return df_p7
+
+
+def run_phase10_ablation_and_jacobian(engine, seeds, results_dir):
+    print("\n[Phase 10] Full 5-Seed PIDKF Ablation Study (Aged 85% SOH NMC & LFP, Batch A -> Batch B)...")
+
+    # Pretrain all ablation NN variants strictly on Batch A DST across 5 seeds
+    variants_nn = {}
+    for chem in ("NMC", "LFP"):
+        variants_nn[chem] = {"blackbox": [], "phys_reg": [], "full_pidkf": []}
+        for s in seeds:
+            m_bb, _ = train_residual_compensator(chemistry=chem, seed=s, epochs=600, unconstrained_blackbox=True)
+            m_pr, _ = train_residual_compensator(chemistry=chem, seed=s, epochs=600, lambda_phys=0.50, unconstrained_blackbox=False)
+            variants_nn[chem]["blackbox"].append(m_bb)
+            variants_nn[chem]["phys_reg"].append(m_pr)
+            variants_nn[chem]["full_pidkf"].append(m_pr)  # identical trained physics weights, paired with hard passivity at inference
+
+    # Strictly unseen Batch B tests: UDDS (2h) at Aged 85% SOH & 25 C (plus 0 C NMC cold-aged stress check)
+    nmc_85 = engine.generate_simulation_data("udds", duration=7200, soh=0.85, temp_c=25.0, chemistry="NMC", initial_soc=0.95)
+    lfp_85 = engine.generate_simulation_data("udds", duration=7200, soh=0.85, temp_c=25.0, chemistry="LFP", initial_soc=0.95)
+    nmc_cold_85 = engine.generate_simulation_data("udds", duration=3600, soh=0.85, temp_c=0.0, chemistry="NMC", initial_soc=0.95)
+
+    def eval_variant(data, variant_name, chem):
+        def mk_nom():
+            if chem == "LFP":
+                return BatteryCellLFP(2.30, soh=1.0, temperature_c=25.0, dt=1.0)
+            return BatteryCellNMC(2.00, soh=1.0, temperature_c=25.0, dt=1.0)
+
+        curr, volt, temp, s_true = data["current_sensed"], data["v_noisy"], data["temp_c"], data["soc_true"]
+        n = len(curr)
+
+        if variant_name == "Standard EKF":
+            obs = ExtendedKalmanFilter(mk_nom(), use_hysteresis=(chem == "LFP"))
+            obs.reset(0.95)
+            tr = np.array([obs.step(curr[k], volt[k])[0] for k in range(n)])
+            m = compute_metrics(tr, s_true)
+            return m["rmse_pct"], 0.0, m["max_err_pct"]
+
+        if variant_name == "Baseline DEKF (No Hyst.)":
+            obs = DualExtendedKalmanFilter(mk_nom(), use_hysteresis=False)
+            obs.reset(0.95)
+            tr = np.array([obs.step(curr[k], volt[k])[0] for k in range(n)])
+            m = compute_metrics(tr, s_true)
+            return m["rmse_pct"], 0.0, m["max_err_pct"]
+
+        if variant_name == "DEKF + Hysteresis":
+            obs = DualExtendedKalmanFilter(mk_nom(), use_hysteresis=True)
+            obs.reset(0.95)
+            tr = np.array([obs.step(curr[k], volt[k])[0] for k in range(n)])
+            m = compute_metrics(tr, s_true)
+            return m["rmse_pct"], 0.0, m["max_err_pct"]
+
+        rmses, maxes = [], []
+        key_nn = "blackbox" if "Black-Box" in variant_name else "phys_reg"
+        hard_p = "PIDKF" in variant_name
+        exact_j = "Exact" in variant_name
+        for pm in variants_nn[chem][key_nn]:
+            obs = PhysicsInformedDualKalmanFilter(
+                mk_nom(), nn_model=pm, use_hysteresis=True, exact_jacobian=exact_j, hard_passivity=hard_p
+            )
+            obs.reset(0.95)
+            tr = np.array([obs.step(curr[k], volt[k], temp_c=float(temp[k]))[0] for k in range(n)])
+            m = compute_metrics(tr, s_true)
+            rmses.append(m["rmse_pct"])
+            maxes.append(m["max_err_pct"])
+        return float(np.mean(rmses)), float(np.std(rmses)), float(np.mean(maxes))
+
+    ablation_configs = [
+        "Standard EKF",
+        "Baseline DEKF (No Hyst.)",
+        "DEKF + Hysteresis",
+        "DEKF + Black-Box MLP",
+        "DEKF + Phys-Reg MLP (No Clamp)",
+        "Full PIDKF (Exact Jac.)",
+        "Full PIDKF (Exog. Approx.)",
+    ]
+
+    rows = []
+    for cfg in ablation_configs:
+        nmc_r, nmc_sd, nmc_mx = eval_variant(nmc_85, cfg, "NMC")
+        lfp_r, lfp_sd, lfp_mx = eval_variant(lfp_85, cfg, "LFP")
+        c_r, c_sd, _ = eval_variant(nmc_cold_85, cfg, "NMC")
+        rows.append({
+            "Variant": cfg,
+            "NMC 85% RMSE (%)": round(nmc_r, 3),
+            "NMC SD": round(nmc_sd, 3),
+            "NMC MaxE (%)": round(nmc_mx, 3),
+            "LFP 85% RMSE (%)": round(lfp_r, 3),
+            "LFP SD": round(lfp_sd, 3),
+            "LFP MaxE (%)": round(lfp_mx, 3),
+            "NMC 85% 0C RMSE (%)": round(c_r, 3),
+            "NMC 0C SD": round(c_sd, 3),
         })
 
-    df_table6 = pd.DataFrame(table6_rows)
-    df_table6.to_csv(os.path.join(results_dir, "table6_sensor_fault_drift.csv"), index=False)
-    print("\n--- Table 6: In-Vehicle Sensor Fault & Bias Drift Stress Test ---")
-    print(df_table6.to_string(index=False))
+    df_p10 = pd.DataFrame(rows)
+    df_p10.to_csv(os.path.join(results_dir, "table9_pidkf_ablation.csv"), index=False)
+    print(df_p10.to_string(index=False))
 
-    # Plot Fig 7: Sensor Bias Drift & Stress (Translucent SMO behind foreground Kalman trajectories + zoom inset)
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(7.4, 5.5), sharex=True, gridspec_kw={"hspace": 0.24})
-    ax1.plot(time_min, soc_clean * 100.0, label="Ground Truth", color=PALETTE["True"], linewidth=2.1, zorder=6)
-    plot_seq = ["SMO", "Coulomb Counting", "AEKF", "DEKF", "EKF"]
-    for name in plot_seq:
-        s_est = stress_models[name]
-        col = PALETTE["Coulomb Counting"] if name == "Coulomb Counting" else PALETTE[name]
-        ls = "--" if name == "Coulomb Counting" else "-"
-        lw = 1.65 if name != "SMO" else 0.95
-        alp = 0.34 if name == "SMO" else 0.94
-        zo = 2 if name == "SMO" else 5
-        ax1.plot(time_min, s_est * 100.0, label=name, color=col, linestyle=ls, linewidth=lw, alpha=alp, zorder=zo)
+    # Extract exact autograd chain-rule vs. exogenous Jacobian discrepancy directly from PhysicsInformedDualKalmanFilter
+    p_ex = PhysicsInformedDualKalmanFilter(BatteryCellNMC(2.0, soh=1.0, temperature_c=25.0), nn_model=variants_nn["NMC"]["full_pidkf"][0], exact_jacobian=True)
+    p_ex.reset(0.95)
+    for k in range(len(nmc_85["time"])):
+        p_ex.step(nmc_85["current_sensed"][k], nmc_85["v_noisy"][k], temp_c=float(nmc_85["temp_c"][k]))
+    jac_ratios = np.array(p_ex.rel_jac_diffs, dtype=float)
+    print(f"\n[Phase 10 Jacobian Check] Relative ||J_NN|| / ||H_ECM||: mean={np.mean(jac_ratios):.4f}, max={np.max(jac_ratios):.4f}")
 
-    ax1.annotate(
-        "Open-Loop Runaway (-12.4%)",
-        xy=(55.5, 73.3),
-        xytext=(46.2, 61.5),
-        arrowprops=dict(arrowstyle="->", color=PALETTE["Coulomb Counting"], lw=1.0),
-        fontsize=7.7,
-        color="#1E293B",
-        fontweight="bold",
-        ha="center",
-        bbox=dict(boxstyle="round,pad=0.20", facecolor="white", edgecolor="#94A3B8", alpha=0.96, lw=0.7),
-        zorder=8,
-    )
-    ax1.set_ylabel("SOC (%)")
-    ax1.set_title(r"(a) Estimation Trajectories under Sensor Drift ($+0.25\;\mathrm{A}$ Hall Bias + $25\;\mathrm{mV}$ EMI)", loc="left", fontweight="bold")
+    # Plot Fig 11 strictly from df_p10 (grouped bar ablation with error bars + thermal cold-aged inset panel)
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(9.6, 4.6), gridspec_kw={"wspace": 0.30})
+    short_lbls = ["EKF", "DEKF\nBase", "DEKF+\nHyst.", "DEKF+\nBB MLP", "DEKF+\nPhysReg", "PIDKF\nExact", "PIDKF\nExog."]
+    x = np.arange(len(short_lbls))
+    w = 0.36
+    y_nmc = df_p10["NMC 85% RMSE (%)"].values
+    sd_nmc = df_p10["NMC SD"].values
+    y_lfp = df_p10["LFP 85% RMSE (%)"].values
+    sd_lfp = df_p10["LFP SD"].values
+
+    b1 = ax1.bar(x - w / 2, y_nmc, w, yerr=sd_nmc, capsize=2.5, label="Aged NMC (85% SOH, UDDS)", color="#2563EB", alpha=0.88, edgecolor="#1F2937", lw=0.6)
+    b2 = ax1.bar(x + w / 2, y_lfp, w, yerr=sd_lfp, capsize=2.5, label="Aged LFP (85% SOH, UDDS)", color="#0F766E", alpha=0.88, edgecolor="#1F2937", lw=0.6)
+    max_y1 = max(np.max(y_nmc + sd_nmc), np.max(y_lfp + sd_lfp))
+    for bar, val, sd in list(zip(b1, y_nmc, sd_nmc)) + list(zip(b2, y_lfp, sd_lfp)):
+        ax1.text(bar.get_x() + bar.get_width() / 2.0, val + sd + max_y1 * 0.03, f"{val:.2f}%", ha="center", va="bottom", rotation=90, fontsize=6.5, fontweight="bold")
+    ax1.set_xticks(x)
+    ax1.set_xticklabels(short_lbls, fontsize=6.9, fontweight="bold")
+    ax1.set_ylabel("Unseen UDDS RMSE (%) [5-Seed Mean +/- SD]")
+    ax1.set_ylim(0.0, max_y1 * 1.38 + 0.35)
+    ax1.set_title("(a) Ablation on Aged NMC & LFP (85% SOH @ 25 C)", fontweight="bold", fontsize=8.8)
+    ax1.grid(True, axis="y")
+    style_legend(ax1.legend(loc="upper right", fontsize=7.0))
+
+    y_c = df_p10["NMC 85% 0C RMSE (%)"].values
+    sd_c = df_p10["NMC 0C SD"].values
+    bc = ax2.bar(x, y_c, 0.56, yerr=sd_c, capsize=3.0, color=["#DC2626", "#64748B", "#16A34A", "#EA580C", "#854D0E", "#0284C7", "#0F766E"], edgecolor="#1F2937", lw=0.65, alpha=0.90)
+    max_y2 = float(np.max(y_c + sd_c))
+    for bar, val, sd in zip(bc, y_c, sd_c):
+        ax2.text(bar.get_x() + bar.get_width() / 2.0, val + sd + max_y2 * 0.03, f"{val:.2f}%", ha="center", va="bottom", fontsize=6.8, fontweight="bold")
+    ax2.axhline(2.0, color="#DC2626", linestyle="--", lw=1.0, label="2.0% BMS Bound")
+    ax2.set_xticks(x)
+    ax2.set_xticklabels(short_lbls, fontsize=6.9, fontweight="bold")
+    ax2.set_ylabel("Cold-Aged UDDS RMSE (%) [0 C, 85% SOH]")
+    ax2.set_ylim(0.0, max_y2 * 1.25 + 0.4)
+    ax2.set_title("(b) Combined Cold + Aging Stress (0 C, 85% SOH)", fontweight="bold", fontsize=8.8)
+    ax2.grid(True, axis="y")
+    style_legend(ax2.legend(loc="upper right", fontsize=7.2))
+
+    save_pub_figure(fig, os.path.join(results_dir, "fig11_pidkf_hybrid_benchmark.png"))
+    print("[Phase 10] Saved fig11_pidkf_hybrid_benchmark.png")
+    return df_p10
+
+
+def main():
+    print("=" * 84)
+    print("ADVANCED BENCHMARKS RUNNER (PHASES 6, 7 & 10, ZERO-LEAKAGE PROTOCOL)")
+    print("=" * 84)
+    seeds = (42, 43, 44, 45, 46)
+    np.random.seed(42)
+    torch.manual_seed(42)
+
+    results_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "results"))
+    engine = BenchmarkEngine(dt=1.0, results_dir=results_dir)
+
+    # Train 5 seeds of neural baselines & PIDKF strictly on Batch A DST (NMC & LFP independently)
+    engine.train_deep_models(epochs=30, lr=0.002, seeds=seeds, chemistry="NMC")
+    b_lfp, p_lfp, m_lfp = engine.train_deep_models(epochs=30, lr=0.002, seeds=seeds, chemistry="LFP")
+
+    pidkf_nmc = [train_residual_compensator("NMC", seed=s, epochs=600)[0] for s in seeds]
+    pidkf_lfp = [train_residual_compensator("LFP", seed=s, epochs=600)[0] for s in seeds]
+
+    # Phase 6 uses chemistry-specific trained models
+    # Store NMC inside engine for Phase 6 NMC call, pass LFP cleanly via temporary swap
+    nmc_b, nmc_p, nmc_m = engine.bilstm_models, engine.pinn_models, engine.mlp_models
+
+    # Evaluate Phase 6 manually handling both chemistries cleanly
+    print("\n[Phase 6] Evaluating Cross-Chemistry (NMC vs. LFP)...")
+    nmc_100 = engine.generate_simulation_data("udds", duration=3600, soh=1.00, temp_c=25.0, chemistry="NMC", initial_soc=0.95)
+    lfp_100 = engine.generate_simulation_data("udds", duration=3600, soh=1.00, temp_c=25.0, chemistry="LFP", initial_soc=0.95)
+    lfp_fuds = engine.generate_simulation_data("fuds", duration=3600, soh=1.00, temp_c=25.0, chemistry="LFP", initial_soc=0.95)
+
+    res_nmc = engine.run_benchmark_on_dataset(nmc_100, include_ukf=True, pidkf_models=pidkf_nmc)
+    engine.bilstm_models, engine.pinn_models, engine.mlp_models = b_lfp, p_lfp, m_lfp
+    res_lfp = engine.run_benchmark_on_dataset(lfp_100, include_ukf=True, pidkf_models=pidkf_lfp)
+    res_lfp_fuds = engine.run_benchmark_on_dataset(lfp_fuds, include_ukf=True, pidkf_models=pidkf_lfp)
+    engine.bilstm_models, engine.pinn_models, engine.mlp_models = nmc_b, nmc_p, nmc_m
+
+    ekf_nohyst = ExtendedKalmanFilter(BatteryCellLFP(2.30, soh=1.0, temperature_c=25.0), use_hysteresis=False)
+    ekf_nohyst.reset(0.95)
+    t_ekf_nh = np.array([ekf_nohyst.step(lfp_100["current_sensed"][k], lfp_100["v_noisy"][k])[0] for k in range(len(lfp_100["time"]))])
+    m_ekf_nh = compute_metrics(t_ekf_nh, lfp_100["soc_true"])
+
+    models_p6 = ["EKF", "AEKF", "UKF", "DEKF", "SMO", "BiLSTM-Attn", "PINN-SOC", "PIDKF"]
+    rows_p6 = []
+    for m in models_p6:
+        rows_p6.append({
+            "Algorithm": m,
+            "NMC UDDS RMSE (%)": round(res_nmc[m]["rmse_pct"], 3),
+            "NMC UDDS SD": round(res_nmc[m].get("rmse_sd", 0.0), 3),
+            "LFP UDDS RMSE (%)": round(res_lfp[m]["rmse_pct"], 3),
+            "LFP UDDS SD": round(res_lfp[m].get("rmse_sd", 0.0), 3),
+            "LFP UDDS MaxE (%)": round(res_lfp[m]["max_err_pct"], 3),
+            "LFP FUDS RMSE (%)": round(res_lfp_fuds[m]["rmse_pct"], 3),
+        })
+    rows_p6.append({
+        "Algorithm": "EKF (No Hyst. Control)",
+        "NMC UDDS RMSE (%)": np.nan,
+        "NMC UDDS SD": 0.0,
+        "LFP UDDS RMSE (%)": round(m_ekf_nh["rmse_pct"], 3),
+        "LFP UDDS SD": 0.0,
+        "LFP UDDS MaxE (%)": round(m_ekf_nh["max_err_pct"], 3),
+        "LFP FUDS RMSE (%)": np.nan,
+    })
+    df_p6 = pd.DataFrame(rows_p6)
+    df_p6.to_csv(os.path.join(results_dir, "table6_cross_chemistry.csv"), index=False)
+    print(df_p6.to_string(index=False))
+
+    # Plot Fig 6 using res_nmc, res_lfp, m_ekf_nh
+    time_min = lfp_100["time"] / 60.0
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(7.6, 5.9), gridspec_kw={"height_ratios": [1.08, 1.05], "hspace": 0.42})
+    ax1.axhspan(-2.0, 2.0, color="#16A34A", alpha=0.075, label=r"$\pm 2\%$ Corridor", zorder=0)
+    ax1.axhline(0.0, color="#111827", linestyle="--", linewidth=0.75, zorder=1)
+    ax1.plot(time_min, (t_ekf_nh - lfp_100["soc_true"]) * 100.0, label=f"EKF (No Hyst: {m_ekf_nh['rmse_pct']:.2f}%)", color="#9CA3AF", linestyle="-.", linewidth=1.25, zorder=2)
+    for m in ["BiLSTM-Attn", "PINN-SOC", "SMO", "AEKF", "UKF", "EKF", "DEKF", "PIDKF"]:
+        err = (res_lfp[m]["soc_est"] - lfp_100["soc_true"]) * 100.0
+        ax1.plot(time_min, err, label=f"{m} ({res_lfp[m]['rmse_pct']:.2f}%)", color=PALETTE.get(m, "#64748B"), linewidth=1.8 if m == "PIDKF" else (1.05 if m in ("BiLSTM-Attn", "PINN-SOC") else 1.35), alpha=0.72 if m in ("BiLSTM-Attn", "PINN-SOC") else 0.94, zorder=7 if m == "PIDKF" else 4)
+    ax1.set_ylabel("SOC Error (%)")
+    ax1.set_xlabel("Time (minutes)")
+    ax1.set_title(r"(a) Flat-Plateau LFP Tracking Error on Unseen UDDS ($25^\circ\mathrm{C}$, SOH $= 100\%$, 4-State Hysteresis)", loc="left", fontweight="bold")
     ax1.grid(True)
     ax1.set_xlim(0.0, 60.5)
-    ax1.set_ylim(54.0, 102.5)
-    style_legend(ax1.legend(loc="lower left", ncol=3, fontsize=7.4, columnspacing=0.95))
+    ax1.set_ylim(-2.5, 9.2)
+    style_legend(ax1.legend(loc="upper right", ncol=3, fontsize=6.4, columnspacing=0.65, handlelength=1.35))
 
-    ax2.axhspan(-2.0, 2.0, color="#16A34A", alpha=0.075, label=r"$\pm 2\%$ Corridor", zorder=0)
-    for name in plot_seq:
-        err = (stress_models[name] - soc_clean) * 100.0
-        col = PALETTE["Coulomb Counting"] if name == "Coulomb Counting" else PALETTE[name]
-        ls = "--" if name == "Coulomb Counting" else "-"
-        lw = 1.65 if name != "SMO" else 0.90
-        alp = 0.30 if name == "SMO" else 0.94
-        zo = 2 if name == "SMO" else 5
-        ax2.plot(time_min, err, label=name, color=col, linestyle=ls, linewidth=lw, alpha=alp, zorder=zo)
+    xm = np.arange(len(models_p6))
+    w = 0.36
+    nmc_vals = [res_nmc[m]["rmse_pct"] for m in models_p6]
+    lfp_vals = [res_lfp[m]["rmse_pct"] for m in models_p6]
+    b1 = ax2.bar(xm - w / 2, nmc_vals, w, label="NMC (Sloping OCV)", color="#2563EB", alpha=0.88, edgecolor="#1F2937", lw=0.6)
+    b2 = ax2.bar(xm + w / 2, lfp_vals, w, label="LFP (Flat Plateau + Hysteresis)", color="#0F766E", alpha=0.88, edgecolor="#1F2937", lw=0.6)
+    max_b = max(max(nmc_vals), max(lfp_vals))
+    for bar, val in list(zip(b1, nmc_vals)) + list(zip(b2, lfp_vals)):
+        ax2.text(bar.get_x() + bar.get_width() / 2.0, val + max_b * 0.02, f"{val:.2f}%", ha="center", va="bottom", rotation=90, fontsize=6.8, fontweight="bold")
+    ax2.set_xticks(xm)
+    ax2.set_xticklabels(models_p6, rotation=15, ha="right", fontweight="bold", fontsize=8.0)
+    ax2.set_ylabel("UDDS RMSE (%)")
+    ax2.set_ylim(0.0, max_b * 1.32 + 0.4)
+    ax2.set_title("(b) Direct Cross-Chemistry Error Comparison on Identical UDDS Schedule", loc="left", fontweight="bold")
+    ax2.grid(True, axis="y")
+    style_legend(ax2.legend(loc="upper left", ncol=2, fontsize=7.6))
+    save_pub_figure(fig, os.path.join(results_dir, "fig6_lfp_plateau_tracking.png"))
 
-    ax2.axhline(0.0, color="#111827", linestyle="--", linewidth=0.75)
-    ax2.axhline(2.0, color="#15803D", linestyle=":", linewidth=0.95)
-    ax2.axhline(-2.0, color="#15803D", linestyle=":", linewidth=0.95)
-    ax2.annotate(
-        "Runaway Drift (-12.4%)",
-        xy=(56.5, -11.7),
-        xytext=(38.5, -12.6),
-        arrowprops=dict(arrowstyle="->", color=PALETTE["Coulomb Counting"], lw=1.0),
-        fontsize=7.7,
-        color="#1E293B",
-        fontweight="bold",
-        ha="center",
-        bbox=dict(boxstyle="round,pad=0.20", facecolor="white", edgecolor="#94A3B8", alpha=0.96, lw=0.7),
-        zorder=8,
-    )
+    run_phase7_sensor_bias(engine, pidkf_nmc, results_dir)
+    run_phase10_ablation_and_jacobian(engine, seeds, results_dir)
 
-    # Embedded zoom inset revealing tightly immune EKF/AEKF/DEKF bias rejection behind SMO EMI spikes
-    ax2_ins = add_zoom_inset(ax2, [0.58, 0.56, 0.39, 0.38], xlim=(30.0, 50.0), ylim=(-0.5, 4.2), loc1=2, loc2=3)
-    ax2_ins.axhspan(-0.5, 2.0, color="#16A34A", alpha=0.08)
-    ax2_ins.axhline(2.0, color="#15803D", linestyle=":", linewidth=0.8)
-    for name in ["AEKF", "DEKF", "EKF"]:
-        err = (stress_models[name] - soc_clean) * 100.0
-        ax2_ins.plot(time_min, err, color=PALETTE[name], linewidth=1.35)
-    ax2_ins.text(0.5, 0.84, "Kalman Bias Rejection (30–50 min)", transform=ax2_ins.transAxes, ha="center", fontsize=6.4, fontweight="bold", color="#1E293B")
-
-    ax2.set_xlabel("Time (minutes)")
-    ax2.set_ylabel("Error (%)")
-    ax2.set_title(r"(b) Error Drift Profiles ($e_k = \hat{s}_k - s_k$; SMO Shown Translucent)", loc="left", fontweight="bold")
-    ax2.grid(True)
-    ax2.set_ylim(-15.8, 22.0)
-    style_legend(ax2.legend(loc="upper left", ncol=3, fontsize=7.3, columnspacing=0.9))
-
-    out_fig7 = os.path.join(results_dir, "fig7_sensor_bias_drift_stress.png")
-    save_pub_figure(fig, out_fig7)
-    print(f"[Visualizer] Saved Fig 7 (PNG 600 DPI + PDF) to {out_fig7}")
-
-    # -------------------------------------------------------------------------
-    # PART 3: Embedded Hardware Profiling on ARM Cortex-M
-    # -------------------------------------------------------------------------
-    print("\n[Extension 3] Compiling ARM Cortex-M Hardware Profiling...")
-    # Real-world benchmark specifications for automotive microcontrollers:
-    # Cortex-M4 (e.g. STM32F407 @ 168 MHz, Hardware FPU Single-Precision)
-    # Cortex-M7 (e.g. STM32H743 @ 480 MHz, Double-Precision FPU + Cache)
-    mcu_specs = {
-        "EKF": {
-            "FLOPs/step": 420,
-            "RAM (Bytes)": 280,
-            "Flash (Bytes)": 3400,
-            "M4 Cycles": 650,
-            "M4 Latency (us)": 3.87,
-            "M7 Latency (us)": 1.35,
-            "Feasibility": "Excellent"
-        },
-        "AEKF": {
-            "FLOPs/step": 580,
-            "RAM (Bytes)": 340,
-            "Flash (Bytes)": 4200,
-            "M4 Cycles": 880,
-            "M4 Latency (us)": 5.24,
-            "M7 Latency (us)": 1.83,
-            "Feasibility": "Excellent"
-        },
-        "DEKF": {
-            "FLOPs/step": 980,
-            "RAM (Bytes)": 620,
-            "Flash (Bytes)": 5800,
-            "M4 Cycles": 1450,
-            "M4 Latency (us)": 8.63,
-            "M7 Latency (us)": 3.02,
-            "Feasibility": "Excellent"
-        },
-        "SMO": {
-            "FLOPs/step": 180,
-            "RAM (Bytes)": 140,
-            "Flash (Bytes)": 2100,
-            "M4 Cycles": 280,
-            "M4 Latency (us)": 1.67,
-            "M7 Latency (us)": 0.58,
-            "Feasibility": "Ideal (Ultra-light)"
-        },
-        "BiLSTM-Attn": {
-            "FLOPs/step": 245000,
-            "RAM (Bytes)": 18400,
-            "Flash (Bytes)": 98000,
-            "M4 Cycles": 410000,
-            "M4 Latency (us)": 2440.48,
-            "M7 Latency (us)": 854.17,
-            "Feasibility": "Marginal / Requires NPU"
-        },
-        "PINN-SOC": {
-            "FLOPs/step": 12800,
-            "RAM (Bytes)": 1200,
-            "Flash (Bytes)": 16500,
-            "M4 Cycles": 21500,
-            "M4 Latency (us)": 127.98,
-            "M7 Latency (us)": 44.79,
-            "Feasibility": "High (Ready for CMSIS-NN)"
-        },
-        "PIDKF (Proposed)": {
-            "FLOPs/step": 1540,
-            "RAM (Bytes)": 850,
-            "Flash (Bytes)": 8200,
-            "M4 Cycles": 2380,
-            "M4 Latency (us)": 14.20,
-            "M7 Latency (us)": 4.97,
-            "Feasibility": "Optimal (Pareto Peak)"
-        }
-    }
-
-    table7_rows = []
-    for alg, data in mcu_specs.items():
-        table7_rows.append({
-            "Algorithm": alg,
-            "FLOPs/Step": data["FLOPs/step"],
-            "RAM (Bytes)": data["RAM (Bytes)"],
-            "Flash (Bytes)": data["Flash (Bytes)"],
-            "M4 @ 168MHz (us)": data["M4 Latency (us)"],
-            "M7 @ 480MHz (us)": data["M7 Latency (us)"],
-            "Embedded Feasibility": data["Feasibility"]
-        })
-
-    df_table7 = pd.DataFrame(table7_rows)
-    df_table7.to_csv(os.path.join(results_dir, "table7_embedded_mcu_profiling.csv"), index=False)
-    print("\n--- Table 7: ARM Cortex-M Hardware Resource Profiling ---")
-    print(df_table7.to_string(index=False))
-
-    # Plot Fig 8: Accuracy vs. Embedded Execution Latency Trade-Off Frontier
-    fig, ax = plt.subplots(figsize=(6.8, 4.4))
-    algs = list(mcu_specs.keys())
-    latencies = [mcu_specs[a]["M4 Latency (us)"] for a in algs]
-    # Fetch RMSE from Table 1 or default map
-    nmc_rmse_map["PIDKF (Proposed)"] = 0.414
-    rmse_vals = [nmc_rmse_map.get(a, 1.0) for a in algs]
-
-    # Clean non-overlapping custom annotation offsets
-    annot_pos = {
-        "SMO": (1.1, 0.52),
-        "EKF": (2.2, -0.22),
-        "AEKF": (4.6, -0.22),
-        "DEKF": (9.2, 0.12),
-        "PIDKF (Proposed)": (16.0, 0.42),
-        "PINN-SOC": (55.0, 0.72),
-        "BiLSTM-Attn": (680.0, 0.88)
-    }
-
-    for i, a in enumerate(algs):
-        m = "*" if "PIDKF" in a else "o"
-        s = 220 if "PIDKF" in a else 130
-        ax.scatter(latencies[i], rmse_vals[i], s=s, marker=m, color=COLORS.get(a, "#888"), label=a, edgecolors="black", linewidth=1.2, zorder=5)
-        pos = annot_pos.get(a, (latencies[i] * 1.15, rmse_vals[i] + 0.15))
-        ax.annotate(a, pos, fontsize=8.5, fontweight="bold")
-
-    ax.set_xscale("log")
-    ax.set_xlabel(r"ARM Cortex-M4 Execution Latency ($\mu$s/step) [Log Scale]")
-    ax.set_ylabel("SOC Estimation RMSE (%) [Lower is Better]")
-    ax.set_title("Pareto Efficiency Frontier: Estimation Accuracy vs. Embedded Latency", fontweight="bold")
-    ax.grid(True, which="both", ls="--")
-    ax.set_xlim(0.8, 6000.0)
-    ax.set_ylim(-0.35, 4.0)
-
-    # Highlight optimal region
-    ax.axvspan(0.8, 20.0, alpha=0.10, color="#2CA02C")
-    ax.axvline(20.0, color="#2CA02C", linestyle="--", linewidth=1.0, alpha=0.8)
-    ax.text(1.15, 3.6, "Ideal Real-Time BMS Zone\n(<20 $\\mu$s per step)", color="#1E7E34", fontsize=8.0, fontweight="bold")
-
-    # Pareto dominant connection
-    ax.plot([1.67, 3.87], [0.941, 0.065], color="#555555", linestyle=":", linewidth=1.3, alpha=0.7, label="Pareto Frontier (Nominal)")
-    ax.legend(loc="upper left", framealpha=0.94, fontsize=8.0)
-    plt.tight_layout()
-    plt.savefig(os.path.join(results_dir, "fig8_embedded_resource_tradeoff.png"), bbox_inches="tight")
-    plt.close()
-    print(f"[Visualizer] Saved Fig 8 to {os.path.join(results_dir, 'fig8_embedded_resource_tradeoff.png')}")
-
-    print("\n" + "=" * 80)
-    print("ALL ADVANCED SCIENTIFIC EXTENSIONS COMPLETED SUCCESSFULLY!")
-    print("=" * 80)
+    print("\n" + "=" * 84)
+    print("PHASES 6, 7 & 10 COMPLETED CLEANLY!")
+    print("=" * 84)
 
 
 if __name__ == "__main__":
-    run_advanced_experiments()
+    main()

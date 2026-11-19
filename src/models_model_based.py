@@ -2,303 +2,518 @@
 Model-Based Observers for Battery State-of-Charge (SOC) Estimation
 Journal of Energy Storage (Elsevier)
 
-Algorithms Implemented:
-1. Extended Kalman Filter (EKF) - Baseline observer
-2. Adaptive Extended Kalman Filter (AEKF) - Innovation-based covariance adaptation
-3. Dual Extended Kalman Filter (DEKF) - Joint State (SOC) and Parameter (R0, Q_act) Tracking
-4. Robust Sliding Mode Observer (SMO) - Non-linear boundary layer tracking
+Exact Python reference implementations synchronized with Sections 3.1-3.4, Appendix A, and Appendix C.2:
+1. ExtendedKalmanFilter (EKF) - 3-state NMC / 4-state LFP with Joseph covariance update
+2. AdaptiveEKF (AEKF) - Sage-Husa innovation variance estimator with Joseph form
+3. UnscentedKalmanFilter (UKF) - Scaled unscented transform (7 / 9 sigma points)
+4. DualExtendedKalmanFilter (DEKF) - Joint state & parameter [R0, 1/Q_act] tracking with rest gating
+5. SlidingModeObserver (SMO) - Discrete boundary-layer sliding mode observer Eq. (34)
 """
 
 import numpy as np
 
 
+def _is_lfp(cell):
+    return getattr(cell, "chemistry", "NMC") == "LFP"
+
+
+def _step_hysteresis(cell, v_h, current_a, q_cap):
+    """Exact ZOH discrete hysteresis Eq. (18): V_{h,k+1} = a_h V_{h,k} + (1 - a_h) M_0 sgn(I_k)."""
+    if abs(current_a) <= 1e-6:
+        return float(v_h), 1.0
+    eta = cell.get_eta(current_a)
+    abs_dz = abs(eta * current_a * cell.dt) / (3600.0 * q_cap)
+    a_h = float(np.exp(-cell.beta_hyst * abs_dz))
+    sgn_i = 1.0 if current_a > 0.0 else -1.0
+    v_h_next = a_h * v_h + (1.0 - a_h) * cell.m0_hyst * sgn_i
+    return float(v_h_next), a_h
+
+
 class ExtendedKalmanFilter:
     """
-    Standard Extended Kalman Filter (EKF) for 2-RC Battery Equivalent Circuit Model.
-    State: x = [SOC, Up1, Up2]^T
+    Standard Extended Kalman Filter (EKF) for 2-RC (3-state NMC or 4-state LFP) model.
+    State vector: [SOC, U1, U2]^T (NMC) or [SOC, U1, U2, V_h]^T (LFP when use_hysteresis=True).
     """
 
-    def __init__(self, battery_cell, q_cov=None, r_cov=0.001, p0_cov=None):
+    def __init__(self, battery_cell, q_cov=None, r_cov=1e-3, p0_cov=None, use_hysteresis=True, rest_gate_a=0.010):
         self.cell = battery_cell
         self.dt = battery_cell.dt
+        self.use_hyst = bool(use_hysteresis and _is_lfp(battery_cell))
+        self.n = 4 if self.use_hyst else 3
+        self.rest_gate_a = float(rest_gate_a)
 
-        # Initial State: [SOC, Up1, Up2]
-        self.x = np.array([[1.0], [0.0], [0.0]])
+        self.x = np.zeros((self.n, 1))
+        self.x[0, 0] = 1.0
 
-        # Covariance matrices
-        if p0_cov is None:
-            self.P = np.diag([0.01, 1e-4, 1e-4])
-        else:
-            self.P = np.array(p0_cov, dtype=float)
+        default_p0 = [0.01, 1e-4, 1e-4, 1e-4] if self.n == 4 else [0.01, 1e-4, 1e-4]
+        default_q = [1e-6, 1e-5, 1e-5, 1e-6] if self.n == 4 else [1e-6, 1e-5, 1e-5]
 
-        if q_cov is None:
-            self.Q = np.diag([1e-6, 1e-5, 1e-5])
-        else:
-            self.Q = np.array(q_cov, dtype=float)
+        self.P = np.diag(default_p0) if p0_cov is None else np.array(p0_cov, dtype=float)
+        self.Q = np.diag(default_q) if q_cov is None else np.array(q_cov, dtype=float)
+        self.R = float(r_cov)
 
-        self.R = float(r_cov)  # Measurement noise covariance (voltage sensor variance)
-
-    def reset(self, initial_soc=1.0, p_diag=(0.25, 1e-4, 1e-4)):
-        self.x = np.array([[float(initial_soc)], [0.0], [0.0]])
+    def reset(self, initial_soc=1.0, p_diag=None):
+        self.x = np.zeros((self.n, 1))
+        self.x[0, 0] = float(initial_soc)
+        if p_diag is None:
+            p_diag = [0.01, 1e-4, 1e-4, 1e-4] if self.n == 4 else [0.01, 1e-4, 1e-4]
+        elif len(p_diag) == 3 and self.n == 4:
+            p_diag = list(p_diag) + [1e-4]
         self.P = np.diag(p_diag)
 
     def step(self, current_a, v_measured):
-        """
-        Execute 1 EKF estimation step.
-        Returns:
-            soc_est: Estimated SOC (0.0 to 1.0)
-            v_est: Predicted terminal voltage
-            p_soc: Estimation variance of SOC
-        """
-        # 1. State Space System Matrices
-        exp1 = np.exp(-self.dt / self.cell.tau1)
-        exp2 = np.exp(-self.dt / self.cell.tau2)
+        # Strictly nominal baseline parameters (no oracle temperature/aging leakage)
+        tau1 = self.cell.r1_base * self.cell.c1_base
+        tau2 = self.cell.r2_base * self.cell.c2_base
+        exp1 = float(np.exp(-self.dt / tau1))
+        exp2 = float(np.exp(-self.dt / tau2))
+        eta = self.cell.get_eta(current_a)
 
-        A = np.array([
-            [1.0, 0.0, 0.0],
-            [0.0, exp1, 0.0],
-            [0.0, 0.0, exp2]
-        ])
+        if self.use_hyst:
+            v_h_next, a_h = _step_hysteresis(self.cell, self.x[3, 0], current_a, self.cell.q_nominal)
+            A = np.diag([1.0, exp1, exp2, a_h])
+            B = np.array([
+                [-eta * self.dt / (3600.0 * self.cell.q_nominal)],
+                [self.cell.r1_base * (1.0 - exp1)],
+                [self.cell.r2_base * (1.0 - exp2)],
+                [0.0],
+            ])
+            x_pred = A @ self.x + B * current_a
+            x_pred[3, 0] = v_h_next
+        else:
+            A = np.diag([1.0, exp1, exp2])
+            B = np.array([
+                [-eta * self.dt / (3600.0 * self.cell.q_nominal)],
+                [self.cell.r1_base * (1.0 - exp1)],
+                [self.cell.r2_base * (1.0 - exp2)],
+            ])
+            x_pred = A @ self.x + B * current_a
 
-        B = np.array([
-            [-self.dt / (3600.0 * self.cell.q_nominal)],
-            [self.cell.r1 * (1.0 - exp1)],
-            [self.cell.r2 * (1.0 - exp2)]
-        ])
-
-        # 2. Time Update (Prediction)
-        x_pred = A @ self.x + B * current_a
         x_pred[0, 0] = np.clip(x_pred[0, 0], 0.0, 1.0)
         P_pred = A @ self.P @ A.T + self.Q
 
-        # 3. Measurement Prediction & Observation Matrix C
         soc_pred = x_pred[0, 0]
-        up1_pred = x_pred[1, 0]
-        up2_pred = x_pred[2, 0]
-
         ocv_pred = self.cell.get_ocv(soc_pred)
-        v_pred = ocv_pred - current_a * self.cell.r0 - up1_pred - up2_pred
+        v_pred = ocv_pred - current_a * self.cell.r0_base - x_pred[1, 0] - x_pred[2, 0]
+        if self.use_hyst:
+            v_pred -= x_pred[3, 0]
 
-        # Jacobian C = [d(Vt)/d(SOC), d(Vt)/d(Up1), d(Vt)/d(Up2)]
         d_ocv = self.cell.get_docv_dsoc(soc_pred)
-        C = np.array([[d_ocv, -1.0, -1.0]])
+        if self.use_hyst:
+            C = np.array([[d_ocv, -1.0, -1.0, -1.0]])
+        else:
+            C = np.array([[d_ocv, -1.0, -1.0]])
 
-        # 4. Measurement Update (Correction)
-        y_residual = v_measured - v_pred
-        S = C @ P_pred @ C.T + self.R
-        K = (P_pred @ C.T) / S[0, 0]
+        y_res = v_measured - v_pred
+        if abs(current_a) < self.rest_gate_a:
+            K = np.zeros((self.n, 1))
+        else:
+            S = float((C @ P_pred @ C.T)[0, 0] + self.R)
+            K = (P_pred @ C.T) / S
 
-        self.x = x_pred + K * y_residual
+        self.x = x_pred + K * y_res
         self.x[0, 0] = np.clip(self.x[0, 0], 0.0, 1.0)
-        I_mat = np.eye(3)
-        self.P = (I_mat - K @ C) @ P_pred @ (I_mat - K @ C).T + K * self.R @ K.T
+        I_mat = np.eye(self.n)
+        IKC = I_mat - K @ C
+        self.P = IKC @ P_pred @ IKC.T + self.R * (K @ K.T)
 
         return float(self.x[0, 0]), float(v_pred), float(self.P[0, 0])
 
 
 class AdaptiveEKF(ExtendedKalmanFilter):
     """
-    Adaptive Extended Kalman Filter (AEKF) with Sage-Husa Noise Estimator.
-    Dynamically adjusts measurement covariance R and process covariance Q
-    to handle sudden current spikes, temperature fluctuations, and noise drift.
+    Sage-Husa Adaptive Extended Kalman Filter (AEKF), Eqs. (28)-(29).
+    Uses exponential weighting sequence d_k = (1 - lambda) / (1 - lambda^k),
+    lambda_SH = 0.985, R_{v,min} = 1e-4, and Joseph covariance update.
     """
 
-    def __init__(self, battery_cell, forgetting_factor=0.98, **kwargs):
+    def __init__(self, battery_cell, forgetting_factor=0.985, r_min=1e-4, r_max=0.05, **kwargs):
         super().__init__(battery_cell, **kwargs)
-        self.lambda_factor = float(forgetting_factor)
+        self.lambda_sh = float(forgetting_factor)
+        self.r_min = float(r_min)
+        self.r_max = float(r_max)
+        self.r_hat = 0.0
         self.r_val = self.R
+        self.k_step = 0
 
-    def reset(self, initial_soc=1.0, p_diag=(0.25, 1e-4, 1e-4)):
+    def reset(self, initial_soc=1.0, p_diag=None):
         super().reset(initial_soc=initial_soc, p_diag=p_diag)
+        self.r_hat = 0.0
         self.r_val = self.R
+        self.k_step = 0
 
     def step(self, current_a, v_measured):
-        exp1 = np.exp(-self.dt / self.cell.tau1)
-        exp2 = np.exp(-self.dt / self.cell.tau2)
+        self.k_step += 1
+        d_k = (1.0 - self.lambda_sh) / (1.0 - self.lambda_sh ** self.k_step)
 
-        A = np.array([
-            [1.0, 0.0, 0.0],
-            [0.0, exp1, 0.0],
-            [0.0, 0.0, exp2]
-        ])
-        B = np.array([
-            [-self.dt / (3600.0 * self.cell.q_nominal)],
-            [self.cell.r1 * (1.0 - exp1)],
-            [self.cell.r2 * (1.0 - exp2)]
-        ])
+        tau1 = self.cell.r1_base * self.cell.c1_base
+        tau2 = self.cell.r2_base * self.cell.c2_base
+        exp1 = float(np.exp(-self.dt / tau1))
+        exp2 = float(np.exp(-self.dt / tau2))
+        eta = self.cell.get_eta(current_a)
 
-        # Prediction
-        x_pred = A @ self.x + B * current_a
+        if self.use_hyst:
+            v_h_next, a_h = _step_hysteresis(self.cell, self.x[3, 0], current_a, self.cell.q_nominal)
+            A = np.diag([1.0, exp1, exp2, a_h])
+            B = np.array([
+                [-eta * self.dt / (3600.0 * self.cell.q_nominal)],
+                [self.cell.r1_base * (1.0 - exp1)],
+                [self.cell.r2_base * (1.0 - exp2)],
+                [0.0],
+            ])
+            x_pred = A @ self.x + B * current_a
+            x_pred[3, 0] = v_h_next
+        else:
+            A = np.diag([1.0, exp1, exp2])
+            B = np.array([
+                [-eta * self.dt / (3600.0 * self.cell.q_nominal)],
+                [self.cell.r1_base * (1.0 - exp1)],
+                [self.cell.r2_base * (1.0 - exp2)],
+            ])
+            x_pred = A @ self.x + B * current_a
+
         x_pred[0, 0] = np.clip(x_pred[0, 0], 0.0, 1.0)
         P_pred = A @ self.P @ A.T + self.Q
 
         soc_pred = x_pred[0, 0]
-        v_pred = self.cell.get_ocv(soc_pred) - current_a * self.cell.r0 - x_pred[1, 0] - x_pred[2, 0]
+        v_pred = self.cell.get_ocv(soc_pred) - current_a * self.cell.r0_base - x_pred[1, 0] - x_pred[2, 0]
+        if self.use_hyst:
+            v_pred -= x_pred[3, 0]
+
         d_ocv = self.cell.get_docv_dsoc(soc_pred)
-        C = np.array([[d_ocv, -1.0, -1.0]])
+        C = np.array([[d_ocv, -1.0, -1.0, -1.0]]) if self.use_hyst else np.array([[d_ocv, -1.0, -1.0]])
 
-        # Innovation residual
-        innovation = v_measured - v_pred
+        e_k = v_measured - v_pred
+        self.r_hat = (1.0 - d_k) * self.r_hat + d_k * e_k
+        e_centered = e_k - self.r_hat
+        r_inst = (e_centered ** 2) - float((C @ P_pred @ C.T)[0, 0])
+        self.r_val = float(np.clip((1.0 - d_k) * self.r_val + d_k * r_inst, self.r_min, self.r_max))
 
-        # Adaptive R update (Sage-Husa formulation with bounds)
-        r_instant = innovation**2 - (C @ P_pred @ C.T)[0, 0]
-        r_instant = max(1e-5, min(0.05, r_instant))
-        self.r_val = self.lambda_factor * self.r_val + (1.0 - self.lambda_factor) * r_instant
+        if abs(current_a) < self.rest_gate_a:
+            K = np.zeros((self.n, 1))
+        else:
+            S = float((C @ P_pred @ C.T)[0, 0] + self.r_val)
+            K = (P_pred @ C.T) / S
 
-        # Kalman gain with adapted R
-        S = (C @ P_pred @ C.T)[0, 0] + self.r_val
-        K = (P_pred @ C.T) / S
-
-        self.x = x_pred + K * innovation
+        self.x = x_pred + K * e_k
         self.x[0, 0] = np.clip(self.x[0, 0], 0.0, 1.0)
-        I_mat = np.eye(3)
-        self.P = (I_mat - K @ C) @ P_pred
+        I_mat = np.eye(self.n)
+        IKC = I_mat - K @ C
+        self.P = IKC @ P_pred @ IKC.T + self.r_val * (K @ K.T)
 
         return float(self.x[0, 0]), float(v_pred), float(self.P[0, 0])
 
 
-class DualExtendedKalmanFilter:
+class UnscentedKalmanFilter:
     """
-    Dual Extended Kalman Filter (DEKF) for Joint State (SOC) and Parameter (R0, Q_act) Tracking.
-    Critical for battery degradation (SOH):
-    - Filter 1 (State): Tracks x = [SOC, Up1, Up2]^T
-    - Filter 2 (Parameter): Tracks theta = [R0, 1 / Q_act]^T
-    Allows the model to self-tune as the battery ages.
+    Scaled Unscented Kalman Filter (UKF) with alpha_UT = 1e-3, beta_UT = 2, kappa_UT = 0 (Appendix C.2).
     """
 
-    def __init__(self, battery_cell):
+    def __init__(self, battery_cell, alpha_ut=1e-3, beta_ut=2.0, kappa_ut=0.0, q_cov=None, r_cov=1e-3, use_hysteresis=True):
         self.cell = battery_cell
         self.dt = battery_cell.dt
+        self.use_hyst = bool(use_hysteresis and _is_lfp(battery_cell))
+        self.n = 4 if self.use_hyst else 3
 
-        # State filter: x = [SOC, Up1, Up2]
-        self.x = np.array([[1.0], [0.0], [0.0]])
-        self.P_x = np.diag([0.02, 1e-4, 1e-4])
-        self.Q_x = np.diag([1e-6, 1e-5, 1e-5])
-        self.R_x = 0.001
+        self.alpha_ut = float(alpha_ut)
+        self.beta_ut = float(beta_ut)
+        self.kappa_ut = float(kappa_ut)
+        lam = (self.alpha_ut ** 2) * (self.n + self.kappa_ut) - self.n
+        self.gamma_ut = np.sqrt(self.n + lam)
 
-        # Parameter filter: theta = [R0, beta], where beta = 1 / (3600 * Q_act)
-        nominal_beta = 1.0 / (3600.0 * battery_cell.q_nominal)
-        self.theta = np.array([[battery_cell.r0_base], [nominal_beta]])
-        self.P_theta = np.diag([1e-3, 1e-10])
-        self.Q_theta = np.diag([1e-7, 1e-14])
-        self.R_theta = 0.001
+        self.wm = np.full(2 * self.n + 1, 0.5 / (self.n + lam))
+        self.wc = np.full(2 * self.n + 1, 0.5 / (self.n + lam))
+        self.wm[0] = lam / (self.n + lam)
+        self.wc[0] = self.wm[0] + (1.0 - self.alpha_ut ** 2 + self.beta_ut)
 
-    def reset(self, initial_soc=1.0):
-        self.x = np.array([[float(initial_soc)], [0.0], [0.0]])
-        self.P_x = np.diag([0.25, 1e-4, 1e-4])
-        nominal_beta = 1.0 / (3600.0 * self.cell.q_nominal)
-        self.theta = np.array([[self.cell.r0_base], [nominal_beta]])
-        self.P_theta = np.diag([1e-3, 1e-10])
+        default_p0 = [0.01, 1e-4, 1e-4, 1e-4] if self.n == 4 else [0.01, 1e-4, 1e-4]
+        default_q = [1e-6, 1e-5, 1e-5, 1e-6] if self.n == 4 else [1e-6, 1e-5, 1e-5]
+        self.P = np.diag(default_p0)
+        self.Q = np.diag(default_q) if q_cov is None else np.array(q_cov, dtype=float)
+        self.R = float(r_cov)
+
+        self.x = np.zeros(self.n)
+        self.x[0] = 1.0
+
+    def reset(self, initial_soc=1.0, p_diag=None):
+        self.x = np.zeros(self.n)
+        self.x[0] = float(initial_soc)
+        if p_diag is None:
+            p_diag = [0.01, 1e-4, 1e-4, 1e-4] if self.n == 4 else [0.01, 1e-4, 1e-4]
+        elif len(p_diag) == 3 and self.n == 4:
+            p_diag = list(p_diag) + [1e-4]
+        self.P = np.diag(p_diag)
 
     def step(self, current_a, v_measured):
-        r0_est = max(0.005, min(0.3, self.theta[0, 0]))
-        beta_est = max(1e-6, min(1e-3, self.theta[1, 0]))
+        # Generate 2n + 1 sigma points
+        P_sym = 0.5 * (self.P + self.P.T) + 1e-12 * np.eye(self.n)
+        L = np.linalg.cholesky(P_sym)
+        sigmas = np.zeros((2 * self.n + 1, self.n))
+        sigmas[0] = self.x
+        for i in range(self.n):
+            col = self.gamma_ut * L[:, i]
+            sigmas[i + 1] = self.x + col
+            sigmas[self.n + i + 1] = self.x - col
 
-        # --- 1. Parameter Filter Update ---
-        # Prior prediction for parameter (random walk assumption)
-        theta_pred = self.theta.copy()
-        P_theta_pred = self.P_theta + self.Q_theta
+        tau1 = self.cell.r1_base * self.cell.c1_base
+        tau2 = self.cell.r2_base * self.cell.c2_base
+        exp1 = float(np.exp(-self.dt / tau1))
+        exp2 = float(np.exp(-self.dt / tau2))
+        eta = self.cell.get_eta(current_a)
+        dsoc_step = (-eta * current_a * self.dt) / (3600.0 * self.cell.q_nominal)
 
-        # Measurement Jacobian w.r.t parameters: C_theta = d(Vt)/d(theta)
-        # Vt = OCV(SOC) - I * R0 - Up1 - Up2
-        # d(Vt)/d(R0) = -I
-        # d(Vt)/d(beta) ~ d(OCV)/d(SOC) * d(SOC)/d(beta) = d(OCV)/d(SOC) * (-I * dt)
-        d_ocv = self.cell.get_docv_dsoc(self.x[0, 0])
-        C_theta = np.array([[-current_a, -d_ocv * current_a * self.dt]])
+        sig_pred = np.zeros_like(sigmas)
+        v_sigma = np.zeros(2 * self.n + 1)
+        for m in range(2 * self.n + 1):
+            sp = sigmas[m].copy()
+            sp[0] = np.clip(sp[0] + dsoc_step, 0.0, 1.0)
+            sp[1] = sp[1] * exp1 + current_a * self.cell.r1_base * (1.0 - exp1)
+            sp[2] = sp[2] * exp2 + current_a * self.cell.r2_base * (1.0 - exp2)
+            if self.use_hyst:
+                sp[3], _ = _step_hysteresis(self.cell, sp[3], current_a, self.cell.q_nominal)
+            sig_pred[m] = sp
+            vp = self.cell.get_ocv(sp[0]) - current_a * self.cell.r0_base - sp[1] - sp[2]
+            if self.use_hyst:
+                vp -= sp[3]
+            v_sigma[m] = vp
 
-        # Voltage prediction using prior parameter
-        v_pred_param = self.cell.get_ocv(self.x[0, 0]) - current_a * theta_pred[0, 0] - self.x[1, 0] - self.x[2, 0]
-        y_param_res = v_measured - v_pred_param
+        x_pred = np.sum(self.wm[:, None] * sig_pred, axis=0)
+        x_pred[0] = np.clip(x_pred[0], 0.0, 1.0)
+        v_pred = float(np.sum(self.wm * v_sigma))
 
-        S_theta = (C_theta @ P_theta_pred @ C_theta.T)[0, 0] + self.R_theta
-        K_theta = (P_theta_pred @ C_theta.T) / S_theta
-        self.theta = theta_pred + K_theta * y_param_res
-        self.P_theta = P_theta_pred - K_theta @ C_theta @ P_theta_pred
+        P_pred = self.Q.copy()
+        P_xy = np.zeros((self.n, 1))
+        S_v = self.R
+        for m in range(2 * self.n + 1):
+            dx = (sig_pred[m] - x_pred).reshape(-1, 1)
+            dv = float(v_sigma[m] - v_pred)
+            P_pred += self.wc[m] * (dx @ dx.T)
+            S_v += self.wc[m] * (dv ** 2)
+            P_xy += self.wc[m] * dx * dv
 
-        # Constrain parameters to physical boundaries
-        self.theta[0, 0] = max(0.01, min(0.25, self.theta[0, 0]))
-        self.theta[1, 0] = max(1.0 / (3600.0 * self.cell.q_nominal * 1.5), min(1.0 / (3600.0 * self.cell.q_nominal * 0.5), self.theta[1, 0]))
+        K = P_xy / max(S_v, 1e-12)
+        self.x = x_pred + (K[:, 0] * (v_measured - v_pred))
+        self.x[0] = np.clip(self.x[0], 0.0, 1.0)
+        self.P = P_pred - S_v * (K @ K.T)
+        self.P = 0.5 * (self.P + self.P.T)
+        return float(self.x[0]), float(v_pred), float(self.P[0, 0])
 
-        # Updated parameters for state filter
-        r0_curr = self.theta[0, 0]
-        beta_curr = self.theta[1, 0]
 
-        # --- 2. State Filter Update ---
-        exp1 = np.exp(-self.dt / self.cell.tau1)
-        exp2 = np.exp(-self.dt / self.cell.tau2)
+class DualExtendedKalmanFilter:
+    """
+    Dual Extended Kalman Filter (DEKF) for Joint State [SOC, U1, U2 (, V_h)]^T
+    and Parameter [R_0, 1/Q_act]^T tracking (Section 3.3, Appendix C.2).
 
-        A = np.array([
-            [1.0, 0.0, 0.0],
-            [0.0, exp1, 0.0],
-            [0.0, 0.0, exp2]
-        ])
-        B = np.array([
-            [-beta_curr * self.dt],
-            [self.cell.r1 * (1.0 - exp1)],
-            [self.cell.r2 * (1.0 - exp2)]
-        ])
+    Features:
+    - Strictly identical fresh/nominal 100% SOH initialization (zero oracle leakage).
+    - Stabilized Joseph covariance updates for both state and parameter filters.
+    - Hard rest-period innovation gating (|I_k| < 10 mA) freezing K_k and K_{theta,k}.
+    - Optional residual voltage compensation delta_v_comp for PIDKF coupling.
+    """
 
-        x_pred = A @ self.x + B * current_a
+    def __init__(
+        self,
+        battery_cell,
+        use_hysteresis=True,
+        p0_x=None,
+        q_x=None,
+        r_x=1e-3,
+        p0_theta=None,
+        q_theta=None,
+        r_theta=1e-2,
+        rest_gate_a=0.010,
+    ):
+        self.cell = battery_cell
+        self.dt = battery_cell.dt
+        self.use_hyst = bool(use_hysteresis and _is_lfp(battery_cell))
+        self.n = 4 if self.use_hyst else 3
+        self.rest_gate_a = float(rest_gate_a)
+
+        self.x = np.zeros((self.n, 1))
+        self.x[0, 0] = 1.0
+        default_p0x = [0.01, 1e-4, 1e-4, 1e-4] if self.n == 4 else [0.01, 1e-4, 1e-4]
+        default_qx = [1e-6, 1e-5, 1e-5, 1e-6] if self.n == 4 else [1e-6, 1e-5, 1e-5]
+        self.p0_x_default = default_p0x
+        self.P_x = np.diag(default_p0x) if p0_x is None else np.array(p0_x, dtype=float)
+        self.Q_x = np.diag(default_qx) if q_x is None else np.array(q_x, dtype=float)
+        self.R_x = float(r_x)
+
+        # Parameter vector theta = [R_0 (Ohm), 1 / Q_act (Ah^-1)]^T matching paper notation
+        self.theta = np.array([[battery_cell.r0_base], [1.0 / battery_cell.q_nominal]])
+        self.P_theta_default = np.diag([1e-3, 1e-2]) if p0_theta is None else np.array(p0_theta, dtype=float)
+        self.P_theta = self.P_theta_default.copy()
+        self.Q_theta = np.diag([1e-7, 1e-6]) if q_theta is None else np.array(q_theta, dtype=float)
+        self.R_theta = float(r_theta)
+        self.dx_plus_dtheta = np.zeros((self.n, 2))
+        self.i_prev = 0.0
+
+    def reset(self, initial_soc=1.0, p_diag=None):
+        self.x = np.zeros((self.n, 1))
+        self.x[0, 0] = float(initial_soc)
+        if p_diag is None:
+            self.P_x = np.diag(self.p0_x_default)
+        else:
+            pd_list = list(p_diag) + [1e-4] if (len(p_diag) == 3 and self.n == 4) else list(p_diag)
+            self.P_x = np.diag(pd_list)
+        self.theta = np.array([[self.cell.r0_base], [1.0 / self.cell.q_nominal]])
+        self.P_theta = self.P_theta_default.copy()
+        self.dx_plus_dtheta = np.zeros((self.n, 2))
+        self.i_prev = 0.0
+
+    def predict_state_prior(self, current_a):
+        """Evaluate a priori state x_k^- and predicted ECM terminal voltage V_{t,ECM,k}^- without updating filter."""
+        r0_curr = float(self.theta[0, 0])
+        q_act_curr = 1.0 / float(self.theta[1, 0])
+        tau1 = self.cell.r1_base * self.cell.c1_base
+        tau2 = self.cell.r2_base * self.cell.c2_base
+        exp1 = float(np.exp(-self.dt / tau1))
+        exp2 = float(np.exp(-self.dt / tau2))
+        eta = self.cell.get_eta(current_a)
+
+        if self.use_hyst:
+            v_h_next, a_h = _step_hysteresis(self.cell, self.x[3, 0], current_a, q_act_curr)
+            A = np.diag([1.0, exp1, exp2, a_h])
+            B = np.array([
+                [-eta * self.dt / (3600.0 * q_act_curr)],
+                [self.cell.r1_base * (1.0 - exp1)],
+                [self.cell.r2_base * (1.0 - exp2)],
+                [0.0],
+            ])
+            x_pred = A @ self.x + B * current_a
+            x_pred[3, 0] = v_h_next
+        else:
+            A = np.diag([1.0, exp1, exp2])
+            B = np.array([
+                [-eta * self.dt / (3600.0 * q_act_curr)],
+                [self.cell.r1_base * (1.0 - exp1)],
+                [self.cell.r2_base * (1.0 - exp2)],
+            ])
+            x_pred = A @ self.x + B * current_a
+
         x_pred[0, 0] = np.clip(x_pred[0, 0], 0.0, 1.0)
+        return A, x_pred, r0_curr, q_act_curr
+
+    def step(self, current_a, v_measured, delta_v_comp=0.0, r_x_eff=None, r_theta_eff=None, c_extra=None):
+        """
+        Execute one joint State + Parameter DEKF cycle matching Section 3.3, Section 3.7, and dekf.c.
+        Optional delta_v_comp and effective variances (R_eff,k, R_{theta,eff}) enable PIDKF coupling.
+        """
+        A, x_pred, r0_curr, q_act_curr = self.predict_state_prior(current_a)
         P_x_pred = A @ self.P_x @ A.T + self.Q_x
 
         soc_pred = x_pred[0, 0]
-        v_pred_state = self.cell.get_ocv(soc_pred) - current_a * r0_curr - x_pred[1, 0] - x_pred[2, 0]
-        d_ocv_state = self.cell.get_docv_dsoc(soc_pred)
-        C_x = np.array([[d_ocv_state, -1.0, -1.0]])
+        v_pred_ecm = self.cell.get_ocv(soc_pred) - current_a * r0_curr - x_pred[1, 0] - x_pred[2, 0]
+        if self.use_hyst:
+            v_pred_ecm -= x_pred[3, 0]
+        v_pred_total = v_pred_ecm + float(delta_v_comp)
 
-        y_state_res = v_measured - v_pred_state
-        S_x = (C_x @ P_x_pred @ C_x.T)[0, 0] + self.R_x
-        K_x = (P_x_pred @ C_x.T) / S_x
+        d_ocv_pred = self.cell.get_docv_dsoc(soc_pred)
+        C_x = np.array([[d_ocv_pred, -1.0, -1.0, -1.0]]) if self.use_hyst else np.array([[d_ocv_pred, -1.0, -1.0]])
+        if c_extra is not None:
+            C_x = C_x + np.asarray(c_extra, dtype=float).reshape(1, self.n)
 
-        self.x = x_pred + K_x * y_state_res
+        rx = self.R_x if r_x_eff is None else float(r_x_eff)
+        rth = self.R_theta if r_theta_eff is None else float(r_theta_eff)
+        e_k = v_measured - v_pred_total
+        is_rest = abs(current_a) < self.rest_gate_a
+
+        if is_rest:
+            K_x = np.zeros((self.n, 1))
+        else:
+            S_x = float((C_x @ P_x_pred @ C_x.T)[0, 0] + rx)
+            K_x = (P_x_pred @ C_x.T) / S_x
+
+        self.x = x_pred + K_x * e_k
         self.x[0, 0] = np.clip(self.x[0, 0], 0.0, 1.0)
-        self.P_x = (np.eye(3) - K_x @ C_x) @ P_x_pred
+        I_n = np.eye(self.n)
+        IKC_x = I_n - K_x @ C_x
+        self.P_x = IKC_x @ P_x_pred @ IKC_x.T + rx * (K_x @ K_x.T)
 
-        # Extracted actual capacity estimate
-        cap_est = 1.0 / (3600.0 * self.theta[1, 0])
+        # --- Parameter Filter Update (Plett 2004 Recurrent Total Derivative Sensitivity) ---
+        P_theta_pred = self.P_theta + self.Q_theta
+        eta_curr = self.cell.get_eta(current_a)
+        df_dtheta = np.zeros((self.n, 2))
+        df_dtheta[0, 1] = -eta_curr * self.dt * current_a / 3600.0
+        dx_minus_dtheta = A @ self.dx_plus_dtheta + df_dtheta
 
-        return float(self.x[0, 0]), float(v_pred_state), float(r0_curr), float(cap_est)
+        dg_dtheta = np.zeros((1, 2))
+        dg_dtheta[0, 0] = -current_a
+        C_theta = dg_dtheta + C_x @ dx_minus_dtheta
+
+        self.dx_plus_dtheta = dx_minus_dtheta - K_x @ C_theta
+
+        # Innovation e_k evaluated at a priori predicted terminal voltage matches total derivative linearization
+        if is_rest:
+            K_theta = np.zeros((2, 1))
+        else:
+            S_theta = float((C_theta @ P_theta_pred @ C_theta.T)[0, 0] + rth)
+            K_theta = (P_theta_pred @ C_theta.T) / S_theta
+
+        self.theta = self.theta + K_theta * e_k
+        # Physical boundaries anchored to initial capacity Q_init
+        self.theta[0, 0] = float(np.clip(self.theta[0, 0], 0.005, 0.250))
+        q_inv_min = 1.0 / (1.5 * self.cell.q_nominal)
+        q_inv_max = 1.0 / (0.5 * self.cell.q_nominal)
+        self.theta[1, 0] = float(np.clip(self.theta[1, 0], q_inv_min, q_inv_max))
+
+        I_2 = np.eye(2)
+        IKC_t = I_2 - K_theta @ C_theta
+        self.P_theta = IKC_t @ P_theta_pred @ IKC_t.T + rth * (K_theta @ K_theta.T)
+
+        self.i_prev = float(current_a)
+        cap_est = 1.0 / self.theta[1, 0]
+        return float(self.x[0, 0]), float(v_pred_total), float(self.theta[0, 0]), float(cap_est)
 
 
 class SlidingModeObserver:
     """
-    Super-Twisting / Boundary-Layer Sliding Mode Observer (SMO).
-    Known for robust disturbance rejection and immunity against model parameter uncertainty.
+    Discrete Boundary-Layer Sliding Mode Observer (SMO), Eq. (34).
+    Parameters synchronized with Appendix C.2: l_smo = 0.025 V, mu = 0.020 V.
+    Supports both 3-state NMC (alpha_min = 0.40 V) and 4-state LFP (alpha_min = 0.065 V).
     """
 
-    def __init__(self, battery_cell, l_gain=0.03, boundary_layer=0.03):
+    def __init__(self, battery_cell, l_gain=0.025, boundary_layer=0.020, use_hysteresis=True):
         self.cell = battery_cell
         self.dt = battery_cell.dt
         self.l_gain = float(l_gain)
-        self.epsilon = float(boundary_layer)
+        self.mu = float(boundary_layer)
+        self.use_hyst = bool(use_hysteresis and _is_lfp(battery_cell))
+        self.alpha_min = 0.065 if _is_lfp(battery_cell) else 0.400
+
         self.soc = 1.0
         self.up1 = 0.0
         self.up2 = 0.0
+        self.v_h = 0.0
 
     def reset(self, initial_soc=1.0):
         self.soc = float(initial_soc)
         self.up1 = 0.0
         self.up2 = 0.0
+        self.v_h = 0.0
 
     def step(self, current_a, v_measured):
-        # ECM model prediction
-        exp1 = np.exp(-self.dt / self.cell.tau1)
-        exp2 = np.exp(-self.dt / self.cell.tau2)
+        # Current predicted voltage V_hat_{t,k} from current state x_hat_k (consistent with S_k = V_meas,k - V_hat_{t,k})
+        v_model = self.cell.get_ocv(self.soc) - current_a * self.cell.r0_base - self.up1 - self.up2
+        if self.use_hyst:
+            v_model -= self.v_h
+        s_k = v_measured - v_model
 
-        self.up1 = self.up1 * exp1 + current_a * self.cell.r1 * (1.0 - exp1)
-        self.up2 = self.up2 * exp2 + current_a * self.cell.r2 * (1.0 - exp2)
+        # Scheduled SOC-only sliding injection L(z_hat_k) * sat(S_k / mu)
+        d_ocv = max(self.alpha_min, float(self.cell.get_docv_dsoc(self.soc)))
+        sat_val = float(np.clip(s_k / self.mu, -1.0, 1.0))
+        l_inj = (self.l_gain / d_ocv) * sat_val
 
-        v_model = self.cell.get_ocv(self.soc) - current_a * self.cell.r0 - self.up1 - self.up2
-        error_v = v_measured - v_model
+        # Discrete state update Eq. (34): x_hat_{k+1} = A_k x_hat_k + B_k I_k + g_k + L(z_k) sat(S_k / mu)
+        eta = self.cell.get_eta(current_a)
+        tau1 = self.cell.r1_base * self.cell.c1_base
+        tau2 = self.cell.r2_base * self.cell.c2_base
+        exp1 = float(np.exp(-self.dt / tau1))
+        exp2 = float(np.exp(-self.dt / tau2))
 
-        # Smooth boundary layer injection scaled by local electro-thermal slope dOCV/dSOC
-        d_ocv = max(0.4, float(self.cell.get_docv_dsoc(self.soc)))
-        s_val = np.clip(error_v / self.epsilon, -1.0, 1.0)
-        sliding_correction = (self.l_gain * s_val) / d_ocv
-
-        # Update SOC with Coulomb counting + sliding mode injection
-        d_soc = (-current_a * self.dt) / (3600.0 * self.cell.q_nominal) + sliding_correction * self.dt
-        self.soc = np.clip(self.soc + d_soc, 0.0, 1.0)
+        self.soc = float(np.clip(self.soc - (eta * current_a * self.dt) / (3600.0 * self.cell.q_nominal) + l_inj, 0.0, 1.0))
+        self.up1 = self.up1 * exp1 + current_a * self.cell.r1_base * (1.0 - exp1)
+        self.up2 = self.up2 * exp2 + current_a * self.cell.r2_base * (1.0 - exp2)
+        if self.use_hyst:
+            self.v_h, _ = _step_hysteresis(self.cell, self.v_h, current_a, self.cell.q_nominal)
 
         return float(self.soc), float(v_model)

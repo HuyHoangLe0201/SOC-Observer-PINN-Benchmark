@@ -37,22 +37,12 @@ def build_pgfplots_data():
         + 4.674
     )
 
-    z_lfp = np.linspace(0.12, 0.95, 84)
-    v_lfp = (
-        3.415
-        - 0.286 * z_lfp
-        + 1.831 * z_lfp**2
-        - 4.120 * z_lfp**3
-        + 4.185 * z_lfp**4
-        - 1.545 * z_lfp**5
-    )
-    dv_lfp = (
-        -0.286
-        + 3.662 * z_lfp
-        - 12.360 * z_lfp**2
-        + 16.740 * z_lfp**3
-        - 7.725 * z_lfp**4
-    )
+    # Strictly monotonic closed-form LFP OCV matching BatteryCellLFP in src/battery_model.py
+    z_lfp = np.linspace(0.0, 1.0, 101)
+    sig_low = 1.0 / (1.0 + np.exp(-26.0 * (z_lfp - 0.06)))
+    sig_high = 1.0 / (1.0 + np.exp(-24.0 * (z_lfp - 0.89)))
+    v_lfp = 1.950 + 1.320 * sig_low + 0.065 * z_lfp + 0.250 * sig_high
+    dv_lfp = 1.320 * 26.0 * sig_low * (1.0 - sig_low) + 0.065 + 0.250 * 24.0 * sig_high * (1.0 - sig_high)
 
     # Exact Eq. (15) discrete dynamic hysteresis trajectory (beta=45, M0=30 mV)
     beta, m0 = 45.0, 30.0
@@ -275,10 +265,10 @@ def get_mechanism_tex(data):
     (onelbl) at (10.06, 17.64) {1-Phase\\[-1pt]Host};
 \draw[->, line width=0.45pt] (onelbl.north) -- (10.06, 18.34);
 \node[anchor=west, align=left, font=\fontsize{6.0}{7.3}\selectfont] at (10.60, 18.52) {
-    \textbf{NMC811} (\texttt{INR20R})\\[1pt]
+    \textbf{NMC} (\texttt{INR20R / NMC532})\\[1pt]
     Solid-solution host\\[0.5pt]
     $V_{\mathrm{ocv}}'\!\in\![0.481, 4.674]\;\mathrm{V}$\\[0.5pt]
-    $\mathrm{rank}(\mathcal{O}_k) = 3$
+    $\mathrm{rank}(\mathcal{O}_3) = 3$
 };
 
 % Lower: LFP Core-Shell
@@ -292,8 +282,8 @@ def get_mechanism_tex(data):
 \node[anchor=west, align=left, font=\fontsize{6.0}{7.3}\selectfont] at (10.60, 15.46) {
     \textbf{$\mathrm{LiFePO_4}$} (\texttt{ANR26650})\\[1pt]
     Biphasic ($F'\!=\!C\!-\!P\!=\!0$)\\[0.5pt]
-    $V_{\mathrm{ocv}}'\!\approx\!0.08\;\mathrm{V} + V_h$\\[0.5pt]
-    $\kappa(\mathcal{O}_k) > 1.99\times 10^5$
+    $V_{\mathrm{ocv}}'\!\ge\!0.066\;\mathrm{V} + V_h$\\[0.5pt]
+    $\kappa(\mathcal{O}_3) = 4.86\times 10^5$
 };
 
 % Brushed Aluminum Collector
@@ -456,7 +446,7 @@ def get_mechanism_tex(data):
 \draw[draw=black, line width=0.5pt] (24.44, 12.14) rectangle (28.98, 12.82);
 \node[align=center, font=\fontsize{6.4}{7.5}\selectfont\bfseries] at (16.50, 12.48) {Fixed-Prior Filters\\(EKF, AEKF, SMO)};
 \node[align=center, font=\fontsize{6.2}{7.4}\selectfont] at (21.23, 12.48) {Freeze fresh $(R_0, R_1, R_2, C_1, C_2, Q_{\mathrm{init}})$};
-\node[align=center, font=\fontsize{6.2}{7.4}\selectfont] at (26.71, 12.48) {$45.7\times$ EKF surge ($80\%$ SOH)};
+\node[align=center, font=\fontsize{6.2}{7.4}\selectfont] at (26.71, 12.48) {$55.9\times$ EKF surge ($80\%$ SOH)};
 
 \filldraw[fill=nmcbg, draw=black, line width=0.5pt] (14.98, 11.45) rectangle (18.02, 12.14);
 \filldraw[fill=nmcbg, draw=black, line width=0.5pt] (18.02, 11.45) rectangle (24.44, 12.14);
@@ -487,9 +477,9 @@ def get_mechanism_tex(data):
     width=12.36cm,
     height=8.02cm,
     xmin=0, xmax=100,
-    ymin=2.75, ymax=4.35,
-    ytick={2.8, 3.0, 3.2, 3.4, 3.6, 3.8, 4.0, 4.2},
-    yticklabels={2.8, 3.0, 3.2, 3.4, 3.6, 3.8, 4.0, 4.2},
+    ymin=2.10, ymax=4.35,
+    ytick={2.2, 2.6, 3.0, 3.4, 3.8, 4.2},
+    yticklabels={2.2, 2.6, 3.0, 3.4, 3.8, 4.2},
     xlabel={State of Charge, SOC (\%)},
     ylabel={Open-Circuit Potential, $V_{\mathrm{ocv}}$ (V)},
     xlabel style={font=\fontsize{9.2}{11}\selectfont\bfseries, text=black},
@@ -509,9 +499,9 @@ def get_mechanism_tex(data):
         row sep=1.4pt
     }
 ]
-    \fill[platshade] (axis cs:20, 2.75) rectangle (axis cs:80, 4.35);
-    \draw[densely dotted, black!65, line width=0.7pt] (axis cs:20, 2.75) -- (axis cs:20, 4.35);
-    \draw[densely dotted, black!65, line width=0.7pt] (axis cs:80, 2.75) -- (axis cs:80, 4.35);
+    \fill[platshade] (axis cs:20, 2.10) rectangle (axis cs:80, 4.35);
+    \draw[densely dotted, black!65, line width=0.7pt] (axis cs:20, 2.10) -- (axis cs:20, 4.35);
+    \draw[densely dotted, black!65, line width=0.7pt] (axis cs:80, 2.10) -- (axis cs:80, 4.35);
 
     \addplot[draw=lfpline!70, fill=green!22, line width=0.5pt] coordinates {
         """ + data["lfp_env_hi"] + " " + data["lfp_env_lo"] + r"""
@@ -521,7 +511,7 @@ def get_mechanism_tex(data):
     \addplot[color=nmcline, line width=1.65pt] coordinates {
         """ + data["nmc_ocv"] + r"""
     };
-    \addlegendentry{NMC811 $V_{\mathrm{ocv}}(z)$ (Eq.\ 15, Monotonic)}
+    \addlegendentry{NMC $V_{\mathrm{ocv}}(z)$ (Monotonic 5th-Order)}
 
     \addplot[color=lfpline, line width=1.5pt, dashed] coordinates {
         """ + data["lfp_ocv"] + r"""
@@ -598,7 +588,7 @@ def get_mechanism_tex(data):
     height=8.02cm,
     ymode=log,
     xmin=0, xmax=100,
-    ymin=0.0018, ymax=9.5,
+    ymin=0.02, ymax=48.0,
     xlabel={State of Charge, SOC (\%)},
     ylabel={OCV Slope, $dV_{\mathrm{ocv}}/dz$ (V)},
     xlabel style={font=\fontsize{9.2}{11}\selectfont\bfseries, text=black},
@@ -618,9 +608,9 @@ def get_mechanism_tex(data):
         row sep=1.4pt
     }
 ]
-    \fill[platshade] (axis cs:20, 0.0018) rectangle (axis cs:80, 9.5);
-    \draw[densely dotted, black!65, line width=0.7pt] (axis cs:20, 0.0018) -- (axis cs:20, 9.5);
-    \draw[densely dotted, black!65, line width=0.7pt] (axis cs:80, 0.0018) -- (axis cs:80, 9.5);
+    \fill[platshade] (axis cs:20, 0.02) rectangle (axis cs:80, 48.0);
+    \draw[densely dotted, black!65, line width=0.7pt] (axis cs:20, 0.02) -- (axis cs:20, 48.0);
+    \draw[densely dotted, black!65, line width=0.7pt] (axis cs:80, 0.02) -- (axis cs:80, 48.0);
 
     \addplot[color=nmcline, line width=1.65pt] coordinates {
         """ + data["nmc_dv"] + r"""
@@ -630,29 +620,29 @@ def get_mechanism_tex(data):
     \addplot[color=lfpderiv, line width=1.65pt, dash pattern=on 6pt off 2.2pt on 1.4pt off 2.2pt] coordinates {
         """ + data["lfp_dv"] + r"""
     };
-    \addlegendentry{LFP Slope $V_{\mathrm{ocv}}'(z)$ ($\approx 0.08\;\mathrm{V}$ on Plateau)}
+    \addlegendentry{LFP Slope $V_{\mathrm{ocv}}'(z)$ (Plateau Min $0.066\;\mathrm{V}$)}
 
-    \draw[densely dotted, black, line width=0.8pt] (axis cs:0, 0.08) -- (axis cs:100, 0.08);
+    \draw[densely dotted, black, line width=0.8pt] (axis cs:0, 0.066) -- (axis cs:100, 0.066);
 
-    \filldraw[fill=nmcline, draw=black, line width=0.55pt] (axis cs:50, 0.74275) circle (2.3pt);
-    \filldraw[fill=lfpderiv, draw=black, line width=0.55pt] (axis cs:50, 0.06469) circle (2.3pt);
+    \filldraw[fill=nmcline, draw=black, line width=0.55pt] (axis cs:50, 0.7434) circle (2.3pt);
+    \filldraw[fill=lfpderiv, draw=black, line width=0.55pt] (axis cs:50, 0.0659) circle (2.3pt);
     \draw[{Latex[length=1.8mm]}-{Latex[length=1.8mm]}, line width=0.95pt, draw=black]
         (axis cs:50, 0.072) -- (axis cs:50, 0.675);
 
     \node[draw=black, line width=0.6pt, fill=white, rounded corners=2pt, inner sep=2.4pt, align=center, font=\fontsize{6.9}{8.2}\selectfont\bfseries]
-        (gapbox) at (axis cs:68.5, 0.27) {Plateau Collapse (@ 50\%)\\$0.743 \to 0.065\;\mathrm{V}$ ($11.5\times$)\\(Mean $V_{\mathrm{ocv}}' \approx 0.08\;\mathrm{V}$)};
-    \draw[-{Latex[length=1.7mm]}, line width=0.8pt, draw=black] (gapbox.west) -- (axis cs:50.8, 0.27);
+        (gapbox) at (axis cs:70.0, 0.25) {Plateau Collapse (@ 50\%)\\$0.743 \to 0.066\;\mathrm{V}$ ($11.3\times$)\\(Median Plateau $0.084\;\mathrm{V}$)};
+    \draw[-{Latex[length=1.7mm]}, line width=0.8pt, draw=black] (gapbox.west) -- (axis cs:50.8, 0.25);
 
-    \filldraw[fill=lfpderiv, draw=black, line width=0.55pt] (axis cs:12, 0.00278) circle (2.3pt);
-    \node[draw=black, line width=0.55pt, fill=white, rounded corners=1.8pt, inner sep=2.2pt, align=left, font=\fontsize{7.0}{8.2}\selectfont\bfseries, anchor=west]
-        (cutbox) at (axis cs:22.0, 0.0029) {BMS Cutoff $z\!=\!0.12$\\$V_{\mathrm{ocv}}' = 0.00278\;\mathrm{V}$};
-    \draw[-{Latex[length=1.6mm]}, line width=0.8pt, draw=black] (cutbox.west) -- (axis cs:12.6, 0.00278);
+    \node[draw=black, line width=0.55pt, fill=white, rounded corners=1.8pt, inner sep=2.0pt, align=left, font=\fontsize{6.8}{8.0}\selectfont\bfseries, anchor=west]
+        (cutbox) at (axis cs:5.5, 0.036) {Plateau Floor $z\!=\!0.50$\\$V_{\mathrm{ocv}}' = 0.0659\;\mathrm{V/unit\;SOC}$};
+    \draw[-{Latex[length=1.6mm]}, line width=0.8pt, draw=black] (cutbox.east) -- (axis cs:49.0, 0.064);
 
-    \node[draw=black, line width=0.6pt, fill=white, rounded corners=2pt, align=left, font=\fontsize{7.1}{8.5}\selectfont, inner sep=2.6pt]
-        at (axis cs:50, 0.0155) {
-            \textbf{Observability:} $|\det(\mathcal{O}_k)| \propto V_{\mathrm{ocv}}'(z_k)$ (Eqs.\ 16, 21)\\[1pt]
-            $\bullet$ NMC811: $\kappa(\mathcal{O}_k)\approx 3.2\times 10^4 \Rightarrow$ Strong Innovation Gain\\
-            $\bullet$ LFP: $\kappa(\mathcal{O}_k) > 1.99\times 10^5 \Rightarrow$ Needs $V_h + \delta\hat{V}_{\mathrm{comp}}$
+    \node[draw=black, line width=0.6pt, fill=white, rounded corners=2pt, align=left, font=\fontsize{6.6}{7.9}\selectfont, inner sep=2.3pt]
+        at (axis cs:50, 4.2) {
+            \textbf{Observability:} $|\det(\mathcal{O}_n)| \propto V_{\mathrm{ocv}}'(z_k)$\\[1pt]
+            $\bullet$ NMC: $\kappa(\mathcal{O}_3) = 3.38\times 10^4 \Rightarrow$ High Gain\\
+            $\bullet$ LFP: $\kappa(\mathcal{O}_3) = 4.86\times 10^5$ ($\kappa(\mathcal{O}_4)=1.20\times 10^8$)\\
+            $\bullet$ 30\,s LTV Gramian $\lambda_{\min}\!\ge\!1.09\!\times\!10^{-7}$ + $V_h$ Bias Rem.
         };
 \end{axis}
 
@@ -734,7 +724,7 @@ def get_framework_tex():
 \node[font=\fontsize{6.4}{7.3}\selectfont\bfseries] at (0.81, 18.18) {$-$};
 \node[anchor=west, align=left, font=\fontsize{6.8}{8.2}\selectfont] at (1.16, 18.65) {
     \textbf{Multi-Chemistry Cell Plant}\\[1.5pt]
-    NMC811: \texttt{INR18650-20R} ($2.00\;\mathrm{Ah}$)\\
+    NMC: \texttt{INR18650-20R} / \texttt{NMC532}\\
     LFP: \texttt{ANR26650M1-B} ($2.30\;\mathrm{Ah}$)\\
     $\mathrm{SOH}\in[80\%,100\%],\;T\in[0^\circ,45^\circ\mathrm{C}]$
 };
@@ -773,7 +763,7 @@ def get_framework_tex():
 
 % --- STAGE 2: Dual EKF Backbone (x = 6.92 to 17.08, 10.16 cm wide) ---
 \filldraw[colhdr, fill=hdrblue] (6.92, 20.46) rectangle (17.08, 20.98);
-\node[font=\fontsize{8.5}{9.8}\selectfont\bfseries] at (12.00, 20.72) {2.\ Dual EKF Backbone ($980\;\mathrm{FLOPs/Step}$)};
+\node[font=\fontsize{8.5}{9.8}\selectfont\bfseries] at (12.00, 20.72) {2.\ Dual EKF Backbone ($960\;\mathrm{FLOPs/Step}$)};
 
 % 2A: Fast State Filter (x = 7.04 to 16.96, 9.92 cm wide, y = 14.34 to 19.74)
 \draw[subcard] (7.04, 14.34) rectangle (16.96, 19.74);
@@ -821,10 +811,10 @@ def get_framework_tex():
 \node[font=\fontsize{7.8}{9.0}\selectfont\bfseries] at (12.00, 13.08)
     {Slow Parameter Filter ($\tau_{\mathrm{SOH}}\sim 10^5\text{--}10^6\;\mathrm{s}$, Random Walk)};
 
-\node[align=center, font=\fontsize{6.9}{8.3}\selectfont] at (12.00, 11.16) {
+\node[align=center, font=\fontsize{6.7}{8.1}\selectfont] at (12.00, 11.16) {
     $\hat{\boldsymbol{\theta}}_k = \left[\hat{R}_{0,k},\; 1/\hat{Q}_{\mathrm{act},k}\right]^T$,\quad $\hat{\boldsymbol{\theta}}_k^+ = \hat{\boldsymbol{\theta}}_k^- + \mathbf{K}_{\theta,k} e_{k,\mathrm{PIDKF}}$\\[3pt]
-    Fr\'echet Jacobian (Eq.\ 30):\; $\mathbf{C}_{\theta,k} = \left[-I_k,\; -\dfrac{\eta\Delta t I_{k-1}}{3600}V_{\mathrm{ocv}}'(\hat{z}_k^+)\right]$\\[3pt]
-    Thermal Inversion:\; $\mathrm{SOH}_{\mathrm{ref},k} \equiv \dfrac{\hat{Q}_{\mathrm{act},k}(T_k)}{Q_{\mathrm{init}}\,f_Q(T_k)} = \dfrac{1}{Q_{\mathrm{init}}\,\hat{\theta}_{2,k}\,f_Q(T_k)}$
+    Recurrent Total Deriv.:\; $\mathbf{C}_{\theta,k} = \frac{\partial g}{\partial\boldsymbol{\theta}} + \mathbf{H}_k \frac{d\hat{\mathbf{x}}_k^-}{d\boldsymbol{\theta}}$\\[3pt]
+    Fast Resistance Proxy:\; $\hat{R}_{0,k}^- = \hat{\theta}_{1,k}^-$ ($\tau_R \approx 10\text{--}30\;\mathrm{s}$, Zero Leakage)
 };
 
 % Routing Stage 1 -> Stage 2 (strictly centered in open corridor [6.08, 6.92])
@@ -845,9 +835,9 @@ def get_framework_tex():
 \draw[subcard] (18.12, 14.66) rectangle (23.82, 19.74);
 \filldraw[fill=hdrgreen, draw=black, line width=0.55pt, rounded corners=1.5pt] (18.24, 19.18) rectangle (23.70, 19.62);
 \node[font=\fontsize{6.9}{8.0}\selectfont\bfseries] at (20.97, 19.40)
-    {MLP ($6\to 16\to 8\to 1$ GELU, $560\;\mathrm{FLOPs}$)};
+    {MLP ($6\to 16\to 8\to 1$ GELU, $580\;\mathrm{FLOPs}$)};
 
-\foreach \i/\lbl/\yy in {1/{$I_k$}/18.58, 2/{$T_k$}/18.00, 3/{$\hat{z}_k^-$}/17.42, 4/{$\hat{U}_{1,k}^-$}/16.84, 5/{$\hat{U}_{2,k}^-$}/16.26, 6/{$\mathrm{SOH}_{\mathrm{ref},k}$}/15.68} {
+\foreach \i/\lbl/\yy in {1/{$I_k$}/18.58, 2/{$T_k$}/18.00, 3/{$\hat{z}_k^-$}/17.42, 4/{$\hat{U}_{1,k}^-$}/16.84, 5/{$\hat{U}_{2,k}^-$}/16.26, 6/{$\hat{R}_{0,k}^-$}/15.68} {
     \filldraw[fill=hdrblue, draw=black, line width=0.6pt] (19.52, \yy) circle (0.12cm);
     \node[anchor=east, font=\fontsize{6.3}{7.2}\selectfont\bfseries] at (19.38, \yy) {\lbl};
 }
@@ -879,7 +869,7 @@ def get_framework_tex():
 }
 \node[font=\fontsize{6.7}{7.6}\selectfont\bfseries] at (23.28, 17.62) {$\mathcal{NN}(\mathbf{u}_k)$};
 \draw[arr, line width=0.9pt] (23.42, 17.12) -- (24.16, 17.12);
-\node[font=\fontsize{6.4}{7.4}\selectfont\bfseries] at (20.97, 14.94) {$257\;\text{Params} = 1.03\;\mathrm{KB}$ Flash (Zero Leakage)};
+\node[font=\fontsize{6.4}{7.4}\selectfont\bfseries] at (20.97, 14.94) {$257\;\text{Params} = 1.00\;\mathrm{KB}$ ($1,028\;\mathrm{B}$) Flash};
 
 % Subcard 3B: Butler-Volmer Passivity Sector (x = 24.16 to 28.96, width 4.80 cm!)
 \draw[subcard] (24.16, 14.66) rectangle (28.96, 19.74);
@@ -900,8 +890,8 @@ def get_framework_tex():
 \node[font=\fontsize{6.6}{7.6}\selectfont\bfseries] at (25.62, 17.34) {Charge OK};
 \node[font=\fontsize{6.6}{7.6}\selectfont\bfseries] at (27.52, 16.52) {Disch.\ OK};
 \node[font=\fontsize{5.9}{6.8}\selectfont] at (27.50, 17.78) {Clamped ($I_k\delta\hat{V}\!>\!0$)};
-\node[font=\fontsize{6.4}{7.4}\selectfont\bfseries] at (26.56, 14.94)
-    {$|\delta\hat{V}|\le V_{\mathrm{pol}}^{\max} \le 20.0\;\mathrm{mV}$;\; $I_k\cdot\delta\hat{V}\le 0$};
+\node[font=\fontsize{5.6}{6.6}\selectfont\bfseries] at (26.56, 14.94)
+    {$|\delta\hat{V}|\le V_{\mathrm{pol}}^{\max}\!\le\!147\;\mathrm{mV}$;\; $I_k\delta\hat{V}\le 0$};
 
 
 % --- DEDICATED CONFLICT-FREE SIGNAL BUSES (open corridor [17.08, 18.00] centered at 17.54) ---
@@ -931,7 +921,7 @@ def get_framework_tex():
 \draw[line width=0.9pt] (17.54, 13.75) arc (-90:90:0.13cm);
 \draw[arr, line width=0.9pt] (17.54, 14.01) -- (17.54, 15.68) -- (18.12, 15.68);
 \node[fill=white, draw=black, line width=0.45pt, rounded corners=1pt, inner sep=1.0pt, font=\fontsize{5.8}{6.6}\selectfont\bfseries]
-    at (17.54, 12.40) {$\mathrm{SOH}_{\mathrm{ref}}$};
+    at (17.54, 12.40) {$\hat{R}_{0,k}^-$};
 
 % 5. Exact Cascaded Summing Junctions along y = 13.88
 \filldraw[fill=white, draw=black, line width=0.85pt] (25.12, 13.88) circle (0.22cm);
@@ -959,12 +949,12 @@ def get_framework_tex():
 \filldraw[fill=hdrgreen, draw=black, line width=0.55pt, rounded corners=1.5pt] (18.24, 12.56) rectangle (28.84, 12.98);
 \node[font=\fontsize{7.1}{8.2}\selectfont\bfseries] at (23.54, 12.77)
     {Compensated Innovation Update, Exogenous Decoupling \& Stability Bound};
-\node[align=center, font=\fontsize{6.5}{7.8}\selectfont] at (23.54, 11.02) {
+\node[align=center, font=\fontsize{6.1}{7.4}\selectfont] at (23.54, 11.02) {
     $\hat{V}_{t,\mathrm{PIDKF},k}^- = \hat{V}_{t,\mathrm{ECM},k}^- + \delta\hat{V}_{t,\mathrm{comp},k}$,\quad $e_{k,\mathrm{PIDKF}} = V_{\mathrm{meas},k} - \hat{V}_{t,\mathrm{PIDKF},k}^-$\\[2.2pt]
-    $R_{\mathrm{eff},k} = R_v + \sigma_{\mathrm{NN}}^2 + \sigma_{\mathrm{approx}}^2 = 1.04\times 10^{-3}\;\mathrm{V}^2$\\[1.4pt]
-    {\fontsize{6.0}{7.0}\selectfont ($R_v = 10^{-3}\;\mathrm{V}^2$,\; MLP Error $\sigma_{\mathrm{NN}} = 5.8\;\mathrm{mV}$,\; Truncation $\sigma_{\mathrm{approx}} = 1.9\;\mathrm{mV}$)}\\[2.4pt]
-    \textbf{Exogenous Decoupling:}\; $\mathbf{H}_{\mathrm{PIDKF},k}\approx\mathbf{H}_k,\;\mathbf{C}_{\theta,\mathrm{PIDKF},k}\approx\mathbf{C}_{\theta,k}$ \;\textbf{($-37.3\%$ MCU Cycles)}\\[2.4pt]
-    \textbf{Mean-Square UUB (Eqs.\ 48--49):}\; $\limsup_{k\to\infty}\mathbb{E}[\|\mathbf{e}_k^-\|^2] \le n\bar{p} + \left(\dfrac{c\bar{A}\bar{K}\bar{\varepsilon}}{1-\rho}\right)^2 < \infty$
+    $R_{\mathrm{eff},k} = R_v + \sigma_{\mathrm{NN}}^2 + \sigma_{\mathrm{approx}}^2 = 1.068\times 10^{-3}\;\mathrm{V}^2$\\[1.4pt]
+    {\fontsize{5.8}{6.8}\selectfont ($R_v = 10^{-3}\;\mathrm{V}^2$,\; MLP Error $\sigma_{\mathrm{NN}} = 8.0\;\mathrm{mV}$,\; Truncation $\sigma_{\mathrm{approx}} = 2.0\;\mathrm{mV}$)}\\[2.4pt]
+    \textbf{Exog.\ Decoupling:}\; $\mathbf{H}_{\mathrm{PIDKF},k}\!\approx\!\mathbf{H}_k$ \textbf{(Shields $\mathbf{K}_k$: $0.554\%$ vs.\ $1.894\%$)}\\[2.4pt]
+    \textbf{Mean-Square UUB:}\; $\limsup_{k\to\infty}\mathbb{E}[\|\mathbf{e}_k^-\|^2] \le n\bar{p} + \left(\dfrac{c\bar{A}\bar{K}\bar{\varepsilon}_{\mathrm{tot}}}{1-\rho}\right)^2 < \infty$
 };
 
 % Clean Unobstructed Bottom Feedback Return Rail (y = 8.90 -> aligned cleanly to x=6.50 return!)
@@ -983,17 +973,17 @@ def get_framework_tex():
 % =========================================================================
 \draw[outerbox] (0.0, 0.0) rectangle (29.40, 8.25);
 \node[anchor=west, font=\fontsize{10.8}{12.2}\selectfont\bfseries] at (0.24, 7.86)
-    {(b) Dual-Tier Validation Protocol, 8-Estimator Benchmark Latency, STM32F407 Profiling \& 10-Phase Matrix};
+    {(b) Dual-Tier Validation Protocol, 8-Estimator Analytical Latency, ARMv7E-M Audit \& 10-Phase Matrix};
 
 % Pillar 1: Zero-Leakage Protocol (x = 0.24 to 8.10, y = 4.76 to 7.48)
 \draw[subcard, fill=cplant] (0.24, 4.76) rectangle (8.10, 7.48);
 \filldraw[fill=hdrslate, draw=black, line width=0.65pt] (0.24, 7.00) rectangle (8.10, 7.48);
 \node[font=\fontsize{8.0}{9.2}\selectfont\bfseries] at (4.17, 7.24) {Zero-Leakage Datasets \& Experimental Split};
-\node[align=center, font=\fontsize{7.2}{8.6}\selectfont] at (4.17, 5.88) {
-    CALCE (\texttt{INR18650-20R}, \texttt{ANR26650M1-B})\\[1.5pt]
-    Oxford EIS \& NASA PCoE Diagnostics\\[1.5pt]
-    Cell Batch~A (Calibrate/Train) $\perp$ Batch~B (Test)\\[1.5pt]
-    Arbin BT-2000 Uncertainty: $\sigma_{\mathrm{SOC,ref}} \le \pm 0.036\%$
+\node[align=center, font=\fontsize{6.9}{8.2}\selectfont] at (4.17, 5.88) {
+    Tier~1: XJTU Batch-5 (\texttt{NMC532} RW) \& NASA PCoE\\[1.5pt]
+    Tier~2: Calibrated \texttt{INR20R} (NMC) \& \texttt{ANR26650} (LFP)\\[1.5pt]
+    Cell Batch~A (Calibrate/Train) $\perp$ Batch~B (Unseen)\\[1.5pt]
+    5-Seed Ensembles ($\text{Mean}\pm\text{SD}$); Nominal $100\%$ Prior
 };
 
 % Pillar 2: Embedded PGFPlots Log-Scale Cortex-M4 Latency Chart (x = 8.46 to 21.10, 12.64 cm wide!)
@@ -1009,15 +999,15 @@ def get_framework_tex():
     xbar=0pt,
     bar shift=0pt,
     xmode=log,
-    xmin=1, xmax=35000,
+    xmin=1, xmax=120000,
     ymin=0.35, ymax=8.65,
     width=10.60cm,
     height=1.84cm,
     scale only axis,
     bar width=4.6pt,
     axis lines*=left,
-    xtick={1, 10, 100, 1000},
-    xticklabels={$1$, $10$, $10^2$, $10^3$},
+    xtick={1, 10, 100, 1000, 10000},
+    xticklabels={$1$, $10$, $10^2$, $10^3$, $10^4$},
     ytick={1, 2, 3, 4, 5, 6, 7, 8},
     yticklabels={BiLSTM, PINN, \textbf{PIDKF}, UKF, DEKF, AEKF, EKF, SMO},
     yticklabel style={font=\fontsize{6.2}{7.0}\selectfont, text=black},
@@ -1031,34 +1021,33 @@ def get_framework_tex():
     \node[font=\fontsize{5.8}{6.6}\selectfont\bfseries, anchor=south west] at (axis cs:22.0, 7.75) {RT $<20\;\mu\mathrm{s}$};
 
     \addplot[fill=barslate, draw=black, line width=0.5pt] coordinates {
-        (1.67, 8) (3.87, 7) (12.42, 4)
+        (1.55, 8) (3.69, 7) (12.98, 4)
     };
     \addplot[fill=barblue, draw=black, line width=0.5pt] coordinates {
-        (5.24, 6) (8.63, 5)
+        (4.82, 6) (8.39, 5)
     };
     \addplot[fill=baramber, draw=black, line width=0.5pt] coordinates {
-        (127.98, 2) (2440.48, 1)
+        (140.48, 2) (16964.29, 1)
     };
     \addplot[fill=bargreen, draw=black, line width=0.7pt] coordinates {
-        (14.20, 3)
+        (17.74, 3)
     };
 
-    % Exact aligned numeric labels strictly clear of the vertical x=20 dashed boundary
-    \node[anchor=west, font=\fontsize{5.9}{6.7}\selectfont\bfseries, inner xsep=1pt, inner ysep=0.2pt] at (axis cs:1.80, 8) {$1.67\;\mu\mathrm{s}$};
-    \node[anchor=west, font=\fontsize{5.9}{6.7}\selectfont\bfseries, inner xsep=1pt, inner ysep=0.2pt] at (axis cs:4.18, 7) {$3.87\;\mu\mathrm{s}$};
-    \node[anchor=west, font=\fontsize{5.9}{6.7}\selectfont\bfseries, inner xsep=1pt, inner ysep=0.2pt] at (axis cs:5.66, 6) {$5.24\;\mu\mathrm{s}$};
-    \node[anchor=west, font=\fontsize{5.9}{6.7}\selectfont\bfseries, inner xsep=1pt, inner ysep=0.2pt] at (axis cs:9.30, 5) {$8.63\;\mu\mathrm{s}$};
-    \node[anchor=east, font=\fontsize{5.6}{6.4}\selectfont\bfseries, inner xsep=1pt, inner ysep=0.2pt] at (axis cs:11.3, 4) {$12.42\;\mu\mathrm{s}$};
-    \node[anchor=east, font=\fontsize{5.7}{6.5}\selectfont\bfseries, inner xsep=1pt, inner ysep=0.2pt] at (axis cs:13.0, 3) {\textbf{$14.20\;\mu\mathrm{s}$}};
-    \node[anchor=west, font=\fontsize{5.8}{6.6}\selectfont\bfseries, inner xsep=1.2pt, inner ysep=0.4pt, fill=white, fill opacity=0.95, text opacity=1] at (axis cs:23.0, 3) {(\textbf{$172\times$ vs.\ LSTM})};
-    \node[anchor=west, font=\fontsize{5.9}{6.7}\selectfont\bfseries, inner sep=1pt] at (axis cs:142, 2) {$127.98\;\mu\mathrm{s}$};
-    \node[anchor=west, font=\fontsize{5.9}{6.7}\selectfont\bfseries, inner sep=1pt] at (axis cs:2720, 1) {$2.44\;\mathrm{ms}$};
+    % Exact aligned numeric labels matching Table 8 CSV cleanly
+    \node[anchor=west, font=\fontsize{5.9}{6.7}\selectfont\bfseries, inner xsep=1pt, inner ysep=0.2pt] at (axis cs:1.70, 8) {$1.55\;\mu\mathrm{s}$};
+    \node[anchor=west, font=\fontsize{5.9}{6.7}\selectfont\bfseries, inner xsep=1pt, inner ysep=0.2pt] at (axis cs:4.00, 7) {$3.69\;\mu\mathrm{s}$};
+    \node[anchor=west, font=\fontsize{5.9}{6.7}\selectfont\bfseries, inner xsep=1pt, inner ysep=0.2pt] at (axis cs:5.20, 6) {$4.82\;\mu\mathrm{s}$};
+    \node[anchor=west, font=\fontsize{5.9}{6.7}\selectfont\bfseries, inner xsep=1pt, inner ysep=0.2pt] at (axis cs:9.10, 5) {$8.39\;\mu\mathrm{s}$};
+    \node[anchor=west, font=\fontsize{5.7}{6.5}\selectfont\bfseries, inner xsep=1pt, inner ysep=0.2pt] at (axis cs:14.2, 4) {$12.98\;\mu\mathrm{s}$};
+    \node[anchor=west, font=\fontsize{5.8}{6.6}\selectfont\bfseries, inner xsep=1.2pt, inner ysep=0.4pt, fill=white, fill opacity=0.95, text opacity=1] at (axis cs:22.0, 3) {\textbf{$17.74\;\mu\mathrm{s}$ ($956\times$ vs.\ LSTM)}};
+    \node[anchor=west, font=\fontsize{5.9}{6.7}\selectfont\bfseries, inner sep=1pt] at (axis cs:158, 2) {$140.48\;\mu\mathrm{s}$};
+    \node[anchor=west, font=\fontsize{5.9}{6.7}\selectfont\bfseries, inner sep=1pt] at (axis cs:19200, 1) {$16.96\;\mathrm{ms}$};
 \end{axis}
 
-% Pillar 3: Bare-Metal MCU Profiling + Crisp IC Package (x = 21.46 to 29.16, 7.70 cm wide!)
+% Pillar 3: Analytical MCU Resource Audit + Crisp IC Package (x = 21.46 to 29.16, 7.70 cm wide!)
 \draw[subcard, fill=cmlp] (21.46, 4.76) rectangle (29.16, 7.48);
 \filldraw[fill=hdrgreen, draw=black, line width=0.65pt] (21.46, 7.00) rectangle (29.16, 7.48);
-\node[font=\fontsize{8.0}{9.2}\selectfont\bfseries] at (25.31, 7.24) {Bare-Metal ARM Cortex-M4F Bench};
+\node[font=\fontsize{8.0}{9.2}\selectfont\bfseries] at (25.31, 7.24) {Analytical ARMv7E-M Resource Audit};
 
 \filldraw[fill=hdrslate, draw=black, line width=0.7pt] (21.82, 5.32) rectangle (22.46, 6.44);
 \foreach \p in {5.48, 5.74, 6.00, 6.26} {
@@ -1066,11 +1055,11 @@ def get_framework_tex():
     \draw[line width=0.6pt] (22.46, \p) -- (22.62, \p);
 }
 \node[font=\fontsize{6.4}{7.2}\selectfont\bfseries] at (22.14, 5.88) {M4F};
-\node[anchor=west, align=left, font=\fontsize{6.8}{8.2}\selectfont] at (22.74, 5.88) {
-    STM32F407VG ($168\;\mathrm{MHz}$, IEEE-754 FPU)\\
-    Zero Heap / MISRA-C:2012 / GCC \texttt{-O3}\\
-    $1,540\;\mathrm{FLOPs}$, $2,386\;\text{cycles}$ (\texttt{DWT})\\
-    $8.2\;\mathrm{KB}$ Flash, $0.85\;\mathrm{KB}$ RAM ($4.97\;\mu\mathrm{s}$ M7)
+\node[anchor=west, align=left, font=\fontsize{6.6}{8.0}\selectfont] at (22.74, 5.88) {
+    Cortex-M4F ($168\;\mathrm{MHz}$, FPv4-SP-D16 FPU)\\
+    Static ANSI-C99 / Zero Heap / Real \texttt{f32} Weights\\
+    $1,540\;\mathrm{FLOPs}$, $2,980\;\text{est.\ cyc}$ ($17.74\;\mu\mathrm{s}$)\\
+    $7.25\;\mathrm{KB}$ Flash, $364\;\mathrm{B}$ RAM ($4.28\;\mu\mathrm{s}$ M7)
 };
 
 \draw[arr, line width=0.85pt] (8.10, 6.12) -- (8.46, 6.12);
@@ -1087,7 +1076,7 @@ def get_framework_tex():
 \node[align=center, font=\fontsize{6.9}{8.3}\selectfont] at (3.01, 3.07) {
     UDDS, US06, FUDS, DST\\
     Fresh Cell ($100\%$ SOH, $25^\circ\mathrm{C}$)\\
-    \textbf{EKF: $0.065\%$ $\mid$ DEKF: $0.191\%$}
+    \textbf{EKF: $0.067\%$ $\mid$ PIDKF: $0.258\%$}
 };
 
 \draw[phasecard] (6.08, 2.32) rectangle (11.62, 4.26);
@@ -1095,8 +1084,8 @@ def get_framework_tex():
 \node[font=\fontsize{7.5}{8.6}\selectfont\bfseries] at (8.85, 4.04) {02 $\mid$ Multi-Stage Aging};
 \node[align=center, font=\fontsize{6.9}{8.3}\selectfont] at (8.85, 3.07) {
     $\mathrm{SOH}\;100\% \to 95\% \to 90\% \to 80\%$\\
-    EKF Surge: $45.7\times$ ($2.973\%$)\\
-    \textbf{DEKF: $0.585\%$ $\mid$ PIDKF: $0.482\%$}
+    EKF Surge: $55.9\times$ ($3.745\%$)\\
+    \textbf{DEKF: $2.073\%$ $\mid$ PIDKF: $0.928\%$}
 };
 
 \draw[phasecard] (11.92, 2.32) rectangle (17.46, 4.26);
@@ -1104,8 +1093,8 @@ def get_framework_tex():
 \node[font=\fontsize{7.5}{8.6}\selectfont\bfseries] at (14.69, 4.04) {03 $\mid$ Thermal Regimes};
 \node[align=center, font=\fontsize{6.9}{8.3}\selectfont] at (14.69, 3.07) {
     Cold ($0^\circ\mathrm{C}$) \& Hot ($45^\circ\mathrm{C}$)\\
-    DEKF $0^\circ\mathrm{C}$: $2.254\%$ $\mid$ SMO: $0.929\%$\\
-    \textbf{NASA PIDKF ($4^\circ\mathrm{C}$): $0.842\%$ (NMC)}
+    DEKF $0^\circ\mathrm{C}$: $3.806\%$ $\mid$ PIDKF: $2.526\%$\\
+    \textbf{NASA B0007 Aged: $1.715\%$ (PIDKF)}
 };
 
 \draw[phasecard] (17.76, 2.32) rectangle (23.30, 4.26);
@@ -1114,7 +1103,7 @@ def get_framework_tex():
 \node[align=center, font=\fontsize{6.9}{8.3}\selectfont] at (20.53, 3.07) {
     Initial Offset $\Delta\mathrm{SOC}_0 = -40\%$\\
     Closed-Loop Riccati Contraction\\
-    \textbf{EKF/AEKF: $7/6\;\mathrm{s}$ $\mid$ PIDKF: $18.0\;\mathrm{s}$}
+    \textbf{EKF/UKF: $8/7\;\mathrm{s}$ $\mid$ PIDKF: $336\;\mathrm{s}$ settle}
 };
 
 \draw[phasecard] (23.60, 2.32) rectangle (29.16, 4.26);
@@ -1130,46 +1119,46 @@ def get_framework_tex():
 \draw[phasecard] (0.24, 0.24) rectangle (5.78, 2.18);
 \filldraw[fill=hdrteal, draw=black, line width=0.6pt] (0.24, 1.74) rectangle (5.78, 2.18);
 \node[font=\fontsize{7.5}{8.6}\selectfont\bfseries] at (3.01, 1.96) {06 $\mid$ LFP Chemistry};
-\node[align=center, font=\fontsize{6.8}{8.2}\selectfont] at (3.01, 0.99) {
+\node[align=center, font=\fontsize{6.7}{8.1}\selectfont] at (3.01, 0.99) {
     $20\%\text{--}80\%$ Plateau $+V_h$ ($\pm 30\;\mathrm{mV}$)\\
-    Gramian $\lambda_{\min}(\mathcal{G}_o) \ge 1.21\!\times\!10^{-3}$\\
-    \textbf{Aged PIDKF: $0.149\%$ ($0.158\%$ CALCE)}
+    Gramian $\lambda_{\min}(\mathcal{G}_o) \ge 1.09\!\times\!10^{-7}$\\
+    \textbf{DEKF+Hyst: $0.346\%$ $\mid$ PIDKF: $0.593\%$}
 };
 
 \draw[phasecard] (6.08, 0.24) rectangle (11.62, 2.18);
 \filldraw[fill=hdramber, draw=black, line width=0.6pt] (6.08, 1.74) rectangle (11.62, 2.18);
 \node[font=\fontsize{7.5}{8.6}\selectfont\bfseries] at (8.85, 1.96) {07 $\mid$ Sensor Faults};
-\node[align=center, font=\fontsize{6.8}{8.2}\selectfont] at (8.85, 0.99) {
+\node[align=center, font=\fontsize{6.7}{8.1}\selectfont] at (8.85, 0.99) {
     $+0.25\;\mathrm{A}$ Hall Bias \& $25\;\mathrm{mV}$ EMI\\
-    SMO Drift Clamping: $1.024\%$\\
-    \textbf{EKF: $1.817\%$ $\mid$ PIDKF: $1.428\%$ RMSE}
+    Coulomb Drift: $14.394\%$ ($24.8\%$ end)\\
+    \textbf{EKF: $1.475\%$ $\mid$ PIDKF: $1.308\%$}
 };
 
 \draw[phasecard] (11.92, 0.24) rectangle (17.46, 2.18);
 \filldraw[fill=hdrteal, draw=black, line width=0.6pt] (11.92, 1.74) rectangle (17.46, 2.18);
 \node[font=\fontsize{7.5}{8.6}\selectfont\bfseries] at (14.69, 1.96) {08 $\mid$ EIS Diagnostics};
-\node[align=center, font=\fontsize{6.8}{8.2}\selectfont] at (14.69, 0.99) {
-    $16\;\mathrm{mHz}\text{--}30\;\mathrm{kHz}$ Randles--CPE\\
-    $R_0$ ($+50\%$), $R_{\mathrm{ct}}\equiv R_1$ ($+150\%$)\\
-    \textbf{Model-Based ($\alpha=0.94$)}
+\node[align=center, font=\fontsize{6.7}{8.1}\selectfont] at (14.69, 0.99) {
+    Real NASA \texttt{B0006} ($0.1\;\mathrm{Hz}\text{--}5\;\mathrm{kHz}$)\\
+    $R_0$ ($56.7\to 64.1$), $R_{\mathrm{ct}}$ ($22.4\to 38.9\;\mathrm{m}\Omega$)\\
+    \textbf{Randles--CPE+L (RMS $\le 2.40\;\mathrm{m}\Omega$)}
 };
 
 \draw[phasecard] (17.76, 0.24) rectangle (23.30, 2.18);
 \filldraw[fill=hdramber, draw=black, line width=0.6pt] (17.76, 1.74) rectangle (23.30, 2.18);
 \node[font=\fontsize{7.5}{8.6}\selectfont\bfseries] at (20.53, 1.96) {09 $\mid$ 8S Pack Scaling};
-\node[align=center, font=\fontsize{6.8}{8.2}\selectfont] at (20.53, 0.99) {
-    Dispersion ($\sigma_Q=3.0\%,\;\sigma_R=10.0\%$)\\
-    Core Thermal $\Delta T\!=\!+3.2^\circ\mathrm{C}$ ($1.24\times$ Fade)\\
-    \textbf{Weakest Cell 4: $0.337\%$ (Dist.\ DEKF)}
+\node[align=center, font=\fontsize{6.7}{8.1}\selectfont] at (20.53, 0.99) {
+    Cell \#4 Thermal Gradient $+2.63^\circ\mathrm{C}$\\
+    Lumped Weakest: $1.317\%$ ($+3.30\%$ peak)\\
+    \textbf{Dist.\ PIDKF: $0.223\%$ mean / $0.544\%$ weak}
 };
 
 \draw[phasecard, fill=cmlp, line width=0.9pt] (23.60, 0.24) rectangle (29.16, 2.18);
 \filldraw[fill=hdrgreen, draw=black, line width=0.9pt] (23.60, 1.74) rectangle (29.16, 2.18);
 \node[font=\fontsize{7.5}{8.6}\selectfont\bfseries] at (26.38, 1.96) {10 $\mid$ Hybrid PIDKF};
-\node[align=center, font=\fontsize{6.8}{8.2}\selectfont] at (26.38, 0.99) {
-    Ablation \& Cortex-M4 Pareto\\
-    $0.414\%$ (NMC) \& $0.149\%$ (LFP)\\
-    \textbf{$14.20\;\mu\mathrm{s}$ M4 ($-37.3\%$ Exog.\ Cyc)}
+\node[align=center, font=\fontsize{6.7}{8.1}\selectfont] at (26.38, 0.99) {
+    Aged $85\%$: $0.554\%$ (NMC), $0.593\%$ (LFP)\\
+    XJTU Aged RW: $2.03\text{--}2.75\%$\\
+    \textbf{$17.74\;\mu\mathrm{s}$ Est.\ M4F (Pareto Knee)}
 };
 
 \end{tikzpicture}

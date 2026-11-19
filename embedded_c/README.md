@@ -1,42 +1,26 @@
-# Bare-Metal C Implementations for Embedded Battery Management Systems (BMS)
+# Bare-Metal ANSI-C99 Reference Implementations for Embedded BMS
 
-This directory provides production-grade, bare-metal C implementations of state-of-charge estimation algorithms profiled on ARM Cortex-M microcontrollers:
+This directory provides static-memory, dynamic-allocation-free ANSI-C99 reference kernels for state-of-charge estimation on 32-bit FPU microcontrollers (ARMv7E-M Cortex-M4F / Cortex-M7):
 
-- **EKF** (`ekf.h`, `ekf.c`): Standard 3-state Extended Kalman Filter with stabilized Joseph covariance update.
-- **DEKF** (`dekf.h`, `dekf.c`): Dual Extended Kalman Filter for joint SOC and SOH parameter tracking ($R_0, Q_{\text{act}}$).
-- **PIDKF** (`pidkf.h`, `pidkf.c`): Proposed Physics-Informed Dual Kalman Filter with Butler–Volmer passivity-constrained neural overpotential compensation.
-
----
-
-## 1. Embedded Profiling Setup
-
-- **Target Hardware:** STM32F407VG Discovery Kit (ARM Cortex-M4F @ 168 MHz with Hardware Single-Precision FPU).
-- **Compiler:** ARM GNU Toolchain (`arm-none-eabi-gcc` v12.3.rel1).
-- **Optimization:** `-O3 -flto -mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=hard`.
-- **Cycle Measurement:** Hardware Data Watchpoint and Trace (DWT) cycle counter register (`DWT->CYCCNT`).
+- **EKF** (`ekf.h`, `ekf.c`): 3-state Extended Kalman Filter with stabilized Joseph covariance update.
+- **DEKF** (`dekf.h`, `dekf.c`): Dual EKF with Plett (2004) recurrent total-derivative sensitivity (`dx_dtheta`), immutable nominal capacity anchor `Q_init`, and rest-period innovation gating (`|I| < 10 mA`).
+- **PIDKF** (`pidkf.h`, `pidkf.c`, `pidkf_weights.h`): Hybrid Physics-Informed Dual Kalman Filter coupling the DEKF core with the exported Seed-42 `[6 -> 16 -> 8 -> 1]` GELU residual compensator (257 `float32` parameters = 1,028 B) under Butler-Volmer passivity projection (`kappa_0 = 15 mV`, `kappa_1 = 22 mOhm`, `I_max = 6.0 A`, `I_k * delta_V <= 0`).
 
 ---
 
-## 2. Compilation and Execution
+## 1. Analytical Resource & Instruction-Level Profiling Basis
 
-To compile with the ARM GCC cross-compiler:
+- **Target ISA:** ARMv7E-M (STM32F407VG Cortex-M4F @ 168 MHz with FPv4-SP-D16 single-precision hardware FPU; projected Cortex-M7 @ 480 MHz via 1.45x dual-issue IPC scaling).
+- **Methodology:** Static RAM and Flash figures are computed directly from C `struct` field sizes (`sizeof`), stack local frames, and exact `float32` weight arrays (`pidkf_weights.h`, PINN-SOC 6,690 params, BiLSTM-Attn 13,698 params). Arithmetic FLOPs/step and ARMv7E-M cycle estimates count exact FPv4-SP-D16 MAC (`VMLA`), multiply/add, hardware `VDIV`/`VSQRT`, and `expf`/`tanhf` polynomial calls (no unverified hardware `DWT->CYCCNT` timing claims are asserted).
+
+---
+
+## 2. Reproducing Exported Weights & Analytical Profiling
+
+Run from the repository root:
 
 ```bash
-arm-none-eabi-gcc -c -O3 -mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=hard ekf.c -o ekf.o
-arm-none-eabi-gcc -c -O3 -mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=hard dekf.c -o dekf.o
-arm-none-eabi-gcc -c -O3 -mcpu=cortex-m4 -mfpu=fpv4-sp-d16 -mfloat-abi=hard pidkf.c -o pidkf.o
+python -u src/export_c_weights.py
 ```
 
----
-
-## 3. Benchmarked MCU Resource Metrics (from Table 8)
-
-| Algorithm | FLOPs/Step | Cortex-M4 DWT Cycles | RAM (Bytes) | Flash (Bytes) | Measured M4 Latency (168 MHz) | Projected M7 Latency (480 MHz) |
-| :--- | :---: | :---: | :---: | :---: | :---: | :---: |
-| **EKF** | 420 | 650 | 280 | 3,400 | $3.87\;\upmu\mathrm{s}$ | $1.35\;\upmu\mathrm{s}$ |
-| **AEKF** | 580 | 880 | 340 | 4,200 | $5.24\;\upmu\mathrm{s}$ | $1.83\;\upmu\mathrm{s}$ |
-| **UKF** | 1,350 | 2,087 | 780 | 6,200 | $12.42\;\upmu\mathrm{s}$ | $4.35\;\upmu\mathrm{s}$ |
-| **DEKF** | 980 | 1,450 | 620 | 5,800 | $8.63\;\upmu\mathrm{s}$ | $3.02\;\upmu\mathrm{s}$ |
-| **SMO** | 180 | 281 | 140 | 2,100 | $1.67\;\upmu\mathrm{s}$ | $0.58\;\upmu\mathrm{s}$ |
-| **PINN-SOC** | 12,800 | 21,501 | 1,200 | 16,500 | $127.98\;\upmu\mathrm{s}$ | $44.79\;\upmu\mathrm{s}$ |
-| **PIDKF (Proposed)** | **1,540** | **2,386** | **850** | **8,200** | **14.20** $\upmu\mathbf{s}$ | **4.97** $\upmu\mathbf{s}$ |
+This script trains the Seed-42 NMC compensator, exports `embedded_c/pidkf_weights.h`, verifies Python-vs-C `float32` numerical parity (`< 1e-5 V`), and outputs `results/table8_embedded_profiling.csv`.

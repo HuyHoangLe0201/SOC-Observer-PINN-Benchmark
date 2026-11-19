@@ -17,11 +17,13 @@ PALETTE = {
     "EKF": "#DC2626",               # Crimson Red
     "Standard EKF": "#DC2626",
     "AEKF": "#2563EB",              # Royal Cobalt Blue
+    "UKF": "#0284C7",               # Cerulean Sky Blue
     "DEKF": "#16A34A",              # Emerald Green
     "Dual EKF (DEKF)": "#16A34A",
     "SMO": "#7C3AED",               # Deep Violet
     "BiLSTM-Attn": "#EA580C",       # Burnished Orange
     "PINN-SOC": "#854D0E",          # Rich Ochre-Bronze (distinct across all baselines)
+    "MLP (Unconstrained)": "#B45309",
     "PIDKF (Proposed)": "#0F766E",  # Hero Deep Teal (matches Fig. 2 framework accent)
     "Novel PIDKF (Hybrid)": "#0F766E",
     "PIDKF": "#0F766E",
@@ -30,11 +32,14 @@ PALETTE = {
 MARKERS = {
     "EKF": "s",
     "AEKF": "^",
+    "UKF": "X",
     "DEKF": "o",
     "SMO": "D",
     "BiLSTM-Attn": "v",
     "PINN-SOC": "P",
+    "MLP (Unconstrained)": "h",
     "PIDKF (Proposed)": "*",
+    "PIDKF": "*",
 }
 
 

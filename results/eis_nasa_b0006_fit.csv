@@ -1,0 +1,4 @@
+Stage,R0 (mOhm),R0_err (mOhm),L (uH),Rct (mOhm),Rct_err (mOhm),Q_cpe (mF*s^(a-1)),alpha,alpha_err,sigma_w (mOhm*s^-1/2),RMS Fit Error (mOhm),Rel Fit Error (%)
+Fresh (~100% SOH),56.67,2.01,0.203,22.37,2.77,1633.5,0.482,0.068,0.29,1.82,2.54
+Mid-Life (~90% SOH),65.62,2.3,0.217,27.19,3.43,1936.3,0.454,0.067,0.31,2.1,2.54
+End-of-Test (~75% SOH),64.14,4.87,0.253,38.89,8.04,3037.6,0.344,0.079,0.0,2.4,2.75

@@ -1,141 +1,129 @@
 """
-Fig 10: Pareto Efficiency Frontier (Estimation Accuracy vs. ARM Cortex-M4 Latency)
-Unified Q1 publication palette & collision-free direct labels + 600-DPI PNG & vector PDF export.
+Pareto Efficiency & Embedded Resource Frontier (Fig. 10)
+Journal of Energy Storage (Elsevier)
+
+Strictly data-driven from executed CSV outputs:
+  - results/table8_embedded_profiling.csv (Analytical ARMv7E-M cycles, latency, RAM, Flash)
+  - results/table2_aging_degradation.csv (80% SOH degraded RMSE on unseen UDDS)
 """
 
 import os
+import numpy as np
+import pandas as pd
 import matplotlib.pyplot as plt
-try:
-    from pub_style import PALETTE, MARKERS, apply_pub_style, save_pub_figure, style_legend
-except ImportError:
-    from src.pub_style import PALETTE, MARKERS, apply_pub_style, save_pub_figure, style_legend
+import matplotlib.ticker as ticker
+
+from pub_style import PALETTE, MARKERS, apply_pub_style, save_pub_figure, style_legend
 
 apply_pub_style()
 
-algs = ["SMO", "EKF", "AEKF", "DEKF", "PIDKF (Proposed)", "PINN-SOC", "BiLSTM-Attn"]
-latencies = [1.67, 3.87, 5.24, 8.63, 14.20, 127.98, 2440.48]
-aged_rmse = [4.254, 1.985, 3.834, 0.452, 0.414, 4.177, 4.202]
-fresh_rmse = [0.941, 0.065, 0.759, 0.191, 0.185, 2.781, 2.813]
 
-fig, ax = plt.subplots(figsize=(7.4, 4.6))
+def main():
+    root_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    results_dir = os.path.join(root_dir, "results")
 
-# Highlight Real-Time BMS Window (<20 us) cleanly
-ax.axvspan(0.8, 20.0, alpha=0.075, color="#0F766E", zorder=0)
-ax.axvline(20.0, color="#0F766E", linestyle="--", linewidth=1.1, alpha=0.85, zorder=2)
-ax.text(
-    4.0,
-    5.15,
-    r"Real-Time BMS Window ($<20\;\mu\mathrm{s}$)",
-    ha="center",
-    va="top",
-    fontsize=7.9,
-    fontweight="bold",
-    color="#0F766E",
-    bbox=dict(boxstyle="round,pad=0.22", facecolor="white", edgecolor="#99F6E4", alpha=0.95, lw=0.75),
-    zorder=6,
-)
+    df_t8 = pd.read_csv(os.path.join(results_dir, "table8_embedded_profiling.csv"))
+    df_t2 = pd.read_csv(os.path.join(results_dir, "table2_aging_degradation.csv"))
 
-# Degradation arrows from fresh (100%) to aged (85%)
-for i in range(len(algs)):
-    ax.annotate(
-        "",
-        xy=(latencies[i], aged_rmse[i]),
-        xytext=(latencies[i], fresh_rmse[i]),
-        arrowprops=dict(arrowstyle="->", color="#64748B", lw=1.0, ls=":"),
-        zorder=3,
-    )
+    # Harmonize names between Table 8 ("PIDKF (Proposed)") and Table 2 ("PIDKF")
+    t2_map = df_t2.set_index("Algorithm")["SOH=80%"].to_dict()
 
-# Fresh Pareto Frontier (100% SOH)
-ax.plot(
-    [1.67, 3.87],
-    [0.941, 0.065],
-    color="#64748B",
-    linestyle="--",
-    linewidth=1.25,
-    alpha=0.85,
-    label="Fresh Pareto Frontier (100% SOH)",
-    zorder=3,
-)
+    records = []
+    for _, row in df_t8.iterrows():
+        alg = str(row["Algorithm"])
+        key_t2 = "PIDKF" if "PIDKF" in alg else alg
+        if key_t2 not in t2_map:
+            continue
+        records.append({
+            "Algorithm": alg,
+            "Short": "PIDKF" if "PIDKF" in alg else alg,
+            "Latency_us": float(row["M4 Latency @168MHz (us)"]),
+            "RMSE_80": float(t2_map[key_t2]),
+            "RAM_B": float(row["Static+Stack RAM (B)"]),
+            "Flash_KB": float(row["Weight+Kernel Flash (B)"]) / 1024.0,
+        })
 
-# Aged Pareto Frontier (85% SOH)
-pareto_lat = [1.67, 3.87, 8.63, 14.20]
-pareto_rmse = [4.254, 1.985, 0.452, 0.414]
-ax.plot(
-    pareto_lat,
-    pareto_rmse,
-    color=PALETTE["PIDKF (Proposed)"],
-    linestyle="-",
-    linewidth=2.1,
-    alpha=0.92,
-    label="Aged Pareto Frontier (85% SOH)",
-    zorder=5,
-)
+    df = pd.DataFrame(records).sort_values("Latency_us").reset_index(drop=True)
 
-# Fresh hollow markers
-ax.scatter(
-    latencies,
-    fresh_rmse,
-    s=62,
-    facecolors="white",
-    edgecolors="#64748B",
-    linewidth=1.2,
-    label="Fresh Baseline (100% SOH)",
-    zorder=4,
-)
+    # Compute Pareto-efficient subset minimizing (Latency_us, RMSE_80)
+    pareto_pts = []
+    best_rmse = np.inf
+    for _, r in df.iterrows():
+        if r["RMSE_80"] < best_rmse:
+            best_rmse = r["RMSE_80"]
+            pareto_pts.append((r["Latency_us"], r["RMSE_80"]))
+    px = [p[0] for p in pareto_pts]
+    py = [p[1] for p in pareto_pts]
 
-# Aged solid markers using unified project-wide colors
-for i, a in enumerate(algs):
-    m = "*" if "PIDKF" in a else MARKERS.get(a, "o")
-    s = 250 if "PIDKF" in a else 105
-    ax.scatter(
-        latencies[i],
-        aged_rmse[i],
-        s=s,
-        marker=m,
-        color=PALETTE[a],
-        edgecolors="#111827",
-        linewidth=1.05,
-        zorder=7 if "PIDKF" in a else 6,
-    )
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(8.8, 4.3), gridspec_kw={"width_ratios": [1.22, 0.95], "wspace": 0.28})
 
-# Strictly de-conflicted white-pill annotations
-annot_cfg = {
-    "SMO": (1.67, 4.254, (1.67, 4.58), "center"),
-    "EKF": (3.87, 1.985, (3.25, 1.85), "right"),
-    "AEKF": (5.24, 3.834, (6.30, 3.83), "left"),
-    "DEKF": (8.63, 0.452, (7.45, 0.62), "right"),
-    "PIDKF (Proposed)": (14.20, 0.414, (22.5, 0.44), "left"),
-    "PINN-SOC": (127.98, 4.177, (127.98, 3.82), "center"),
-    "BiLSTM-Attn": (2440.48, 4.202, (2440.48, 3.82), "center"),
-}
+    # Panel (a): Pareto Frontier (Log-Scale Analytical Cortex-M4F Latency vs 80% SOH RMSE)
+    ax1.axhspan(0.0, 1.0, color="#16A34A", alpha=0.08, zorder=0, label="<1.0% Target Zone")
+    ax1.axhline(1.0, color="#15803D", linestyle=":", lw=0.95, zorder=1)
+    ax1.plot(px, py, color="#0F766E", linestyle="--", lw=1.6, zorder=3, label="Pareto Efficiency Frontier")
 
-for a, (xv, yv, (xt, yt), ha) in annot_cfg.items():
-    col = PALETTE[a] if "PIDKF" in a else "#111827"
-    txt = r"$\mathbf{PIDKF\;(Proposed)}$" + f"\n(0.414%, 14.20 $\\mu$s)" if "PIDKF" in a else f"{a} ({yv:.2f}%)"
-    kw = dict(arrowprops=dict(arrowstyle="->", color=col, lw=0.85)) if ("PIDKF" in a or a == "DEKF") else {}
-    ax.annotate(
-        txt,
-        xy=(xv, yv),
-        xytext=(xt, yt),
-        ha=ha,
-        va="center",
-        fontsize=7.8,
-        fontweight="bold",
-        color=col,
-        bbox=dict(boxstyle="round,pad=0.16", facecolor="white", edgecolor="#CBD5E1" if "PIDKF" not in a else col, alpha=0.94, lw=0.65),
-        zorder=8,
-        **kw,
-    )
+    # Non-overlapping label offsets tailored cleanly in log-x / linear-y coordinates
+    offsets = {
+        "SMO": (1.28, -0.45, "left"),
+        "EKF": (1.42, 0.30, "left"),
+        "AEKF": (1.42, 0.36, "left"),
+        "DEKF": (1.42, -0.05, "left"),
+        "UKF": (1.45, -0.45, "left"),
+        "PIDKF": (1.35, -0.15, "left"),
+        "PINN-SOC": (1.30, 0.35, "left"),
+        "BiLSTM-Attn": (0.55, -0.60, "right"),
+    }
+    for _, r in df.iterrows():
+        short = r["Short"]
+        col = PALETTE.get(short, "#475569")
+        mk = MARKERS.get(short, "o")
+        sz = 120 if short == "PIDKF" else 75
+        ax1.scatter(r["Latency_us"], r["RMSE_80"], s=sz, color=col, marker=mk, edgecolor="white", linewidth=0.9, zorder=6)
+        xf, dy, ha_v = offsets.get(short, (1.1, 0.2, "left"))
+        ax1.annotate(
+            f"{short}\n({r['Latency_us']:.1f} us, {r['RMSE_80']:.2f}%)",
+            xy=(r["Latency_us"], r["RMSE_80"]),
+            xytext=(r["Latency_us"] * xf, r["RMSE_80"] + dy),
+            arrowprops=dict(arrowstyle="-", color=col, lw=0.6, alpha=0.6),
+            fontsize=6.4, fontweight="bold", color=col, ha=ha_v, va="center",
+            bbox=dict(boxstyle="round,pad=0.14", facecolor="white", edgecolor=col, alpha=0.94, lw=0.6),
+            zorder=8,
+        )
 
-ax.set_xscale("log")
-ax.set_xlabel(r"ARM Cortex-M4 Execution Latency ($\mu\mathrm{s/step}$) [Log Scale]")
-ax.set_ylabel("SOC Estimation RMSE (%) [Lower is Better]")
-ax.set_title("Pareto Frontier: Estimation Accuracy vs. Cortex-M4 Latency on Aged Cells (85% SOH)", fontweight="bold")
-ax.grid(True, which="both")
-ax.set_xlim(0.85, 6500.0)
-ax.set_ylim(-0.30, 5.45)
-style_legend(ax.legend(loc="upper right", fontsize=8.0))
+    ax1.set_xscale("log")
+    ax1.set_xlim(0.75, 45000.0)
+    ax1.set_ylim(-0.2, max(df["RMSE_80"]) + 1.35)
+    ax1.set_xlabel(r"Analytical Cortex-M4F Latency @ $168\;\mathrm{MHz}$ ($\mu$s/step, log)")
+    ax1.set_ylabel("Aged RMSE at 80% SOH on UDDS (%)")
+    ax1.set_title("(a) Accuracy--Compute Pareto Frontier (80% SOH)", fontweight="bold", fontsize=9.2)
+    ax1.grid(True, which="both", alpha=0.45)
+    style_legend(ax1.legend(loc="upper right", fontsize=7.0))
 
-out_path = os.path.join("results", "fig10_embedded_resource_tradeoff.png")
-save_pub_figure(fig, out_path)
-print("Saved Fig 10 (PNG 600 DPI + PDF) to results/fig10_embedded_resource_tradeoff.png")
+    # Panel (b): Static+Stack RAM (KB) & Weight+Kernel Flash (KB)
+    y_pos = np.arange(len(df))
+    h = 0.36
+    ram_kb = df["RAM_B"].values / 1024.0
+    flash_kb = df["Flash_KB"].values
+    ax2.barh(y_pos - h / 2, ram_kb, h, label="Static + Stack RAM (KB)", color="#2563EB", alpha=0.88, edgecolor="#1F2937", lw=0.6)
+    ax2.barh(y_pos + h / 2, flash_kb, h, label="Weight + Kernel Flash (KB)", color="#0F766E", alpha=0.88, edgecolor="#1F2937", lw=0.6)
+    for yp, rk, fk in zip(y_pos, ram_kb, flash_kb):
+        ax2.text(rk * 1.15, yp - h / 2, f"{rk*1024:.0f} B" if rk < 1.0 else f"{rk:.2f} KB", va="center", ha="left", fontsize=6.2, fontweight="bold", color="#1E3A8A")
+        ax2.text(fk * 1.15, yp + h / 2, f"{fk:.2f} KB", va="center", ha="left", fontsize=6.2, fontweight="bold", color="#0F766E")
+
+    ax2.set_xscale("log")
+    ax2.set_xlim(0.05, 5000.0)
+    ax2.set_yticks(y_pos)
+    ax2.set_yticklabels(df["Short"], fontweight="bold", fontsize=7.6)
+    ax2.set_ylim(len(df) - 0.35, -1.65)
+    ax2.set_xlabel("MCU Memory Footprint (KB, log scale)")
+    ax2.set_title("(b) Static C Memory Sizing (ARMv7E-M)", fontweight="bold", fontsize=9.2)
+    ax2.grid(True, axis="x", which="both", alpha=0.45)
+    style_legend(ax2.legend(loc="upper right", fontsize=6.9))
+
+    out_png = os.path.join(results_dir, "fig10_embedded_resource_tradeoff.png")
+    save_pub_figure(fig, out_png)
+    print(f"[Fig 10] Saved data-driven Pareto plot to {out_png}")
+
+
+if __name__ == "__main__":
+    main()

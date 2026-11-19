@@ -1,103 +1,71 @@
 """
-Data-Driven Deep Learning Models for Battery State-of-Charge (SOC) Estimation
+Data-Driven Deep Learning Model for Battery State-of-Charge (SOC) Estimation
 Journal of Energy Storage (Elsevier)
 
-Architectures:
-1. BiLSTM-Attention: Bidirectional Long Short-Term Memory with Temporal Self-Attention
-2. Lightweight GRU: Efficient Recurrent Baseline for Embedded BMS
+Exact architecture synchronized with Section 3.5 & Appendix C.2:
+- Causal sliding window X_k = [I_{k-W:k}, V_{k-W:k}, T_{k-W:k}] in R^{W x 3}, W = 30
+- 1-layer Bidirectional LSTM (D = 32 per direction -> 64-dim hidden state)
+- Temporal self-attention mechanism Eqs. (36)-(38) + MLP regressor head
+- Exact parameter count: 13,698 parameters (54.79 KB in float32)
 """
 
 import torch
 import torch.nn as nn
-import numpy as np
 
 
 class TemporalAttention(nn.Module):
-    """
-    Self-attention layer for weighting critical dynamic transitions
-    (e.g., rapid acceleration spikes, regenerative braking pulses).
-    """
+    """Temporal self-attention layer computing scalar alignment weights Eqs. (36)-(37)."""
 
     def __init__(self, hidden_dim):
         super().__init__()
         self.attn_weights = nn.Sequential(
             nn.Linear(hidden_dim, hidden_dim // 2),
             nn.Tanh(),
-            nn.Linear(hidden_dim // 2, 1)
+            nn.Linear(hidden_dim // 2, 1),
         )
 
     def forward(self, rnn_outputs):
-        # rnn_outputs: (batch_size, seq_len, hidden_dim)
-        scores = self.attn_weights(rnn_outputs)  # (batch_size, seq_len, 1)
-        weights = torch.softmax(scores, dim=1)  # Normalize across time steps
-        context_vector = torch.sum(weights * rnn_outputs, dim=1)  # (batch_size, hidden_dim)
+        scores = self.attn_weights(rnn_outputs)
+        weights = torch.softmax(scores, dim=1)
+        context_vector = torch.sum(weights * rnn_outputs, dim=1)
         return context_vector, weights
 
 
 class BiLSTMAttentionSOC(nn.Module):
     """
-    Bidirectional LSTM with Attention Mechanism for SOC Estimation.
-    Input features per time step: [Current (A), Voltage (V), Temperature (C), dV/dt]
+    Causal Bidirectional LSTM with Temporal Self-Attention.
+    Default (W=30, input_dim=3, hidden_dim=32, num_layers=1): 13,698 float32 parameters.
     """
 
-    def __init__(self, input_dim=4, hidden_dim=64, num_layers=2, dropout=0.1):
+    def __init__(self, input_dim=3, hidden_dim=32, num_layers=1, dropout=0.0):
         super().__init__()
-        self.hidden_dim = hidden_dim
-        self.num_layers = num_layers
+        self.input_dim = int(input_dim)
+        self.hidden_dim = int(hidden_dim)
+        self.num_layers = int(num_layers)
 
         self.bilstm = nn.LSTM(
-            input_size=input_dim,
-            hidden_size=hidden_dim,
-            num_layers=num_layers,
+            input_size=self.input_dim,
+            hidden_size=self.hidden_dim,
+            num_layers=self.num_layers,
             batch_first=True,
             bidirectional=True,
-            dropout=dropout if num_layers > 1 else 0.0
+            dropout=dropout if self.num_layers > 1 else 0.0,
         )
-
-        # BiLSTM outputs hidden_dim * 2
-        self.attention = TemporalAttention(hidden_dim * 2)
-
+        self.attention = TemporalAttention(self.hidden_dim * 2)
         self.regressor = nn.Sequential(
-            nn.Linear(hidden_dim * 2, 32),
-            nn.ReLU(),
-            nn.Dropout(dropout),
+            nn.Linear(self.hidden_dim * 2, 32),
+            nn.GELU(),
             nn.Linear(32, 1),
-            nn.Sigmoid()  # Constrain SOC output to physical [0.0, 1.0] range
+            nn.Sigmoid(),
         )
 
     def forward(self, x):
-        # x shape: (batch_size, seq_len, input_dim)
         lstm_out, _ = self.bilstm(x)
-        context, attn_weights = self.attention(lstm_out)
-        soc_pred = self.regressor(context)
-        return soc_pred.squeeze(-1)
+        context, _ = self.attention(lstm_out)
+        return self.regressor(context).squeeze(-1)
 
 
-class GRUNetworkSOC(nn.Module):
-    """
-    Lightweight Gated Recurrent Unit (GRU) for SOC Estimation.
-    Tailored for low-latency embedded MCU computation.
-    """
-
-    def __init__(self, input_dim=4, hidden_dim=32, num_layers=2, dropout=0.1):
-        super().__init__()
-        self.gru = nn.GRU(
-            input_size=input_dim,
-            hidden_size=hidden_dim,
-            num_layers=num_layers,
-            batch_first=True,
-            dropout=dropout if num_layers > 1 else 0.0
-        )
-        self.fc = nn.Sequential(
-            nn.Linear(hidden_dim, 16),
-            nn.ReLU(),
-            nn.Linear(16, 1),
-            nn.Sigmoid()
-        )
-
-    def forward(self, x):
-        gru_out, _ = self.gru(x)
-        # Use last time step
-        last_step = gru_out[:, -1, :]
-        soc_pred = self.fc(last_step)
-        return soc_pred.squeeze(-1)
+if __name__ == "__main__":
+    m = BiLSTMAttentionSOC()
+    n_p = sum(p.numel() for p in m.parameters())
+    print(f"BiLSTM-Attn params: {n_p} ({n_p * 4 / 1024:.2f} KB float32)")
